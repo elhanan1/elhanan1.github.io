@@ -111,6 +111,13 @@
       visual.appendChild(svg);
       visual.appendChild(tooltip);
 
+      visual.addEventListener("pointermove", function (e) {
+        positionTooltip(e, tooltip);
+      });
+      visual.addEventListener("pointerenter", function (e) {
+        positionTooltip(e, tooltip);
+      });
+
       var meta = document.createElement("div");
       meta.className = "work-meta";
       meta.innerHTML =
@@ -133,6 +140,25 @@
     });
 
     setupSketchDraw(entries);
+  }
+
+  /* Keeps a work's hover tooltip glued to the cursor, offset slightly
+     so it doesn't sit directly under it, and flipped inward near the
+     edges of the viewport so it never runs off-screen. */
+  function positionTooltip(e, tooltip) {
+    var offset = 18;
+    var pad = 12;
+    var w = tooltip.offsetWidth || 260;
+    var h = tooltip.offsetHeight || 110;
+
+    var left = e.clientX + offset;
+    var top = e.clientY + offset;
+
+    if (left + w > window.innerWidth - pad) left = e.clientX - offset - w;
+    if (top + h > window.innerHeight - pad) top = e.clientY - offset - h;
+
+    tooltip.style.left = Math.max(pad, left) + "px";
+    tooltip.style.top = Math.max(pad, top) + "px";
   }
 
   function escapeHtml(str) {
