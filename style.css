@@ -269,28 +269,54 @@ ul { margin: 0; padding: 0; list-style: none; }
    Works feed: asymmetric, alternating layout
    ------------------------------------------------------------------- */
 .works-feed {
+  position: relative;
   padding: 6vh var(--page-pad) 20vh;
 }
 
 .work-entry {
   position: relative;
+  z-index: 1;
   display: flex;
-  margin: 0 0 16vh;
+  margin: 0 0 20vh;
+  margin-left: var(--indent, 0%);
 }
 
 .work-entry:last-child { margin-bottom: 4vh; }
-
-.work-entry[data-align="left"] { justify-content: flex-start; }
-.work-entry[data-align="right"] { justify-content: flex-end; }
 
 .work-entry[data-size="large"] .work-card { width: min(640px, 72vw); }
 .work-entry[data-size="medium"] .work-card { width: min(480px, 58vw); }
 .work-entry[data-size="small"] .work-card { width: min(360px, 46vw); }
 
-.work-entry:nth-child(odd) { transform: translateY(0); }
-.work-entry:nth-child(even) { margin-top: 4vh; }
-
 .work-card { display: block; }
+
+/* The thread connecting one work's line to the next: positioned behind
+   the whole gap (including the title/caption text), spanning from the
+   bottom of the sketch above to the top of the sketch below — their
+   actual horizontal centers, measured in JS, since works sit at varying
+   indents rather than directly above one another. */
+.work-connector {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.work-connector svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.work-connector path {
+  fill: none;
+  stroke: var(--fg);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
 
 .work-card a.work-link {
   display: block;
@@ -416,9 +442,7 @@ ul { margin: 0; padding: 0; list-style: none; }
   .work-entry[data-size="small"] .work-card {
     width: 88vw;
   }
-  .work-entry { justify-content: center !important; }
-  .work-entry:nth-child(even) { margin-top: 0; }
-  .work-entry { margin-bottom: 11vh; }
+  .work-entry { justify-content: center; margin-left: 0 !important; }
   .hero { padding: 7rem var(--page-pad) 3rem; min-height: 60vh; }
 }
 

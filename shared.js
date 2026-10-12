@@ -70,16 +70,33 @@
     if (tagEl) tagEl.textContent = DATA.person.tagline;
 
     var sizes = ["large", "medium", "small"];
+    var sizePercent = { large: 72, medium: 58, small: 46 };
+    // How far each work sits from the left edge, as a fraction of the
+    // space left over after its own width — using close to the full
+    // 0..1 range so works actually spread from edge to edge, but in a
+    // deliberately uneven order (not a simple left/right/left/right
+    // alternation), so the amount of drift varies from one work to the
+    // next instead of ping-ponging between two fixed positions.
+    var indentPattern = [0.04, 0.88, 0.30, 0.96, 0.54, 0.74, 0.14, 0.62, 0.40, 0.84];
     var entries = [];
+    var connectors = [];
+    var prevVisual = null;
 
     DATA.works.forEach(function (work, i) {
-      var align = i % 2 === 0 ? "left" : "right";
       var size = work.size || sizes[i % sizes.length];
+      var pendingConnector = null;
+
+      if (prevVisual) {
+        pendingConnector = buildConnector(prevVisual);
+        feed.appendChild(pendingConnector.el);
+      }
 
       var article = document.createElement("article");
       article.className = "work-entry";
-      article.dataset.align = align;
       article.dataset.size = size;
+      var indentFrac = indentPattern[i % indentPattern.length];
+      var indentPct = (100 - (sizePercent[size] || 58)) * indentFrac;
+      article.style.setProperty("--indent", indentPct.toFixed(1) + "%");
 
       var card = document.createElement("div");
       card.className = "work-card";
@@ -136,10 +153,80 @@
       article.appendChild(card);
       feed.appendChild(article);
 
+      if (pendingConnector) {
+        pendingConnector.toEl = visual;
+        connectors.push(pendingConnector);
+      }
+      prevVisual = visual;
+
       entries.push({ el: visual, path: path, progress: 0, drawn: false });
     });
 
-    setupSketchDraw(entries);
+    layoutConnectors(feed, connectors);
+    window.addEventListener("resize", function () { layoutConnectors(feed, connectors); }, { passive: true });
+
+    setupSketchDraw(entries.concat(connectors.map(function (c) { return c.entry; })));
+  }
+
+  /* Builds one connector between two consecutive works: a small block in
+     normal document flow (so it needs no document-coordinate math) with
+     an SVG whose path is set once both works are laid out. */
+  function buildConnector(fromEl) {
+    var el = document.createElement("div");
+    el.className = "work-connector";
+    el.setAttribute("aria-hidden", "true");
+
+    var svgNS = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("preserveAspectRatio", "none");
+    var path = document.createElementNS(svgNS, "path");
+    svg.appendChild(path);
+    el.appendChild(svg);
+
+    return {
+      el: el,
+      svg: svg,
+      path: path,
+      fromEl: fromEl,
+      toEl: null,
+      entry: { el: el, path: path, progress: 0, drawn: false }
+    };
+  }
+
+  /* Points each connector from the horizontal center of the work above
+     it to the horizontal center of the work below it, spanning the full
+     gap between them (sketch bottom to sketch top — including whatever
+     title/caption text sits in between, so the line visibly reaches
+     both sketches instead of stopping short at the text). Works sit at
+     varying indents rather than stacking directly, so this is measured
+     rather than assumed. */
+  function layoutConnectors(feed, connectors) {
+    var feedBox = feed.getBoundingClientRect();
+
+    connectors.forEach(function (c) {
+      var fromBox = c.fromEl.getBoundingClientRect();
+      var toBox = c.toEl.getBoundingClientRect();
+
+      var top = fromBox.bottom - feedBox.top;
+      var height = Math.max(1, (toBox.top - feedBox.top) - top);
+      var w = feedBox.width || 1;
+      var x1 = (fromBox.left + fromBox.width / 2) - feedBox.left;
+      var x2 = (toBox.left + toBox.width / 2) - feedBox.left;
+      var midY = height / 2;
+
+      c.el.style.top = top + "px";
+      c.el.style.height = height + "px";
+      c.svg.setAttribute("viewBox", "0 0 " + w + " " + height);
+      c.path.setAttribute(
+        "d",
+        "M" + x1 + ",0 C" + x1 + "," + midY + " " + x2 + "," + midY + " " + x2 + "," + height
+      );
+
+      var len = c.path.getTotalLength();
+      c.entry.length = len;
+      c.path.style.strokeDasharray = len;
+      if (!c.entry.drawn) c.path.style.strokeDashoffset = reduceMotion ? 0 : len;
+    });
   }
 
   /* Keeps a work's hover tooltip glued to the cursor, offset slightly
@@ -183,13 +270,14 @@
     var ticking = false;
     function update() {
       var vh = window.innerHeight;
-      // The trigger line is where drawing starts (as the work's top
-      // approaches it); progress then advances over the work's own
-      // height, so the full line length is spread across exactly the
-      // scroll distance it takes to pass that work — a tall/large work
-      // naturally takes longer to finish drawing than a small one,
-      // instead of always finishing within a fixed viewport window.
-      var triggerLine = vh * 0.82;
+      // Drawing starts at progress 0 the moment a work's top edge
+      // appears at the bottom of the viewport (no head start — nothing
+      // is pre-drawn before it has actually scrolled into view), and
+      // reaches progress 1 once it has scrolled up by its own height
+      // from there. So the full line length is spread across exactly
+      // the scroll distance it takes to pass that work — a tall/large
+      // work naturally takes longer to finish drawing than a small one.
+      var triggerLine = vh;
       entries.forEach(function (entry) {
         var rect = entry.el.getBoundingClientRect();
         var progress = (triggerLine - rect.top) / rect.height;
