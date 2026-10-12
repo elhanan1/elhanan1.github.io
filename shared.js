@@ -199,11 +199,16 @@
     var ticking = false;
     function update() {
       var vh = window.innerHeight;
-      var startLine = vh * 0.88;
-      var endLine = vh * 0.3;
+      // The trigger line is where drawing starts (as the work's top
+      // approaches it); progress then advances over the work's own
+      // height, so the full line length is spread across exactly the
+      // scroll distance it takes to pass that work — a tall/large work
+      // naturally takes longer to finish drawing than a small one,
+      // instead of always finishing within a fixed viewport window.
+      var triggerLine = vh * 0.82;
       entries.forEach(function (entry) {
         var rect = entry.el.getBoundingClientRect();
-        var progress = (startLine - rect.top) / (startLine - endLine);
+        var progress = (triggerLine - rect.top) / rect.height;
         progress = Math.max(0, Math.min(1, progress));
         entry.path.style.strokeDashoffset = entry.length * (1 - progress);
         var nowDrawn = progress >= 0.985;

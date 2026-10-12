@@ -265,6 +265,53 @@ window.SITE_DATA = {
       caption: "Leg-splay scale models"
     }
   ]
+  },
+  {
+    id: "transit-lock",
+    title: "Transit Hold",
+    year: 2024,
+    category: "Transit furniture",
+    size: "large",
+    blurb: "An airport seat that locks your carry-on in place the moment you sit down.",
+    intro: "Transit Hold is a waiting-area seat built around a single problem: a bag "
+      + "on the floor next to you is a bag someone else can walk off with. A slot "
+      + "under the front edge of the seat holds a carry-on case, and a spring "
+      + "bolt in the seat frame locks onto it the instant your weight settles — "
+      + "releasing again only once you stand up.",
+    process: "The locking sequence was worked out first as a small paper-and-chipboard "
+      + "study model, with a wooden dowel standing in for the bolt: a block "
+      + "representing the case slides into the slot from the side, the seat drops "
+      + "onto it, and the dowel pins it in place until the seat lifts again. The "
+      + "storyboard sketch maps that same three-step sequence — slide, sit, lock — "
+      + "which later became the brief for the actual spring-bolt mechanism.",
+    materials: ["Moulded composite shell", "Spring-loaded steel locking bolt", "Powder-coated steel frame", "Rubber case-grip pads"],
+    sketch: {
+      viewBox: "0 0 400 400",
+      anchor: [70, 330],
+      path: "M70,330 L140,330 L148,232 Q150,222 160,220 L250,216 Q262,215 263,226 L256,292 L248,330 L256,292 L263,226 Q264,180 262,130 Q261,100 250,82 Q240,68 222,64 L176,66 Q194,82 182,130 Q180,180 181,226 L160,220 L148,232 L140,330 L300,330 L300,300 L312,300 L312,290 L330,290 L330,300 L352,300 Q364,300 364,312 L364,326 Q364,330 356,330 L300,330 L70,330"
+    },
+    glow: { source: "photo" },
+    images: {
+      tiny: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABQODxIPDRQSEBIXFRQYHjIhHhwcHj0sLiQySUBMS0dARkVQWnNiUFVtVkVGZIhlbXd7gYKBTmCNl4x9lnN+gXz/2wBDARUXFx4aHjshITt8U0ZTfHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHz/wAARCAAbABQDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDXd8nFNOMVFcSpbrlzyegHU1HYic2vmXUsbFj8pUjGKq4hso+c0VM8WW5ooArXFq0p3tliBjA71EbCb92VdQEbIQngVoD7tOSk0mO47cDznJ70U3ufrRQI/9k=",
+      medium: "assets/img/transit-lock-medium.webp",
+      full: "assets/img/transit-lock-full.jpg"
+    },
+    gallery: [
+    {
+      type: "image",
+      tiny: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABQODxIPDRQSEBIXFRQYHjIhHhwcHj0sLiQySUBMS0dARkVQWnNiUFVtVkVGZIhlbXd7gYKBTmCNl4x9lnN+gXz/2wBDARUXFx4aHjshITt8U0ZTfHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHz/wAARCAAbABQDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDcJzTHiDLSMwjjaSQ4VRkmqxvGMh8t1aM8qcdqpiGN8jEUVM0DSYfjkZopgUL+W5n2qqnYDkgHrUcUDGFm/expn7qpznHvzj6Vepyk+tKwXLalVUKudoGBk5oqrk560UwP/9k=",
+      medium: "assets/img/transit-lock-2-medium.webp",
+      full: "assets/img/transit-lock-2-full.jpg",
+      caption: "Rear view of the chipboard study model"
+    },
+    {
+      type: "image",
+      tiny: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABQODxIPDRQSEBIXFRQYHjIhHhwcHj0sLiQySUBMS0dARkVQWnNiUFVtVkVGZIhlbXd7gYKBTmCNl4x9lnN+gXz/2wBDARUXFx4aHjshITt8U0ZTfHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHz/wAARCAAHABQDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDrFSYSsSy+Wei+lJHHON4eRWycqcdKKKLALCk6xgSSKWHfHWiiigD/2Q==",
+      medium: "assets/img/transit-lock-3-medium.webp",
+      full: "assets/img/transit-lock-3-full.jpg",
+      caption: "Storyboard: slide the case in, sit, the bolt locks"
+    }
+  ]
   }
   ]
 };
