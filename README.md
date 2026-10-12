@@ -99,24 +99,28 @@ Each work has a `sketch` object:
 ```js
 sketch: {
   viewBox: "0 0 400 400",
-  anchor: [70, 330],
-  path: "M70,330 L150,330 ..."
+  entry: [200, 0],
+  exit: [200, 400],
+  path: "M200,0 L150,330 ..."
 }
 ```
 
 `path` is a single continuous SVG path — it's drawn progressively as the
-work scrolls into view. **Every sketch must start and end at the exact
-same `anchor` point** `(70, 330)` in the `400x400` viewBox — that's what
-lets you reorder works freely without the line animation jumping between
-different start positions.
+work scrolls into view. **Every sketch must start at `entry` (200,0 —
+top-center) and end at `exit` (200,400 — bottom-center)** of the `400x400`
+viewBox. The home page measures each sketch's actual on-screen entry and
+exit points and draws a connecting thread between consecutive works, so
+keeping these fixed is what lets that thread reach correctly regardless
+of how the works are reordered or how wide/positioned each card is.
 
 A reliable way to draw your own: trace your sketch as one continuous
-stroke in Illustrator/Figma/Inkscape starting and ending at the same
-point, export as SVG, and copy the single `<path d="...">` value in here
-(scale/position it to roughly fill the 400×400 box, with the start/end
-point at `70,330`). If your tool outputs multiple `<path>` elements,
-either combine them into one continuous path, or just keep the first one
-and treat the rest as optional detail.
+stroke in Illustrator/Figma/Inkscape starting at the top-center and
+ending at the bottom-center of your artboard, export as SVG, and copy
+the single `<path d="...">` value in here (scale/position it to roughly
+fill the 400×400 box, with the start point at `200,0` and the end point
+at `200,400`). If your tool outputs multiple `<path>` elements, either
+combine them into one continuous path, or just keep the first one and
+treat the rest as optional detail.
 
 ### About / Contact page
 

@@ -80,14 +80,15 @@
     var indentPattern = [0.04, 0.88, 0.30, 0.96, 0.54, 0.74, 0.14, 0.62, 0.40, 0.84];
     var entries = [];
     var connectors = [];
-    var prevVisual = null;
+    var prevSvg = null;
+    var prevExit = null;
 
     DATA.works.forEach(function (work, i) {
       var size = work.size || sizes[i % sizes.length];
       var pendingConnector = null;
 
-      if (prevVisual) {
-        pendingConnector = buildConnector(prevVisual);
+      if (prevSvg) {
+        pendingConnector = buildConnector(prevSvg, prevExit);
         feed.appendChild(pendingConnector.el);
       }
 
@@ -154,10 +155,12 @@
       feed.appendChild(article);
 
       if (pendingConnector) {
-        pendingConnector.toEl = visual;
+        pendingConnector.toSvg = svg;
+        pendingConnector.toPoint = work.sketch.entry;
         connectors.push(pendingConnector);
       }
-      prevVisual = visual;
+      prevSvg = svg;
+      prevExit = work.sketch.exit;
 
       entries.push({ el: visual, path: path, progress: 0, drawn: false });
     });
@@ -168,10 +171,25 @@
     setupSketchDraw(entries.concat(connectors.map(function (c) { return c.entry; })));
   }
 
-  /* Builds one connector between two consecutive works: a small block in
-     normal document flow (so it needs no document-coordinate math) with
-     an SVG whose path is set once both works are laid out. */
-  function buildConnector(fromEl) {
+  /* Translates a point in an SVG's own viewBox coordinates (e.g. a
+     sketch's entry/exit point) into actual on-screen pixels, accounting
+     for however that SVG's viewBox is scaled/letterboxed into its box —
+     so a connector can start and end exactly where a sketch's line
+     really does, not at an assumed edge or center of its box. */
+  function svgPointToScreen(svg, point) {
+    var ctm = svg.getScreenCTM();
+    if (!ctm) return null;
+    var pt = svg.createSVGPoint();
+    pt.x = point[0];
+    pt.y = point[1];
+    var screenPt = pt.matrixTransform(ctm);
+    return { x: screenPt.x, y: screenPt.y };
+  }
+
+  /* Builds one connector between two consecutive works: an SVG whose
+     path is computed once both works are laid out, from the exact exit
+     point of the work above to the exact entry point of the work below. */
+  function buildConnector(fromSvg, fromPoint) {
     var el = document.createElement("div");
     el.className = "work-connector";
     el.setAttribute("aria-hidden", "true");
@@ -187,39 +205,43 @@
       el: el,
       svg: svg,
       path: path,
-      fromEl: fromEl,
-      toEl: null,
+      fromSvg: fromSvg,
+      fromPoint: fromPoint,
+      toSvg: null,
+      toPoint: null,
       entry: { el: el, path: path, progress: 0, drawn: false }
     };
   }
 
-  /* Points each connector from the horizontal center of the work above
-     it to the horizontal center of the work below it, spanning the full
-     gap between them (sketch bottom to sketch top — including whatever
-     title/caption text sits in between, so the line visibly reaches
-     both sketches instead of stopping short at the text). Works sit at
-     varying indents rather than stacking directly, so this is measured
-     rather than assumed. */
+  /* Points each connector from the work above's exact exit point to the
+     work below's exact entry point, measured on-screen (via each
+     sketch's own coordinate transform) rather than assumed — works sit
+     at varying indents and sizes, not stacked directly, so an assumed
+     box edge or center would miss. */
   function layoutConnectors(feed, connectors) {
     var feedBox = feed.getBoundingClientRect();
 
     connectors.forEach(function (c) {
-      var fromBox = c.fromEl.getBoundingClientRect();
-      var toBox = c.toEl.getBoundingClientRect();
+      var from = svgPointToScreen(c.fromSvg, c.fromPoint);
+      var to = svgPointToScreen(c.toSvg, c.toPoint);
+      if (!from || !to) return;
 
-      var top = fromBox.bottom - feedBox.top;
-      var height = Math.max(1, (toBox.top - feedBox.top) - top);
+      var top = Math.min(from.y, to.y) - feedBox.top;
+      var bottom = Math.max(from.y, to.y) - feedBox.top;
+      var height = Math.max(1, bottom - top);
       var w = feedBox.width || 1;
-      var x1 = (fromBox.left + fromBox.width / 2) - feedBox.left;
-      var x2 = (toBox.left + toBox.width / 2) - feedBox.left;
-      var midY = height / 2;
+      var x1 = from.x - feedBox.left;
+      var x2 = to.x - feedBox.left;
+      var y1 = from.y - feedBox.top - top;
+      var y2 = to.y - feedBox.top - top;
+      var midY = (y1 + y2) / 2;
 
       c.el.style.top = top + "px";
       c.el.style.height = height + "px";
       c.svg.setAttribute("viewBox", "0 0 " + w + " " + height);
       c.path.setAttribute(
         "d",
-        "M" + x1 + ",0 C" + x1 + "," + midY + " " + x2 + "," + midY + " " + x2 + "," + height
+        "M" + x1 + "," + y1 + " C" + x1 + "," + midY + " " + x2 + "," + midY + " " + x2 + "," + y2
       );
 
       var len = c.path.getTotalLength();
@@ -270,17 +292,18 @@
     var ticking = false;
     function update() {
       var vh = window.innerHeight;
-      // Drawing starts at progress 0 the moment a work's top edge
-      // appears at the bottom of the viewport (no head start — nothing
-      // is pre-drawn before it has actually scrolled into view), and
-      // reaches progress 1 once it has scrolled up by its own height
-      // from there. So the full line length is spread across exactly
-      // the scroll distance it takes to pass that work — a tall/large
-      // work naturally takes longer to finish drawing than a small one.
-      var triggerLine = vh;
+      // Progress 0 is the moment a work's top edge appears at the
+      // bottom of the viewport (nothing is pre-drawn before it has
+      // actually scrolled into view), and progress 1 is the moment its
+      // bottom edge scrolls past the top of the viewport — i.e. drawing
+      // is spread across the work's entire transit through the screen,
+      // the whole time any part of it is visible, instead of finishing
+      // partway up (which read as "already drawn" / rushed for short
+      // works). A tall work still takes more scrolling to finish than a
+      // short one, just never faster than the time it spends on screen.
       entries.forEach(function (entry) {
         var rect = entry.el.getBoundingClientRect();
-        var progress = (triggerLine - rect.top) / rect.height;
+        var progress = (vh - rect.top) / (vh + rect.height);
         progress = Math.max(0, Math.min(1, progress));
         entry.path.style.strokeDashoffset = entry.length * (1 - progress);
         if (progress >= 0.985) entry.drawn = true;
