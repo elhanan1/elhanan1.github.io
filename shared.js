@@ -1,0 +1,405 @@
+/**
+ * Shared behaviour for every page: the collapsing nav, and whichever
+ * page-specific module matches document.body.dataset.page ("home",
+ * "project", "about"). Reads all content from window.SITE_DATA
+ * (data/works.js), which must be loaded before this file.
+ */
+(function () {
+  "use strict";
+
+  var DATA = window.SITE_DATA;
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var canHover = window.matchMedia("(hover: hover)").matches;
+
+  document.addEventListener("DOMContentLoaded", function () {
+    initNav();
+    var page = document.body.dataset.page;
+    if (page === "home") initHome();
+    if (page === "project") initProject();
+    if (page === "about") initAbout();
+  });
+
+  /* -------------------------------------------------------------------
+     Nav: collapses into a dot after a small scroll, expands on
+     hover (desktop) or tap (mobile/touch).
+     ----------------------------------------------------------------- */
+  function initNav() {
+    var nav = document.querySelector(".site-nav");
+    if (!nav) return;
+    var dot = nav.querySelector(".dot");
+    var threshold = 72;
+
+    function onScroll() {
+      var collapsed = window.scrollY > threshold;
+      nav.classList.toggle("collapsed", collapsed);
+      if (!collapsed) nav.classList.remove("expanded");
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+
+    if (dot) {
+      dot.addEventListener("click", function () {
+        nav.classList.toggle("expanded");
+      });
+    }
+
+    document.addEventListener("click", function (e) {
+      if (nav.classList.contains("expanded") && !nav.contains(e.target)) {
+        nav.classList.remove("expanded");
+      }
+    });
+
+    var current = document.body.dataset.page;
+    nav.querySelectorAll("a[data-nav]").forEach(function (a) {
+      if (a.dataset.nav === current || (current === "project" && a.dataset.nav === "work")) {
+        a.setAttribute("aria-current", "page");
+      }
+    });
+  }
+
+  /* -------------------------------------------------------------------
+     Home page: builds the works feed, animates each sketch as it
+     scrolls into view, and drives the glass-lens cursor effect.
+     ----------------------------------------------------------------- */
+  function initHome() {
+    var feed = document.getElementById("work");
+    if (!feed || !DATA) return;
+
+    var nameEl = document.querySelector(".hero .name");
+    if (nameEl) nameEl.textContent = DATA.person.name;
+    var tagEl = document.querySelector(".hero .tagline");
+    if (tagEl) tagEl.textContent = DATA.person.tagline;
+
+    var sizes = ["large", "medium", "small"];
+    var entries = [];
+
+    DATA.works.forEach(function (work, i) {
+      var align = i % 2 === 0 ? "left" : "right";
+      var size = work.size || sizes[i % sizes.length];
+
+      var article = document.createElement("article");
+      article.className = "work-entry";
+      article.dataset.align = align;
+      article.dataset.size = size;
+
+      var card = document.createElement("div");
+      card.className = "work-card";
+
+      var link = document.createElement("a");
+      link.className = "work-link";
+      link.href = "project.html?id=" + encodeURIComponent(work.id);
+      link.setAttribute("aria-label", work.title + ", " + work.year);
+
+      var visual = document.createElement("div");
+      visual.className = "work-visual";
+
+      var glow = document.createElement("div");
+      glow.className = "glow";
+      glow.style.backgroundImage = "url(" + work.images.tiny + ")";
+
+      var tinyImg = document.createElement("img");
+      tinyImg.className = "tiny-bg";
+      tinyImg.src = work.images.tiny;
+      tinyImg.alt = "";
+      tinyImg.setAttribute("aria-hidden", "true");
+
+      var mediumImg = document.createElement("img");
+      mediumImg.className = "medium-img";
+      mediumImg.dataset.src = work.images.medium;
+      mediumImg.alt = work.title + " — full image";
+      mediumImg.loading = "lazy";
+
+      var svgNS = "http://www.w3.org/2000/svg";
+      var svg = document.createElementNS(svgNS, "svg");
+      svg.setAttribute("class", "sketch-svg");
+      svg.setAttribute("viewBox", work.sketch.viewBox);
+      svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+      var path = document.createElementNS(svgNS, "path");
+      path.setAttribute("d", work.sketch.path);
+      svg.appendChild(path);
+
+      var tooltip = document.createElement("div");
+      tooltip.className = "work-tooltip";
+      tooltip.innerHTML =
+        '<div class="tt-title">' + escapeHtml(work.title) + "</div>" +
+        '<div class="tt-sub">' + work.year + " · " + escapeHtml(work.category) + "</div>" +
+        '<div class="tt-desc">' + escapeHtml(work.blurb) + "</div>";
+
+      visual.appendChild(glow);
+      visual.appendChild(tinyImg);
+      visual.appendChild(mediumImg);
+      visual.appendChild(svg);
+      visual.appendChild(tooltip);
+
+      var meta = document.createElement("div");
+      meta.className = "work-meta";
+      meta.innerHTML =
+        '<span class="work-title">' + escapeHtml(work.title) + "</span>" +
+        '<span class="work-tags">' + work.year + " · " + escapeHtml(work.category) + "</span>";
+
+      var mobileCaption = document.createElement("div");
+      mobileCaption.className = "mobile-caption";
+      mobileCaption.innerHTML =
+        '<div class="tt-desc">' + escapeHtml(work.blurb) + "</div>";
+
+      link.appendChild(visual);
+      card.appendChild(link);
+      card.appendChild(meta);
+      card.appendChild(mobileCaption);
+      article.appendChild(card);
+      feed.appendChild(article);
+
+      entries.push({ el: visual, path: path, progress: 0, drawn: false });
+    });
+
+    setupLazyLoad(entries);
+    setupSketchDraw(entries);
+    if (canHover) setupLens(entries);
+    else setupTapReveal(entries);
+  }
+
+  function escapeHtml(str) {
+    var div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function setupLazyLoad(entries) {
+    var io = new IntersectionObserver(function (observed) {
+      observed.forEach(function (item) {
+        if (!item.isIntersecting) return;
+        var img = item.target.querySelector(".medium-img");
+        if (img && img.dataset.src) {
+          img.src = img.dataset.src;
+          img.addEventListener("load", function () {
+            img.classList.add("loaded");
+          }, { once: true });
+          delete img.dataset.src;
+        }
+        io.unobserve(item.target);
+      });
+    }, { rootMargin: "250px 0px" });
+
+    entries.forEach(function (entry) { io.observe(entry.el); });
+  }
+
+  function setupSketchDraw(entries) {
+    entries.forEach(function (entry) {
+      var len = entry.path.getTotalLength();
+      entry.length = len;
+      entry.path.style.strokeDasharray = len;
+      entry.path.style.strokeDashoffset = reduceMotion ? 0 : len;
+    });
+
+    if (reduceMotion) {
+      entries.forEach(function (e) { e.drawn = true; e.el.classList.add("revealed"); });
+      return;
+    }
+
+    var ticking = false;
+    function update() {
+      var vh = window.innerHeight;
+      var startLine = vh * 0.88;
+      var endLine = vh * 0.3;
+      entries.forEach(function (entry) {
+        var rect = entry.el.getBoundingClientRect();
+        var progress = (startLine - rect.top) / (startLine - endLine);
+        progress = Math.max(0, Math.min(1, progress));
+        entry.path.style.strokeDashoffset = entry.length * (1 - progress);
+        var nowDrawn = progress >= 0.985;
+        if (nowDrawn && !entry.drawn) {
+          entry.drawn = true;
+          if (!canHover) entry.el.classList.add("revealed");
+        }
+      });
+      ticking = false;
+    }
+    function onScroll() {
+      if (!ticking) {
+        window.requestAnimationFrame(update);
+        ticking = true;
+      }
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    update();
+  }
+
+  /* Desktop: soft circular lens follows the cursor with eased motion,
+     revealing the real image underneath the sketch. */
+  function setupLens(entries) {
+    entries.forEach(function (entry) {
+      var state = { tx: 50, ty: 42, cx: 50, cy: 42, active: false };
+      entry.lens = state;
+
+      entry.el.addEventListener("pointerenter", function () {
+        state.active = true;
+        entry.el.classList.add("lens-active");
+      });
+      entry.el.addEventListener("pointerleave", function () {
+        state.active = false;
+        entry.el.classList.remove("lens-active");
+      });
+      entry.el.addEventListener("pointermove", function (e) {
+        var rect = entry.el.getBoundingClientRect();
+        state.tx = ((e.clientX - rect.left) / rect.width) * 100;
+        state.ty = ((e.clientY - rect.top) / rect.height) * 100;
+      });
+    });
+
+    if (reduceMotion) {
+      entries.forEach(function (entry) {
+        entry.el.style.setProperty("--mx", entry.lens.tx + "%");
+        entry.el.style.setProperty("--my", entry.lens.ty + "%");
+      });
+      return;
+    }
+
+    function tick() {
+      entries.forEach(function (entry) {
+        var s = entry.lens;
+        if (!s) return;
+        s.cx += (s.tx - s.cx) * 0.12;
+        s.cy += (s.ty - s.cy) * 0.12;
+        entry.el.style.setProperty("--mx", s.cx.toFixed(2) + "%");
+        entry.el.style.setProperty("--my", s.cy.toFixed(2) + "%");
+      });
+      window.requestAnimationFrame(tick);
+    }
+    window.requestAnimationFrame(tick);
+  }
+
+  /* Mobile / touch: tap reveals the image underneath immediately. */
+  function setupTapReveal(entries) {
+    entries.forEach(function (entry) {
+      entry.el.addEventListener("click", function (e) {
+        if (entry.el.classList.contains("revealed")) return;
+        e.preventDefault();
+        entry.el.classList.add("revealed");
+      });
+    });
+  }
+
+  /* -------------------------------------------------------------------
+     Project page
+     ----------------------------------------------------------------- */
+  function initProject() {
+    if (!DATA) return;
+    var params = new URLSearchParams(window.location.search);
+    var id = params.get("id");
+    var works = DATA.works;
+    var index = works.findIndex(function (w) { return w.id === id; });
+
+    if (index === -1) {
+      document.getElementById("project-root").innerHTML =
+        '<div class="not-found">' +
+        '<p>This project could not be found.</p>' +
+        '<p><a href="index.html#work">Back to work</a></p>' +
+        "</div>";
+      document.title = "Not found — " + DATA.person.name;
+      return;
+    }
+
+    var work = works[index];
+    document.title = work.title + " — " + DATA.person.name;
+
+    setText("p-title", work.title);
+    setText("p-year", work.year);
+    setText("p-category", work.category);
+    setText("p-intro", work.intro);
+    setText("p-process", work.process);
+
+    var heroGlow = document.querySelector(".project-hero-visual .glow");
+    var heroImg = document.querySelector(".project-hero-visual img");
+    if (heroGlow) heroGlow.style.backgroundImage = "url(" + work.images.tiny + ")";
+    if (heroImg) {
+      heroImg.alt = work.title;
+      heroImg.loading = "lazy";
+      heroImg.src = work.images.full;
+    }
+
+    var materialsList = document.getElementById("p-materials");
+    if (materialsList) {
+      materialsList.innerHTML = "";
+      work.materials.forEach(function (m) {
+        var li = document.createElement("li");
+        li.textContent = m;
+        materialsList.appendChild(li);
+      });
+    }
+
+    var gallery = document.getElementById("p-gallery");
+    if (gallery) {
+      gallery.innerHTML = "";
+      work.gallery.forEach(function (item) {
+        var fig = document.createElement("figure");
+        fig.className = "gallery-item";
+        if (item.type === "video") {
+          var video = document.createElement("video");
+          video.src = item.src;
+          video.controls = true;
+          video.muted = true;
+          video.loop = true;
+          video.playsInline = true;
+          video.preload = "none";
+          fig.appendChild(video);
+        } else {
+          var img = document.createElement("img");
+          img.src = item.medium;
+          img.alt = item.caption || work.title;
+          img.loading = "lazy";
+          fig.appendChild(img);
+        }
+        if (item.caption) {
+          var cap = document.createElement("figcaption");
+          cap.textContent = item.caption;
+          fig.appendChild(cap);
+        }
+        gallery.appendChild(fig);
+      });
+    }
+
+    var prevWork = works[(index - 1 + works.length) % works.length];
+    var nextWork = works[(index + 1) % works.length];
+    linkProjectNav("nav-prev", prevWork);
+    linkProjectNav("nav-next", nextWork);
+  }
+
+  function linkProjectNav(elId, work) {
+    var el = document.getElementById(elId);
+    if (!el) return;
+    el.href = "project.html?id=" + encodeURIComponent(work.id);
+    var titleEl = el.querySelector(".nav-title");
+    if (titleEl) titleEl.textContent = work.title;
+  }
+
+  function setText(id, value) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = value;
+  }
+
+  /* -------------------------------------------------------------------
+     About page
+     ----------------------------------------------------------------- */
+  function initAbout() {
+    if (!DATA) return;
+    var about = DATA.about;
+    setText("about-bio", about.bio);
+
+    setLink("link-email", "mailto:" + about.email, about.email);
+    setLink("link-instagram", about.instagram, "Instagram");
+    setLink("link-behance", about.behance, "Behance");
+    setLink("link-linkedin", about.linkedin, "LinkedIn");
+
+    var cv = document.getElementById("cv-button");
+    if (cv) cv.href = about.cv;
+  }
+
+  function setLink(id, href, label) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.href = href;
+    var labelEl = el.querySelector(".link-label");
+    if (labelEl) labelEl.textContent = label;
+  }
+})();

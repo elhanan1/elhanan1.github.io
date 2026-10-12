@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Project — elhanan itzkovich</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-page="project">
+
+  <nav class="site-nav" aria-label="Primary">
+    <div class="menu-row">
+      <a href="index.html#work" data-nav="work">Work</a>
+      <a href="about.html" data-nav="about">About</a>
+      <a href="about.html#contact" data-nav="contact">Contact</a>
+      <a class="menu-logo" href="index.html" aria-label="elhanan itzkovich — home">
+        <svg viewBox="10 6 114 86" aria-hidden="true" focusable="false">
+          <g fill="none" stroke="var(--fg)" stroke-width="12">
+            <path d="M22 18 L78 82"/>
+            <path d="M78 18 L78 36 Q78 50 60 56"/>
+            <path d="M22 82 L22 64 Q22 50 40 44"/>
+          </g>
+          <g fill="none" stroke="var(--bg)" stroke-width="22" transform="translate(36,0)">
+            <path d="M22 18 L78 82"/>
+            <path d="M78 18 L78 36 Q78 50 60 56"/>
+            <path d="M22 82 L22 64 Q22 50 40 44"/>
+          </g>
+          <g fill="none" stroke="var(--fg)" stroke-width="12" transform="translate(36,0)">
+            <path d="M22 18 L78 82"/>
+            <path d="M78 18 L78 36 Q78 50 60 56"/>
+            <path d="M22 82 L22 64 Q22 50 40 44"/>
+          </g>
+        </svg>
+      </a>
+    </div>
+    <button class="dot" aria-label="Open menu" type="button"></button>
+  </nav>
+
+  <div id="project-root">
+    <header class="project-header">
+      <a class="back-link" href="index.html#work">&larr; Back to work</a>
+      <h1 class="p-title" id="p-title"></h1>
+      <div class="p-meta"><span id="p-year"></span><span id="p-category"></span></div>
+      <p class="p-intro" id="p-intro"></p>
+    </header>
+
+    <div class="project-hero-visual">
+      <div class="glow"></div>
+      <img alt="" />
+    </div>
+
+    <section class="project-gallery" id="p-gallery" aria-label="Gallery"></section>
+
+    <section class="project-section">
+      <h2>Process</h2>
+      <p id="p-process"></p>
+    </section>
+
+    <section class="project-section">
+      <h2>Materials</h2>
+      <ul class="materials-list" id="p-materials"></ul>
+    </section>
+
+    <nav class="project-nav" aria-label="Other projects">
+      <a id="nav-prev" class="prev">
+        <span class="nav-label">Previous</span>
+        <span class="nav-title"></span>
+      </a>
+      <a id="nav-next" class="next">
+        <span class="nav-label">Next</span>
+        <span class="nav-title"></span>
+      </a>
+    </nav>
+  </div>
+
+  <footer class="site-footer">
+    <span>&copy; <span id="year"></span> elhanan itzkovich</span>
+    <a href="index.html#work">Back to work</a>
+  </footer>
+
+  <script src="data/works.js"></script>
+  <script src="shared.js"></script>
+  <script>document.getElementById("year").textContent = new Date().getFullYear();</script>
+</body>
+</html>
