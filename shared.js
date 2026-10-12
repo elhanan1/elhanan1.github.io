@@ -58,7 +58,7 @@
 
   /* -------------------------------------------------------------------
      Home page: builds the works feed, and animates each sketch as it
-     scrolls into view, over a soft color glow.
+     scrolls into view.
      ----------------------------------------------------------------- */
   function initHome() {
     var feed = document.getElementById("work");
@@ -92,10 +92,6 @@
       var visual = document.createElement("div");
       visual.className = "work-visual";
 
-      var glow = document.createElement("div");
-      glow.className = "glow";
-      glow.style.backgroundImage = "url(" + work.images.tiny + ")";
-
       var svgNS = "http://www.w3.org/2000/svg";
       var svg = document.createElementNS(svgNS, "svg");
       svg.setAttribute("class", "sketch-svg");
@@ -112,7 +108,6 @@
         '<div class="tt-sub">' + work.year + " · " + escapeHtml(work.category) + "</div>" +
         '<div class="tt-desc">' + escapeHtml(work.blurb) + "</div>";
 
-      visual.appendChild(glow);
       visual.appendChild(svg);
       visual.appendChild(tooltip);
 
