@@ -20,7 +20,6 @@
   --dur-med: .6s;
   --dur-slow: 1.1s;
 
-  --lens-size: 220px;
   --page-pad: 7vw;
   color-scheme: light;
 }
@@ -303,45 +302,24 @@ ul { margin: 0; padding: 0; list-style: none; }
   aspect-ratio: 1 / 1.08;
   border-radius: 3px;
   overflow: hidden;
-  background: var(--surface);
+  background: var(--bg);
   cursor: pointer;
 }
 
+/* A soft, very subtle color glow behind the sketch — never the photo
+   itself, just its blurred, feathered color — taken from the work's
+   tiny (~20px) LQIP thumbnail. */
 .work-visual .glow {
   position: absolute;
-  inset: -25%;
+  inset: 0;
   background-size: cover;
   background-position: center;
-  filter: blur(46px) brightness(.5) saturate(1.3);
-  transform: scale(1.15);
-  opacity: .85;
-  transition: opacity var(--dur-med) var(--ease);
+  filter: blur(80px) brightness(.9) saturate(.85);
+  transform: scale(1.3);
+  opacity: .55;
+  -webkit-mask-image: radial-gradient(circle at 50% 42%, #000 0%, #000 22%, transparent 68%);
+  mask-image: radial-gradient(circle at 50% 42%, #000 0%, #000 22%, transparent 68%);
 }
-
-.work-visual .tiny-bg,
-.work-visual .medium-img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.work-visual .tiny-bg {
-  filter: blur(16px) saturate(1.05);
-  transform: scale(1.12);
-}
-
-.work-visual .medium-img {
-  opacity: 0;
-  transition: opacity var(--dur-med) var(--ease);
-  -webkit-mask-image: radial-gradient(circle var(--lens-size) at var(--mx, 50%) var(--my, 42%), #000 0%, #000 52%, transparent 96%);
-  mask-image: radial-gradient(circle var(--lens-size) at var(--mx, 50%) var(--my, 42%), #000 0%, #000 52%, transparent 96%);
-}
-
-.work-visual .medium-img.loaded { opacity: 1; }
-
-.work-visual.lens-active .medium-img.loaded { opacity: 1; }
 
 .work-visual .sketch-svg {
   position: absolute;
@@ -357,13 +335,6 @@ ul { margin: 0; padding: 0; list-style: none; }
   stroke-linecap: round;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
-}
-
-/* mobile / no-hover: reveal fully once drawn, no lens mask */
-.work-visual.revealed .medium-img {
-  -webkit-mask-image: none;
-  mask-image: none;
-  opacity: 1;
 }
 
 .work-meta {

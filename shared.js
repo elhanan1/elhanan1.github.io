@@ -9,7 +9,6 @@
 
   var DATA = window.SITE_DATA;
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var canHover = window.matchMedia("(hover: hover)").matches;
 
   document.addEventListener("DOMContentLoaded", function () {
     initNav();
@@ -58,8 +57,8 @@
   }
 
   /* -------------------------------------------------------------------
-     Home page: builds the works feed, animates each sketch as it
-     scrolls into view, and drives the glass-lens cursor effect.
+     Home page: builds the works feed, and animates each sketch as it
+     scrolls into view, over a soft color glow.
      ----------------------------------------------------------------- */
   function initHome() {
     var feed = document.getElementById("work");
@@ -97,18 +96,6 @@
       glow.className = "glow";
       glow.style.backgroundImage = "url(" + work.images.tiny + ")";
 
-      var tinyImg = document.createElement("img");
-      tinyImg.className = "tiny-bg";
-      tinyImg.src = work.images.tiny;
-      tinyImg.alt = "";
-      tinyImg.setAttribute("aria-hidden", "true");
-
-      var mediumImg = document.createElement("img");
-      mediumImg.className = "medium-img";
-      mediumImg.dataset.src = work.images.medium;
-      mediumImg.alt = work.title + " — full image";
-      mediumImg.loading = "lazy";
-
       var svgNS = "http://www.w3.org/2000/svg";
       var svg = document.createElementNS(svgNS, "svg");
       svg.setAttribute("class", "sketch-svg");
@@ -126,8 +113,6 @@
         '<div class="tt-desc">' + escapeHtml(work.blurb) + "</div>";
 
       visual.appendChild(glow);
-      visual.appendChild(tinyImg);
-      visual.appendChild(mediumImg);
       visual.appendChild(svg);
       visual.appendChild(tooltip);
 
@@ -152,35 +137,13 @@
       entries.push({ el: visual, path: path, progress: 0, drawn: false });
     });
 
-    setupLazyLoad(entries);
     setupSketchDraw(entries);
-    if (canHover) setupLens(entries);
-    else setupTapReveal(entries);
   }
 
   function escapeHtml(str) {
     var div = document.createElement("div");
     div.textContent = str;
     return div.innerHTML;
-  }
-
-  function setupLazyLoad(entries) {
-    var io = new IntersectionObserver(function (observed) {
-      observed.forEach(function (item) {
-        if (!item.isIntersecting) return;
-        var img = item.target.querySelector(".medium-img");
-        if (img && img.dataset.src) {
-          img.src = img.dataset.src;
-          img.addEventListener("load", function () {
-            img.classList.add("loaded");
-          }, { once: true });
-          delete img.dataset.src;
-        }
-        io.unobserve(item.target);
-      });
-    }, { rootMargin: "250px 0px" });
-
-    entries.forEach(function (entry) { io.observe(entry.el); });
   }
 
   function setupSketchDraw(entries) {
@@ -192,7 +155,7 @@
     });
 
     if (reduceMotion) {
-      entries.forEach(function (e) { e.drawn = true; e.el.classList.add("revealed"); });
+      entries.forEach(function (e) { e.drawn = true; });
       return;
     }
 
@@ -211,11 +174,7 @@
         var progress = (triggerLine - rect.top) / rect.height;
         progress = Math.max(0, Math.min(1, progress));
         entry.path.style.strokeDashoffset = entry.length * (1 - progress);
-        var nowDrawn = progress >= 0.985;
-        if (nowDrawn && !entry.drawn) {
-          entry.drawn = true;
-          if (!canHover) entry.el.classList.add("revealed");
-        }
+        if (progress >= 0.985) entry.drawn = true;
       });
       ticking = false;
     }
@@ -228,61 +187,6 @@
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll, { passive: true });
     update();
-  }
-
-  /* Desktop: soft circular lens follows the cursor with eased motion,
-     revealing the real image underneath the sketch. */
-  function setupLens(entries) {
-    entries.forEach(function (entry) {
-      var state = { tx: 50, ty: 42, cx: 50, cy: 42, active: false };
-      entry.lens = state;
-
-      entry.el.addEventListener("pointerenter", function () {
-        state.active = true;
-        entry.el.classList.add("lens-active");
-      });
-      entry.el.addEventListener("pointerleave", function () {
-        state.active = false;
-        entry.el.classList.remove("lens-active");
-      });
-      entry.el.addEventListener("pointermove", function (e) {
-        var rect = entry.el.getBoundingClientRect();
-        state.tx = ((e.clientX - rect.left) / rect.width) * 100;
-        state.ty = ((e.clientY - rect.top) / rect.height) * 100;
-      });
-    });
-
-    if (reduceMotion) {
-      entries.forEach(function (entry) {
-        entry.el.style.setProperty("--mx", entry.lens.tx + "%");
-        entry.el.style.setProperty("--my", entry.lens.ty + "%");
-      });
-      return;
-    }
-
-    function tick() {
-      entries.forEach(function (entry) {
-        var s = entry.lens;
-        if (!s) return;
-        s.cx += (s.tx - s.cx) * 0.12;
-        s.cy += (s.ty - s.cy) * 0.12;
-        entry.el.style.setProperty("--mx", s.cx.toFixed(2) + "%");
-        entry.el.style.setProperty("--my", s.cy.toFixed(2) + "%");
-      });
-      window.requestAnimationFrame(tick);
-    }
-    window.requestAnimationFrame(tick);
-  }
-
-  /* Mobile / touch: tap reveals the image underneath immediately. */
-  function setupTapReveal(entries) {
-    entries.forEach(function (entry) {
-      entry.el.addEventListener("click", function (e) {
-        if (entry.el.classList.contains("revealed")) return;
-        e.preventDefault();
-        entry.el.classList.add("revealed");
-      });
-    });
   }
 
   /* -------------------------------------------------------------------

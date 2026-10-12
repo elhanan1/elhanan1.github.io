@@ -1,11 +1,11 @@
 # elhanan itzkovich — portfolio (demo)
 
-A minimalist portfolio site with scroll-drawn single-line sketches, a
-glass-lens cursor that reveals the real photo underneath each sketch, and
-an asymmetric scrolling work feed. Everything here is generic placeholder
-content — six sample products (lamp, chair, headphones, kettle, vase,
-stool) with invented names, descriptions and abstract color-mood images —
-ready for you to swap for your own work.
+A minimalist portfolio site with scroll-drawn single-line sketches, each
+sitting over a soft, feathered color glow, in an asymmetric scrolling work
+feed. Everything here is generic placeholder content — sample products
+(lamp, chair, headphones, kettle, vase, stool, and an airport-seat
+concept) with invented names, descriptions and placeholder images — ready
+for you to swap for your own work.
 
 ## Run it locally
 
@@ -34,7 +34,7 @@ index.html          Home page — name, tagline, scrolling work feed
 project.html         Project template, loads a work by ?id= in the URL
 about.html           About / contact page
 style.css            All styles (design tokens at the top)
-shared.js            Nav, scroll/sketch/lens behaviour, page rendering
+shared.js            Nav, scroll/sketch behaviour, page rendering
 data/works.js        ALL content: your name, bio, links, and every work
 assets/originals/    Your source photos (one per work, plus -2/-3 variants)
 assets/img/          Generated medium (600px webp) + full (1600px jpg) images
@@ -75,11 +75,10 @@ home page scroll order and the Previous/Next links on the project page.
    ```
 
    This creates, for every image in `assets/originals/`:
-   - `assets/img/<name>-medium.webp` — 600px wide, used for the home-page
-     glass-lens reveal and in galleries
+   - `assets/img/<name>-medium.webp` — 600px wide, used in project galleries
    - `assets/img/<name>-full.jpg` — 1600px wide, used on the project page
-   - a tiny (~20px, under 1KB) base64 thumbnail, used for instant blur-up
-     previews and the soft color glow behind each sketch
+   - a tiny (~20px, under 1KB) base64 thumbnail, used as the soft color
+     glow behind each sketch on the home page
 
    `--update-data` automatically writes the new tiny thumbnails into the
    matching `tiny:` fields in `data/works.js`. Without that flag it just
@@ -144,10 +143,9 @@ something else.
 
 - **Dark mode** follows the device/OS setting automatically (no toggle).
 - **Reduced motion**: if the visitor has "reduce motion" enabled, sketches
-  appear fully drawn immediately and the lens/menu animations are
-  effectively instant.
+  appear fully drawn immediately and the menu animations are effectively
+  instant.
 - **Mobile**: there's no hover, so each work's description sits below its
-  sketch, and the photo underneath reveals itself automatically once the
-  line finishes drawing (or on tap).
+  sketch instead of appearing in a hover tooltip.
 - The **Work · About · Contact** menu collapses into a small dot after a
   short scroll, and expands again on hover (desktop) or tap (mobile).
