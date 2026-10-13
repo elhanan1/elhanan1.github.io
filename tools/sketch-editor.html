@@ -73,6 +73,11 @@
   button.primary { background: var(--fg); color: var(--bg); }
   button.primary:hover { opacity: .8; background: var(--fg); color: var(--bg); }
 
+  .mode-switch { display: flex; border: 1px solid var(--fg); border-radius: 2px; overflow: hidden; }
+  .mode-switch .mode-btn { border: none; border-radius: 0; }
+  .mode-switch .mode-btn + .mode-btn { border-left: 1px solid var(--fg); }
+  .mode-switch .mode-btn.active { background: var(--fg); color: var(--bg); }
+
   #canvasWrap {
     position: relative;
     width: 560px;
@@ -165,22 +170,31 @@
 <header>
   <h1>Sketch Editor</h1>
   <p>
-    Click to place points — they connect in order, with corners rounded automatically.
-    The first point you place becomes the top entry, the last becomes the bottom exit
-    (both required so works can connect into one line, see README.md). Drag a point to
-    move it, double-click a point to delete it. Load a reference photo to trace over it.
-    When you're happy, copy the generated <code>sketch: {...}</code> block into a work
-    in <code>data/works.js</code>.
+    Two ways to draw: <b>Click points</b> — click to place a point at a time, straight
+    lines connect them with corners rounded automatically. <b>Draw freehand</b> — click
+    and drag to sketch a stroke in one motion; it's simplified down to a handful of
+    points automatically when you release. Either way, the first point becomes the top
+    entry and the last becomes the bottom exit. Drag a point to move it, double-click to
+    delete it. Load a reference photo to trace over it. When you're happy, copy the
+    generated <code>sketch: {...}</code> block into a work in <code>data/works.js</code>.
   </p>
 </header>
 
 <div class="layout">
   <div class="canvas-col">
     <div class="toolbar">
+      <div class="mode-switch">
+        <button id="modeClickBtn" class="mode-btn active">Click points</button>
+        <button id="modeDrawBtn" class="mode-btn">Draw freehand</button>
+      </div>
       <button id="undoBtn">Undo point</button>
       <button id="clearBtn">Clear all</button>
       <label>Smoothing
         <input id="radius" type="range" min="0" max="40" value="16" />
+      </label>
+      <label>
+        <input id="labelsToggle" type="checkbox" checked />
+        point numbers
       </label>
       <label>
         <input id="refFile" type="file" accept="image/*" />
@@ -204,6 +218,7 @@
           <path id="stubTop" class="stub-line" d=""/>
           <path id="stubBottom" class="stub-line" d=""/>
           <path id="objectPath" class="object-path" d=""/>
+          <path id="freehandPreview" class="object-path" d="" style="opacity:.55"/>
           <circle id="entryDot" class="entry-dot" r="4" cx="-10" cy="-10"/>
           <circle id="exitDot" class="exit-dot" r="4" cx="-10" cy="-10"/>
           <g id="handles"></g>
@@ -258,9 +273,17 @@
   var refImage = document.getElementById("refImage");
   var refFile = document.getElementById("refFile");
   var refOpacity = document.getElementById("refOpacity");
+  var modeClickBtn = document.getElementById("modeClickBtn");
+  var modeDrawBtn = document.getElementById("modeDrawBtn");
+  var labelsToggle = document.getElementById("labelsToggle");
+  var freehandPreview = document.getElementById("freehandPreview");
 
   var points = []; // {x, y} in 0..400 viewBox space
   var dragIndex = -1;
+  var mode = "click"; // "click" | "draw"
+  var freehandActive = false;
+  var freehandBuffer = [];
+  var measurer = document.createElementNS(svg.namespaceURI, "path"); // reused, detached
 
   // ---- grid -----------------------------------------------------------
   (function buildGrid() {
@@ -288,6 +311,31 @@
   }
   function fmt(p) { return round1(p.x) + "," + round1(p.y); }
   function round1(n) { return Math.round(n * 10) / 10; }
+
+  /* Ramer–Douglas–Peucker: reduces a dense freehand stroke (one point
+     per pixel of mouse movement) down to the handful of points needed
+     to describe its shape, so dragging to draw doesn't flood the point
+     list and bog everything down. */
+  function perpendicularDistance(p, a, b) {
+    var dx = b.x - a.x, dy = b.y - a.y;
+    var len = Math.hypot(dx, dy);
+    if (len < 1e-9) return dist(p, a);
+    return Math.abs(dy * p.x - dx * p.y + b.x * a.y - b.y * a.x) / len;
+  }
+  function simplifyPoints(pts, epsilon) {
+    if (pts.length < 3) return pts.slice();
+    var dmax = 0, index = 0;
+    for (var i = 1; i < pts.length - 1; i++) {
+      var d = perpendicularDistance(pts[i], pts[0], pts[pts.length - 1]);
+      if (d > dmax) { dmax = d; index = i; }
+    }
+    if (dmax > epsilon) {
+      var left = simplifyPoints(pts.slice(0, index + 1), epsilon);
+      var right = simplifyPoints(pts.slice(index), epsilon);
+      return left.slice(0, -1).concat(right);
+    }
+    return [pts[0], pts[pts.length - 1]];
+  }
 
   /* Builds a single continuous path through `verts`, rounding every
      interior vertex with a quadratic curve of the given radius (clamped
@@ -317,6 +365,7 @@
 
     // handles
     handlesG.innerHTML = "";
+    var showLabels = labelsToggle.checked;
     points.forEach(function (p, i) {
       var c = document.createElementNS(svg.namespaceURI, "circle");
       c.setAttribute("class", "handle");
@@ -332,12 +381,14 @@
       });
       handlesG.appendChild(c);
 
-      var t = document.createElementNS(svg.namespaceURI, "text");
-      t.setAttribute("class", "handle-index");
-      t.setAttribute("x", p.x + 8);
-      t.setAttribute("y", p.y - 8);
-      t.textContent = i + 1;
-      handlesG.appendChild(t);
+      if (showLabels) {
+        var t = document.createElementNS(svg.namespaceURI, "text");
+        t.setAttribute("class", "handle-index");
+        t.setAttribute("x", p.x + 8);
+        t.setAttribute("y", p.y - 8);
+        t.textContent = i + 1;
+        handlesG.appendChild(t);
+      }
     });
 
     if (points.length === 0) {
@@ -369,8 +420,7 @@
 
     previewPath.setAttribute("d", fullPath);
 
-    // measure length via a detached path element
-    var measurer = document.createElementNS(svg.namespaceURI, "path");
+    // measure length via one reused, detached path element
     measurer.setAttribute("d", fullPath);
     var len = 0;
     try { len = measurer.getTotalLength(); } catch (e) { len = 0; }
@@ -395,11 +445,39 @@
     return { x: Math.max(0, Math.min(400, x)), y: Math.max(0, Math.min(400, y)) };
   }
 
+  function setMode(next) {
+    mode = next;
+    modeClickBtn.classList.toggle("active", mode === "click");
+    modeDrawBtn.classList.toggle("active", mode === "draw");
+  }
+  modeClickBtn.addEventListener("click", function () { setMode("click"); });
+  modeDrawBtn.addEventListener("click", function () { setMode("draw"); });
+
+  // A raw (unsimplified) preview of the stroke currently being dragged,
+  // drawn as plain straight segments — cheap to update on every move,
+  // unlike a full render() which rebuilds every handle.
+  function drawFreehandPreview() {
+    if (freehandBuffer.length < 2) {
+      freehandPreview.setAttribute("d", "");
+      return;
+    }
+    var d = "M" + fmt(freehandBuffer[0]);
+    for (var i = 1; i < freehandBuffer.length; i++) d += " L" + fmt(freehandBuffer[i]);
+    freehandPreview.setAttribute("d", d);
+  }
+
   svg.addEventListener("pointerdown", function (e) {
     if (e.target.closest(".handle")) return;
     var p = clientToViewBox(e);
-    points.push(p);
-    render();
+    if (mode === "draw") {
+      freehandActive = true;
+      freehandBuffer = [p];
+      svg.setPointerCapture(e.pointerId);
+      drawFreehandPreview();
+    } else {
+      points.push(p);
+      render();
+    }
   });
 
   function onHandleDown(e) {
@@ -407,13 +485,39 @@
     dragIndex = parseInt(e.currentTarget.dataset.index, 10);
     svg.setPointerCapture(e.pointerId);
   }
+
   svg.addEventListener("pointermove", function (e) {
-    if (dragIndex < 0) return;
-    points[dragIndex] = clientToViewBox(e);
-    render();
+    if (dragIndex >= 0) {
+      points[dragIndex] = clientToViewBox(e);
+      render();
+      return;
+    }
+    if (freehandActive) {
+      var p = clientToViewBox(e);
+      var last = freehandBuffer[freehandBuffer.length - 1];
+      if (dist(last, p) >= 3) {
+        freehandBuffer.push(p);
+        drawFreehandPreview();
+      }
+    }
   });
-  svg.addEventListener("pointerup", function () { dragIndex = -1; });
-  svg.addEventListener("pointercancel", function () { dragIndex = -1; });
+
+  function finishFreehand() {
+    if (!freehandActive) return;
+    freehandActive = false;
+    freehandPreview.setAttribute("d", "");
+    if (freehandBuffer.length >= 2) {
+      // epsilon scales gently with stroke length, so a long sweeping
+      // stroke doesn't keep hundreds of nearly-collinear points
+      var epsilon = 2.5;
+      var simplified = simplifyPoints(freehandBuffer, epsilon);
+      points = points.concat(simplified);
+      render();
+    }
+    freehandBuffer = [];
+  }
+  svg.addEventListener("pointerup", function () { dragIndex = -1; finishFreehand(); });
+  svg.addEventListener("pointercancel", function () { dragIndex = -1; finishFreehand(); });
 
   document.getElementById("undoBtn").addEventListener("click", function () {
     points.pop();
@@ -425,6 +529,7 @@
     render();
   });
   radiusInput.addEventListener("input", render);
+  labelsToggle.addEventListener("change", render);
 
   // ---- reference image --------------------------------------------------
   refFile.addEventListener("change", function () {

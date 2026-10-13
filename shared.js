@@ -10,6 +10,12 @@
   var DATA = window.SITE_DATA;
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  // Paused (not removed): the connecting thread between consecutive
+  // works' sketches wasn't reading well yet. Flip to true to bring it
+  // back — buildConnector/layoutConnectors/svgPointToScreen below are
+  // untouched and still do exactly what they did before.
+  var CONNECTORS_ENABLED = false;
+
   document.addEventListener("DOMContentLoaded", function () {
     initNav();
     var page = document.body.dataset.page;
@@ -87,7 +93,7 @@
       var size = work.size || sizes[i % sizes.length];
       var pendingConnector = null;
 
-      if (prevSvg) {
+      if (CONNECTORS_ENABLED && prevSvg) {
         pendingConnector = buildConnector(prevSvg, prevExit);
         feed.appendChild(pendingConnector.el);
       }
@@ -165,8 +171,10 @@
       entries.push({ el: visual, path: path, progress: 0, drawn: false });
     });
 
-    layoutConnectors(feed, connectors);
-    window.addEventListener("resize", function () { layoutConnectors(feed, connectors); }, { passive: true });
+    if (CONNECTORS_ENABLED) {
+      layoutConnectors(feed, connectors);
+      window.addEventListener("resize", function () { layoutConnectors(feed, connectors); }, { passive: true });
+    }
 
     setupSketchDraw(entries.concat(connectors.map(function (c) { return c.entry; })));
   }
