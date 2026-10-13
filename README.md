@@ -41,6 +41,8 @@ assets/img/          Generated medium (600px webp) + full (1600px jpg) images
 assets/video/        Optional video clips for a project's gallery
 scripts/
   generate-images.py Builds the medium/full images + tiny LQIP from originals
+tools/
+  sketch-editor.html Click-to-draw tool for making your own sketch paths
 ```
 
 ## Replacing content
@@ -99,26 +101,42 @@ Each work has a `sketch` object:
 ```js
 sketch: {
   viewBox: "0 0 400 400",
-  entry: [200, 0],
-  exit: [200, 400],
-  path: "M200,0 L150,330 ..."
+  entry: [150, 0],
+  exit: [150, 400],
+  path: "M150,0 L150,330 ..."
 }
 ```
 
 `path` is a single continuous SVG path — it's drawn progressively as the
-work scrolls into view. **Every sketch must start at `entry` (200,0 —
-top-center) and end at `exit` (200,400 — bottom-center)** of the `400x400`
-viewBox. The home page measures each sketch's actual on-screen entry and
-exit points and draws a connecting thread between consecutive works, so
-keeping these fixed is what lets that thread reach correctly regardless
-of how the works are reordered or how wide/positioned each card is.
+work scrolls into view. **Every sketch must start at `entry` (its own
+x, y=0 — top edge) and end at `exit` (its own x, y=400 — bottom edge)**
+of the `400x400` viewBox, with a plain vertical line from that edge point
+down to wherever your drawing actually starts/ends (so there's no
+diagonal stub slicing across the artwork). The home page measures each
+sketch's real on-screen entry/exit position and draws a connecting
+thread between consecutive works, so these edge points are what let that
+thread reach correctly regardless of how the works are reordered or how
+wide/positioned each card is.
 
-A reliable way to draw your own: trace your sketch as one continuous
-stroke in Illustrator/Figma/Inkscape starting at the top-center and
-ending at the bottom-center of your artboard, export as SVG, and copy
-the single `<path d="...">` value in here (scale/position it to roughly
-fill the 400×400 box, with the start point at `200,0` and the end point
-at `200,400`). If your tool outputs multiple `<path>` elements, either
+#### The easy way: the built-in sketch editor
+
+Open **`tools/sketch-editor.html`** directly in a browser (no server
+needed). Click to place points — they connect in order with corners
+rounded automatically, the first point becomes the top entry and the
+last becomes the bottom exit (both wired up for you, so you don't have
+to think about the vertical-stub rule above). Drag a point to move it,
+double-click to delete it. You can load a photo of your own sketch as a
+semi-transparent reference layer and trace over it. Copy the generated
+`sketch: {...}` block straight into a work in `data/works.js`.
+
+#### Drawing it by hand instead
+
+Trace your sketch as one continuous stroke in Illustrator/Figma/Inkscape,
+starting and ending with a short straight segment to the top/bottom edge
+of your artboard (same x-coordinate as the point directly below/above
+it, so that segment is perfectly vertical), export as SVG, and copy the
+single `<path d="...">` value in here (scale/position it to roughly fill
+the 400×400 box). If your tool outputs multiple `<path>` elements, either
 combine them into one continuous path, or just keep the first one and
 treat the rest as optional detail.
 

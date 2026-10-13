@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sketch Editor — portfolio tool</title>
+<style>
+  :root {
+    --bg: #f5f1e9;
+    --fg: #1c1a17;
+    --fg-soft: #6b6559;
+    --border: rgba(28,26,23,0.15);
+    --accent: #b5482a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+  }
+  header {
+    padding: 1.6rem 2rem 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 0 .4rem;
+  }
+  header p {
+    margin: 0;
+    font-size: .85rem;
+    color: var(--fg-soft);
+    max-width: 62em;
+    line-height: 1.5;
+  }
+  .layout {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    padding: 1.6rem 2rem 3rem;
+  }
+  .canvas-col {
+    display: flex;
+    flex-direction: column;
+    gap: .9rem;
+  }
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem 1.2rem;
+    align-items: center;
+    font-size: .8rem;
+  }
+  .toolbar label {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    color: var(--fg-soft);
+  }
+  button {
+    font: inherit;
+    font-size: .8rem;
+    padding: .5em 1em;
+    border: 1px solid var(--fg);
+    background: none;
+    color: var(--fg);
+    cursor: pointer;
+    border-radius: 2px;
+  }
+  button:hover { background: var(--fg); color: var(--bg); }
+  button.primary { background: var(--fg); color: var(--bg); }
+  button.primary:hover { opacity: .8; background: var(--fg); color: var(--bg); }
+
+  #canvasWrap {
+    position: relative;
+    width: 560px;
+    max-width: 90vw;
+    aspect-ratio: 1 / 1;
+    border: 1px solid var(--border);
+    background: #fff;
+    touch-action: none;
+    cursor: crosshair;
+  }
+  svg#stage { width: 100%; height: 100%; display: block; }
+  .grid-line { stroke: #eee; stroke-width: 1; }
+  .center-guide { stroke: #ddd; stroke-width: 1; stroke-dasharray: 4 4; }
+  .stub-line { stroke: var(--fg-soft); stroke-width: 1.4; stroke-dasharray: 3 4; fill: none; }
+  .object-path { stroke: var(--fg); stroke-width: 2; fill: none; stroke-linecap: round; }
+  .handle {
+    fill: #fff;
+    stroke: var(--accent);
+    stroke-width: 2;
+    cursor: grab;
+  }
+  .handle:hover { fill: var(--accent); }
+  .handle-index {
+    font-size: 11px;
+    fill: var(--accent);
+    pointer-events: none;
+    font-family: ui-monospace, monospace;
+  }
+  .entry-dot, .exit-dot { fill: var(--accent); }
+
+  .hint {
+    font-size: .78rem;
+    color: var(--fg-soft);
+    line-height: 1.5;
+  }
+
+  .output-col {
+    flex: 1;
+    min-width: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: .9rem;
+  }
+  .output-col h2 {
+    font-size: .85rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--fg-soft);
+    margin: 0;
+    font-weight: 500;
+  }
+  textarea#output {
+    width: 100%;
+    min-height: 260px;
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: .78rem;
+    line-height: 1.5;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--fg);
+    resize: vertical;
+  }
+  .stat-row {
+    display: flex;
+    gap: 1.4rem;
+    font-size: .78rem;
+    color: var(--fg-soft);
+  }
+  .stat-row b { color: var(--fg); font-weight: 600; }
+
+  .preview-box {
+    width: 220px;
+    aspect-ratio: 1 / 1.08;
+    border: 1px solid var(--border);
+    background: #fff;
+  }
+  .preview-box svg { width: 100%; height: 100%; }
+  .preview-box path { fill: none; stroke: var(--fg); stroke-width: 1.6; stroke-linecap: round; }
+
+  #copyStatus {
+    font-size: .78rem;
+    color: var(--accent);
+    min-height: 1.2em;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Sketch Editor</h1>
+  <p>
+    Click to place points — they connect in order, with corners rounded automatically.
+    The first point you place becomes the top entry, the last becomes the bottom exit
+    (both required so works can connect into one line, see README.md). Drag a point to
+    move it, double-click a point to delete it. Load a reference photo to trace over it.
+    When you're happy, copy the generated <code>sketch: {...}</code> block into a work
+    in <code>data/works.js</code>.
+  </p>
+</header>
+
+<div class="layout">
+  <div class="canvas-col">
+    <div class="toolbar">
+      <button id="undoBtn">Undo point</button>
+      <button id="clearBtn">Clear all</button>
+      <label>Smoothing
+        <input id="radius" type="range" min="0" max="40" value="16" />
+      </label>
+      <label>
+        <input id="refFile" type="file" accept="image/*" />
+        reference image
+      </label>
+      <label>Opacity
+        <input id="refOpacity" type="range" min="0" max="100" value="45" />
+      </label>
+      <button id="clearRefBtn">Remove image</button>
+    </div>
+
+    <div id="canvasWrap">
+      <svg id="stage" viewBox="0 0 400 400">
+        <defs>
+          <clipPath id="clip400"><rect x="0" y="0" width="400" height="400"/></clipPath>
+        </defs>
+        <g clip-path="url(#clip400)">
+          <image id="refImage" x="0" y="0" width="400" height="400" preserveAspectRatio="xMidYMid slice" opacity="0.45" style="display:none" />
+          <g id="grid"></g>
+          <line class="center-guide" x1="200" y1="0" x2="200" y2="400"/>
+          <path id="stubTop" class="stub-line" d=""/>
+          <path id="stubBottom" class="stub-line" d=""/>
+          <path id="objectPath" class="object-path" d=""/>
+          <circle id="entryDot" class="entry-dot" r="4" cx="-10" cy="-10"/>
+          <circle id="exitDot" class="exit-dot" r="4" cx="-10" cy="-10"/>
+          <g id="handles"></g>
+        </g>
+      </svg>
+    </div>
+
+    <p class="hint">
+      Tip: aim for roughly the same overall height as the existing sketches (they fill
+      most of the 400&times;400 box). Keep the shape as ONE continuous route — don't lift
+      the pen; if you need an interior detail (like a handle or a slat), route the click
+      path out to it and back rather than starting a new shape.
+    </p>
+  </div>
+
+  <div class="output-col">
+    <h2>Live preview</h2>
+    <div class="preview-box">
+      <svg viewBox="0 0 400 400" id="previewSvg"><path id="previewPath" d=""/></svg>
+    </div>
+
+    <h2>Generated code</h2>
+    <div class="stat-row">
+      <span>Points: <b id="pointCount">0</b></span>
+      <span>Path length: <b id="pathLength">0</b></span>
+    </div>
+    <textarea id="output" readonly spellcheck="false"></textarea>
+    <div>
+      <button class="primary" id="copyBtn">Copy to clipboard</button>
+      <span id="copyStatus"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var svg = document.getElementById("stage");
+  var grid = document.getElementById("grid");
+  var handlesG = document.getElementById("handles");
+  var objectPath = document.getElementById("objectPath");
+  var stubTop = document.getElementById("stubTop");
+  var stubBottom = document.getElementById("stubBottom");
+  var entryDot = document.getElementById("entryDot");
+  var exitDot = document.getElementById("exitDot");
+  var previewPath = document.getElementById("previewPath");
+  var output = document.getElementById("output");
+  var pointCountEl = document.getElementById("pointCount");
+  var pathLengthEl = document.getElementById("pathLength");
+  var radiusInput = document.getElementById("radius");
+  var refImage = document.getElementById("refImage");
+  var refFile = document.getElementById("refFile");
+  var refOpacity = document.getElementById("refOpacity");
+
+  var points = []; // {x, y} in 0..400 viewBox space
+  var dragIndex = -1;
+
+  // ---- grid -----------------------------------------------------------
+  (function buildGrid() {
+    for (var i = 0; i <= 400; i += 40) {
+      var v = document.createElementNS(svg.namespaceURI, "line");
+      v.setAttribute("class", "grid-line");
+      v.setAttribute("x1", i); v.setAttribute("y1", 0);
+      v.setAttribute("x2", i); v.setAttribute("y2", 400);
+      grid.appendChild(v);
+      var h = document.createElementNS(svg.namespaceURI, "line");
+      h.setAttribute("class", "grid-line");
+      h.setAttribute("x1", 0); h.setAttribute("y1", i);
+      h.setAttribute("x2", 400); h.setAttribute("y2", i);
+      grid.appendChild(h);
+    }
+  })();
+
+  // ---- geometry helpers -------------------------------------------------
+  function dist(a, b) { return Math.hypot(b.x - a.x, b.y - a.y); }
+  function towards(from, to, d) {
+    var full = dist(from, to);
+    if (full < 1e-6) return { x: from.x, y: from.y };
+    var t = Math.min(d, full) / full;
+    return { x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t };
+  }
+  function fmt(p) { return round1(p.x) + "," + round1(p.y); }
+  function round1(n) { return Math.round(n * 10) / 10; }
+
+  /* Builds a single continuous path through `verts`, rounding every
+     interior vertex with a quadratic curve of the given radius (clamped
+     so it never overshoots a neighboring segment). */
+  function buildSmoothedPath(verts, radius) {
+    if (verts.length < 2) return "";
+    var d = "M" + fmt(verts[0]);
+    if (verts.length === 2) return d + " L" + fmt(verts[1]);
+    for (var i = 1; i < verts.length - 1; i++) {
+      var prev = verts[i - 1], cur = verts[i], next = verts[i + 1];
+      var r = Math.min(radius, dist(prev, cur) / 2, dist(cur, next) / 2);
+      if (r > 0.6) {
+        var pIn = towards(cur, prev, r);
+        var pOut = towards(cur, next, r);
+        d += " L" + fmt(pIn) + " Q" + fmt(cur) + " " + fmt(pOut);
+      } else {
+        d += " L" + fmt(cur);
+      }
+    }
+    d += " L" + fmt(verts[verts.length - 1]);
+    return d;
+  }
+
+  // ---- core render --------------------------------------------------
+  function render() {
+    var radius = parseFloat(radiusInput.value) || 0;
+
+    // handles
+    handlesG.innerHTML = "";
+    points.forEach(function (p, i) {
+      var c = document.createElementNS(svg.namespaceURI, "circle");
+      c.setAttribute("class", "handle");
+      c.setAttribute("r", 6);
+      c.setAttribute("cx", p.x);
+      c.setAttribute("cy", p.y);
+      c.dataset.index = i;
+      c.addEventListener("pointerdown", onHandleDown);
+      c.addEventListener("dblclick", function (e) {
+        e.stopPropagation();
+        points.splice(i, 1);
+        render();
+      });
+      handlesG.appendChild(c);
+
+      var t = document.createElementNS(svg.namespaceURI, "text");
+      t.setAttribute("class", "handle-index");
+      t.setAttribute("x", p.x + 8);
+      t.setAttribute("y", p.y - 8);
+      t.textContent = i + 1;
+      handlesG.appendChild(t);
+    });
+
+    if (points.length === 0) {
+      objectPath.setAttribute("d", "");
+      stubTop.setAttribute("d", "");
+      stubBottom.setAttribute("d", "");
+      entryDot.setAttribute("cx", -10); entryDot.setAttribute("cy", -10);
+      exitDot.setAttribute("cx", -10); exitDot.setAttribute("cy", -10);
+      previewPath.setAttribute("d", "");
+      output.value = "// Click on the canvas to place your first point.";
+      pointCountEl.textContent = "0";
+      pathLengthEl.textContent = "0";
+      return;
+    }
+
+    var first = points[0];
+    var last = points[points.length - 1];
+    var entry = { x: first.x, y: 0 };
+    var exit = { x: last.x, y: 400 };
+
+    var fullVerts = [entry].concat(points).concat([exit]);
+    var fullPath = buildSmoothedPath(fullVerts, radius);
+
+    objectPath.setAttribute("d", buildSmoothedPath(points.length > 1 ? points : [first, first], radius));
+    stubTop.setAttribute("d", "M" + fmt(entry) + " L" + fmt(first));
+    stubBottom.setAttribute("d", "M" + fmt(last) + " L" + fmt(exit));
+    entryDot.setAttribute("cx", entry.x); entryDot.setAttribute("cy", entry.y);
+    exitDot.setAttribute("cx", exit.x); exitDot.setAttribute("cy", exit.y);
+
+    previewPath.setAttribute("d", fullPath);
+
+    // measure length via a detached path element
+    var measurer = document.createElementNS(svg.namespaceURI, "path");
+    measurer.setAttribute("d", fullPath);
+    var len = 0;
+    try { len = measurer.getTotalLength(); } catch (e) { len = 0; }
+
+    pointCountEl.textContent = String(points.length);
+    pathLengthEl.textContent = Math.round(len);
+
+    output.value =
+      "sketch: {\n" +
+      '  viewBox: "0 0 400 400",\n' +
+      "  entry: [" + round1(entry.x) + ", 0],\n" +
+      "  exit: [" + round1(exit.x) + ", 400],\n" +
+      '  path: "' + fullPath + '"\n' +
+      "}";
+  }
+
+  // ---- interaction ----------------------------------------------------
+  function clientToViewBox(evt) {
+    var rect = svg.getBoundingClientRect();
+    var x = ((evt.clientX - rect.left) / rect.width) * 400;
+    var y = ((evt.clientY - rect.top) / rect.height) * 400;
+    return { x: Math.max(0, Math.min(400, x)), y: Math.max(0, Math.min(400, y)) };
+  }
+
+  svg.addEventListener("pointerdown", function (e) {
+    if (e.target.closest(".handle")) return;
+    var p = clientToViewBox(e);
+    points.push(p);
+    render();
+  });
+
+  function onHandleDown(e) {
+    e.stopPropagation();
+    dragIndex = parseInt(e.currentTarget.dataset.index, 10);
+    svg.setPointerCapture(e.pointerId);
+  }
+  svg.addEventListener("pointermove", function (e) {
+    if (dragIndex < 0) return;
+    points[dragIndex] = clientToViewBox(e);
+    render();
+  });
+  svg.addEventListener("pointerup", function () { dragIndex = -1; });
+  svg.addEventListener("pointercancel", function () { dragIndex = -1; });
+
+  document.getElementById("undoBtn").addEventListener("click", function () {
+    points.pop();
+    render();
+  });
+  document.getElementById("clearBtn").addEventListener("click", function () {
+    if (points.length && !confirm("Clear all points?")) return;
+    points = [];
+    render();
+  });
+  radiusInput.addEventListener("input", render);
+
+  // ---- reference image --------------------------------------------------
+  refFile.addEventListener("change", function () {
+    var file = refFile.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      refImage.setAttribute("href", reader.result);
+      refImage.style.display = "";
+    };
+    reader.readAsDataURL(file);
+  });
+  refOpacity.addEventListener("input", function () {
+    refImage.setAttribute("opacity", refOpacity.value / 100);
+  });
+  document.getElementById("clearRefBtn").addEventListener("click", function () {
+    refImage.style.display = "none";
+    refImage.removeAttribute("href");
+    refFile.value = "";
+  });
+
+  // ---- copy ----------------------------------------------------------
+  document.getElementById("copyBtn").addEventListener("click", function () {
+    output.select();
+    var status = document.getElementById("copyStatus");
+    navigator.clipboard.writeText(output.value).then(function () {
+      status.textContent = "Copied.";
+      setTimeout(function () { status.textContent = ""; }, 1800);
+    }, function () {
+      status.textContent = "Couldn't copy automatically — selected instead, use Cmd/Ctrl+C.";
+    });
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
