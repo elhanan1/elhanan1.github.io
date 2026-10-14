@@ -1,11 +1,7 @@
 # elhanan itzkovich — portfolio (demo)
 
 A minimalist portfolio site with scroll-drawn single-line sketches in an
-asymmetric scrolling work feed. Everything here is generic placeholder
-content — sample products
-(lamp, chair, headphones, kettle, vase, stool, and an airport-seat
-concept) with invented names, descriptions and placeholder images — ready
-for you to swap for your own work.
+asymmetric scrolling work feed. 
 
 ## Run it locally
 
