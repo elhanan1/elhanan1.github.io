@@ -407,7 +407,7 @@
       gallery.innerHTML = "";
       work.gallery.forEach(function (item) {
         var fig = document.createElement("figure");
-        fig.className = "gallery-item";
+        fig.className = "gallery-item" + (item.wide ? " wide" : "");
         if (item.type === "video") {
           var video = document.createElement("video");
           video.src = item.src;
