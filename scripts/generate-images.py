@@ -44,9 +44,23 @@ def resize_to_width(img, width):
     return img.resize((width, height), Image.LANCZOS)
 
 
+def load_rgb(path):
+    """Open an image as RGB, flattening any transparency onto white.
+
+    A cut-out PNG usually stores black under its transparent pixels, so a
+    plain .convert("RGB") would turn the background into a black block.
+    """
+    img = Image.open(path)
+    if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
+        img = img.convert("RGBA")
+        backdrop = Image.new("RGBA", img.size, (255, 255, 255, 255))
+        img = Image.alpha_composite(backdrop, img)
+    return img.convert("RGB")
+
+
 def process_one(path):
     name = path.stem
-    img = Image.open(path).convert("RGB")
+    img = load_rgb(path)
 
     medium = resize_to_width(img, MEDIUM_WIDTH)
     medium_path = OUT_DIR / f"{name}-medium.webp"

@@ -36,6 +36,54 @@ window.SITE_DATA = {
   },
   works: [
   {
+    id: "bottle-fifo",
+    title: "First Out",
+    year: 2026,
+    category: "Retail fixture",
+    size: "small",
+    blurb: "A fridge rack filled from the back, so the oldest bottle is always the one in front.",
+    intro: "First Out is an early concept for a chilled-display rack that is "
+      + "loaded from behind and emptied from the front. The bottles sit in a "
+      + "channel that falls towards the customer, so lifting the front bottle "
+      + "lets the next one run down into the space it leaves, and whatever is "
+      + "restocked behind it has no way of jumping the queue. The shelf keeps "
+      + "its own rotation, instead of depending on whoever happens to be "
+      + "refilling it to pull the older stock forward first.",
+    process: "This is the first study model: a body cut from corrugated "
+      + "plastic, a strip of sheet metal through it standing in for the rail "
+      + "the bottles run on, and a ball of plasticine standing in for a "
+      + "bottle. At this stage the only question is the angle \u2014 shallow "
+      + "enough that a bottle stays where it is put, steep enough that it "
+      + "moves forward on its own the moment the one ahead of it is lifted "
+      + "away. It was photographed in place on a caf\u00e9 display fridge, "
+      + "against the shelf heights and the bottles it would have to work with.",
+    materials: ["Corrugated plastic", "Sheet metal", "Plasticine"],
+    sketch: {
+      viewBox: "0 0 400 400",
+      entry: [48, 292],
+      exit: [330, 196],
+      path: "M48,292 L344,292 Q352,292 352,284 L352,158 Q352,150 344,152 Q312,158 296,186 Q282,210 262,196 Q242,182 226,204 Q210,226 190,210 Q170,194 142,206 Q112,219 96,240 Q78,264 62,276 L48,292 L56,286 L167,249 Q165,220 193,215 Q221,211 219,241 Q217,268 190,266 Q164,264 167,249 L330,196"
+    },
+    images: {
+      medium: "assets/img/bottle-fifo-medium.webp",
+      full: "assets/img/bottle-fifo-full.jpg"
+    },
+    gallery: [
+    {
+      type: "image",
+      medium: "assets/img/bottle-fifo-2-medium.webp",
+      full: "assets/img/bottle-fifo-2-full.jpg",
+      caption: "The model tried in place on a caf\u00e9 display fridge"
+    },
+    {
+      type: "image",
+      medium: "assets/img/bottle-fifo-3-medium.webp",
+      full: "assets/img/bottle-fifo-3-full.jpg",
+      caption: "Side view: the rail and the bottle's resting position"
+    }
+  ]
+  },
+  {
     id: "looker-chair",
     title: "Looker-Chair",
     year: 2024,
