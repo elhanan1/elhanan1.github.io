@@ -125,9 +125,14 @@
       path.setAttribute("d", work.sketch.path);
       svg.appendChild(path);
 
+      var previewSrc = (work.images && (work.images.preview || work.images.medium)) || "";
+
       var tooltip = document.createElement("div");
       tooltip.className = "work-tooltip";
       tooltip.innerHTML =
+        (previewSrc
+          ? '<img class="tt-image" src="' + escapeHtml(previewSrc) + '" alt="" loading="lazy">'
+          : "") +
         '<div class="tt-title">' + escapeHtml(work.title) + "</div>" +
         '<div class="tt-sub">' + work.year + " · " + escapeHtml(work.category) + "</div>" +
         '<div class="tt-desc">' + escapeHtml(work.blurb) + "</div>";

@@ -89,6 +89,11 @@ home page scroll order and the Previous/Next links on the project page.
    at the generated files (already done for the placeholder works — new
    works just need their `id` to match the filenames).
 
+Hovering a sketch on the home page shows a preview photo. It uses
+`images.preview` if you set one (any path, doesn't have to be generated —
+useful for picking a different shot than the cover image), and otherwise
+falls back to `images.medium` — the work's first/main image.
+
 The color glow behind each sketch is generated automatically from the
 tiny thumbnail (heavily blurred and darkened) — no extra step needed. If
 a work doesn't have a photo that fits, drop a photo of the *sketch itself*

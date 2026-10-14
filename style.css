@@ -386,7 +386,7 @@ ul { margin: 0; padding: 0; list-style: none; }
   width: 260px;
   background: var(--bg);
   border: 1px solid var(--border);
-  padding: .9rem 1.1rem;
+  overflow: hidden;
   opacity: 0;
   transform: scale(.98);
   transform-origin: top left;
@@ -395,6 +395,21 @@ ul { margin: 0; padding: 0; list-style: none; }
   z-index: 50;
   will-change: left, top, transform;
 }
+
+.work-tooltip .tt-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.work-tooltip .tt-title,
+.work-tooltip .tt-sub,
+.work-tooltip .tt-desc {
+  padding: 0 1.1rem;
+}
+
+.work-tooltip .tt-title { margin-top: .9rem; }
 
 @media (hover: hover) {
   .work-visual:hover .work-tooltip,
@@ -419,6 +434,7 @@ ul { margin: 0; padding: 0; list-style: none; }
 
 .work-tooltip .tt-desc {
   margin-top: .5rem;
+  padding-bottom: .9rem;
   font-size: .8rem;
   color: var(--fg-soft);
   max-width: 28em;
