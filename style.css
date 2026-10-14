@@ -25,6 +25,9 @@
   --dur-slow: 1.1s;
 
   --page-pad: 7vw;
+  /* How far up the hover preview comes. Short of 1 on purpose: the photo
+     is a hint of the work, and the drawn line stays the thing you read. */
+  --preview-dim: .28;
   color-scheme: light;
 }
 
@@ -457,7 +460,7 @@ ul { margin: 0; padding: 0; list-style: none; }
 @media (hover: hover) {
   .work-link:hover .work-preview,
   .work-link:focus-visible .work-preview {
-    opacity: 1;
+    opacity: var(--preview-dim);
   }
 }
 
@@ -467,7 +470,7 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 
 @media (hover: none) {
-  .work-preview { opacity: 1; }
+  .work-preview { opacity: var(--preview-dim); }
   .work-card .mobile-caption {
     display: block;
     margin-top: .9rem;
