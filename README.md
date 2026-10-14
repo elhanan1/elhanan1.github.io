@@ -1,8 +1,8 @@
 # elhanan itzkovich — portfolio (demo)
 
-A minimalist portfolio site with scroll-drawn single-line sketches, each
-sitting over a soft, feathered color glow, in an asymmetric scrolling work
-feed. Everything here is generic placeholder content — sample products
+A minimalist portfolio site with scroll-drawn single-line sketches in an
+asymmetric scrolling work feed. Everything here is generic placeholder
+content — sample products
 (lamp, chair, headphones, kettle, vase, stool, and an airport-seat
 concept) with invented names, descriptions and placeholder images — ready
 for you to swap for your own work.
@@ -40,7 +40,7 @@ assets/originals/    Your source photos (one per work, plus -2/-3 variants)
 assets/img/          Generated medium (600px webp) + full (1600px jpg) images
 assets/video/        Optional video clips for a project's gallery
 scripts/
-  generate-images.py Builds the medium/full images + tiny LQIP from originals
+  generate-images.py Builds the medium/full images from your originals
 tools/
   sketch-editor.html Click-to-draw tool for making your own sketch paths
 ```
@@ -73,18 +73,13 @@ home page scroll order and the Previous/Next links on the project page.
 3. Run the generator:
 
    ```bash
-   python3 scripts/generate-images.py --update-data
+   python3 scripts/generate-images.py
    ```
 
    This creates, for every image in `assets/originals/`:
    - `assets/img/<name>-medium.webp` — 600px wide, used in project galleries
+     and the home-page hover preview
    - `assets/img/<name>-full.jpg` — 1600px wide, used on the project page
-   - a tiny (~20px, under 1KB) base64 thumbnail, used as the soft color
-     glow behind each sketch on the home page
-
-   `--update-data` automatically writes the new tiny thumbnails into the
-   matching `tiny:` fields in `data/works.js`. Without that flag it just
-   writes `assets/img/tiny-lqip.json` so you can copy them in by hand.
 4. In `data/works.js`, point each work's `images.medium` / `images.full`
    at the generated files (already done for the placeholder works — new
    works just need their `id` to match the filenames).
@@ -93,11 +88,6 @@ Hovering a sketch on the home page shows a preview photo. It uses
 `images.preview` if you set one (any path, doesn't have to be generated —
 useful for picking a different shot than the cover image), and otherwise
 falls back to `images.medium` — the work's first/main image.
-
-The color glow behind each sketch is generated automatically from the
-tiny thumbnail (heavily blurred and darkened) — no extra step needed. If
-a work doesn't have a photo that fits, drop a photo of the *sketch itself*
-into `assets/originals/` instead; the pipeline treats it the same way.
 
 ### Replacing a sketch
 

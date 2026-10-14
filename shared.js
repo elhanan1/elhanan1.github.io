@@ -374,9 +374,7 @@
     setText("p-intro", work.intro);
     setText("p-process", work.process);
 
-    var heroGlow = document.querySelector(".project-hero-visual .glow");
     var heroImg = document.querySelector(".project-hero-visual img");
-    if (heroGlow) heroGlow.style.backgroundImage = "url(" + work.images.tiny + ")";
     if (heroImg) {
       heroImg.alt = work.title;
       heroImg.loading = "lazy";
