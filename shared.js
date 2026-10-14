@@ -272,7 +272,7 @@
         "M" + x1 + "," + y1 + " C" + x1 + "," + midY + " " + x2 + "," + midY + " " + x2 + "," + y2
       );
 
-      var len = c.path.getTotalLength();
+      var len = strokeLength(c.path);
       c.entry.length = len;
       c.path.style.strokeDasharray = len;
       if (!c.entry.drawn) c.path.style.strokeDashoffset = reduceMotion ? 0 : len;
@@ -304,13 +304,38 @@
     return div.innerHTML;
   }
 
+  /* How long a path's stroke actually is on screen. These lines are
+     drawn with vector-effect: non-scaling-stroke, which builds the
+     stroke — dashes and all — in screen pixels, while getTotalLength()
+     reports the path in its own viewBox units (400 wide here). The two
+     only agree when the sketch happens to render at exactly 1:1. A large
+     card is 640px wide, i.e. 1.6x its viewBox, so its stroke is 1.6x
+     longer than the dash we were handing it: the single gap that is
+     meant to sit past the end of the line landed inside the sketch
+     instead, splitting it into two pieces that were never both drawn.
+     Measuring in the stroke's own space keeps it one dash and one gap at
+     any card width. */
+  function strokeLength(path) {
+    var len = path.getTotalLength();
+    var ctm = path.getScreenCTM();
+    if (!ctm) return len;
+    var scale = Math.sqrt(Math.abs(ctm.a * ctm.d - ctm.b * ctm.c));
+    return scale ? len * scale : len;
+  }
+
   function setupSketchDraw(entries) {
-    entries.forEach(function (entry) {
-      var len = entry.path.getTotalLength();
-      entry.length = len;
-      entry.path.style.strokeDasharray = len;
-      entry.path.style.strokeDashoffset = reduceMotion ? 0 : len;
-    });
+    // Re-measured whenever the layout can have changed (resize), since
+    // card widths are responsive and the scale above moves with them.
+    function measure() {
+      entries.forEach(function (entry) {
+        entry.length = strokeLength(entry.path);
+        entry.path.style.strokeDasharray = entry.length;
+        entry.path.style.strokeDashoffset = reduceMotion
+          ? 0
+          : entry.length * (1 - entry.progress);
+      });
+    }
+    measure();
 
     if (reduceMotion) {
       entries.forEach(function (e) { e.drawn = true; });
@@ -336,14 +361,19 @@
       // (finishing exactly as the work fully exits), which reintroduced
       // the same "still mid-draw while part of it is already gone" bug,
       // just only for the larger sizes on a short enough window. Instead
-      // we floor the window at a fraction of the viewport height, so it
-      // shrinks gracefully (finishing in a tighter stretch near the top)
-      // but never collapses into that broken behaviour.
+      // the draw ends at whichever scroll position shows the most of the
+      // work — its top edge at the top of the viewport while it fits,
+      // and the work sitting centered once it is taller than the window
+      // — and the stretch leading up to that is floored at a fraction of
+      // the viewport height, so it tightens on a short window rather
+      // than collapsing into that broken behaviour.
       entries.forEach(function (entry) {
         var rect = entry.el.getBoundingClientRect();
-        var span = Math.max(vh - rect.height, vh * 0.15);
-        var progress = (span - rect.top) / span;
+        var end = Math.min(0, (vh - rect.height) / 2);
+        var start = Math.max(vh - rect.height, end + vh * 0.15);
+        var progress = (start - rect.top) / (start - end);
         progress = Math.max(0, Math.min(1, progress));
+        entry.progress = progress;
         entry.path.style.strokeDashoffset = entry.length * (1 - progress);
         if (progress >= 0.985) entry.drawn = true;
       });
@@ -356,7 +386,10 @@
       }
     }
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll, { passive: true });
+    window.addEventListener("resize", function () {
+      measure();
+      onScroll();
+    }, { passive: true });
     update();
   }
 
