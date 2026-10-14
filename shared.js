@@ -130,12 +130,23 @@
       var tooltip = document.createElement("div");
       tooltip.className = "work-tooltip";
       tooltip.innerHTML =
-        (previewSrc
-          ? '<img class="tt-image" src="' + escapeHtml(previewSrc) + '" alt="" loading="lazy">'
-          : "") +
         '<div class="tt-title">' + escapeHtml(work.title) + "</div>" +
         '<div class="tt-sub">' + work.year + " · " + escapeHtml(work.category) + "</div>" +
         '<div class="tt-desc">' + escapeHtml(work.blurb) + "</div>";
+
+      if (previewSrc) {
+        var previewImg = document.createElement("img");
+        previewImg.className = "tt-image";
+        previewImg.alt = "";
+        previewImg.loading = "lazy";
+        // If the image 404s (missing/not-yet-uploaded), drop it instead of
+        // showing a broken-image icon — the tooltip just falls back to text.
+        previewImg.addEventListener("error", function () {
+          previewImg.remove();
+        });
+        previewImg.src = previewSrc;
+        tooltip.insertBefore(previewImg, tooltip.firstChild);
+      }
 
       visual.appendChild(svg);
       visual.appendChild(tooltip);
