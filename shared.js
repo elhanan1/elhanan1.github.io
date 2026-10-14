@@ -300,18 +300,27 @@
     var ticking = false;
     function update() {
       var vh = window.innerHeight;
-      // Progress 0 is the moment a work's top edge appears at the
-      // bottom of the viewport (nothing is pre-drawn before it has
-      // actually scrolled into view), and progress 1 is the moment its
-      // bottom edge scrolls past the top of the viewport — i.e. drawing
-      // is spread across the work's entire transit through the screen,
-      // the whole time any part of it is visible, instead of finishing
-      // partway up (which read as "already drawn" / rushed for short
-      // works). A tall work still takes more scrolling to finish than a
-      // short one, just never faster than the time it spends on screen.
+      // Progress 0 is the moment a work becomes FULLY visible (its top
+      // edge reaches the bottom of the viewport minus its own height —
+      // i.e. the whole thing has just finished entering), and progress 1
+      // is the moment its top edge reaches the top of the viewport —
+      // i.e. the instant before any part of it starts exiting the screen.
+      // Drawing is spread across the entire time the work sits fully
+      // inside the viewport, so it's never still mid-draw while part of
+      // it has already scrolled out of view (which looked like one part
+      // of the sketch vanishing while another part was still appearing).
+      // For a work taller than the viewport (so it can never be fully on
+      // screen at once) this window would be empty/negative, so fall
+      // back to spreading the draw across its whole transit instead.
       entries.forEach(function (entry) {
         var rect = entry.el.getBoundingClientRect();
-        var progress = (vh - rect.top) / (vh + rect.height);
+        var span = vh - rect.height;
+        var progress;
+        if (span > 0) {
+          progress = (span - rect.top) / span;
+        } else {
+          progress = (vh - rect.top) / (vh + rect.height);
+        }
         progress = Math.max(0, Math.min(1, progress));
         entry.path.style.strokeDashoffset = entry.length * (1 - progress);
         if (progress >= 0.985) entry.drawn = true;
