@@ -644,29 +644,20 @@ ul { margin: 0; padding: 0; list-style: none; }
   gap: 1.4rem;
 }
 
-.project-closing {
-  padding: 0 0 5rem;
-  margin-inline: auto;
-  max-width: min(52em, 100% - var(--page-pad) * 2);
-}
-
-.project-gallery figure,
-.project-closing figure {
+.project-gallery figure {
   margin: 0;
   background: var(--surface);
   overflow: hidden;
   border-radius: 3px;
 }
 
-.project-gallery img, .project-gallery video,
-.project-closing img {
+.project-gallery img, .project-gallery video {
   display: block;
   width: 100%;
   height: auto;
 }
 
-.project-gallery figcaption,
-.project-closing figcaption {
+.project-gallery figcaption {
   margin-top: .6rem;
   font-size: .78rem;
   color: var(--fg-faint);

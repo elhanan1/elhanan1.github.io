@@ -451,25 +451,6 @@
       });
     }
 
-    var closing = document.getElementById("p-closing");
-    if (closing) {
-      closing.innerHTML = "";
-      if (work.closing) {
-        var cFig = document.createElement("figure");
-        var cImg = document.createElement("img");
-        cImg.src = work.closing.full || work.closing.medium;
-        cImg.alt = work.closing.caption || work.title;
-        cImg.loading = "lazy";
-        cFig.appendChild(cImg);
-        if (work.closing.caption) {
-          var cCap = document.createElement("figcaption");
-          cCap.textContent = work.closing.caption;
-          cFig.appendChild(cCap);
-        }
-        closing.appendChild(cFig);
-      }
-    }
-
     var prevWork = works[(index - 1 + works.length) % works.length];
     var nextWork = works[(index + 1) % works.length];
     linkProjectNav("nav-prev", prevWork);

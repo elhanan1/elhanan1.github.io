@@ -40,7 +40,7 @@ window.SITE_DATA = {
     title: "Fast FIFO",
     year: 2026,
     category: "Retail tool",
-    size: "large",
+    size: "small",
     blurb: "A caf\u00e9 restocking tool that draws a whole row of bottles forward at once, so new stock goes in behind.",
     intro: "While working in a caf\u00e9 I kept running into the same "
       + "awkwardness in restocking: to put new bottles in behind the ones "
@@ -79,13 +79,15 @@ window.SITE_DATA = {
       medium: "assets/img/bottle-fifo-3-medium.webp",
       full: "assets/img/bottle-fifo-3-full.jpg",
       caption: "Side view: the rail and the bottle's resting position"
-    }
-  ],
-    closing: {
+    },
+    {
+      type: "image",
+      wide: true,
       medium: "assets/img/bottle-fifo-4-medium.webp",
       full: "assets/img/bottle-fifo-4-full.jpg",
       caption: "Operating sequence: draw the row forward, feed the new bottle in behind"
     }
+  ]
   },
   {
     id: "looker-chair",
