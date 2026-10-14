@@ -81,14 +81,15 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 
 /* ---------------------------------------------------------------------
-   Logo mark, sitting above the menu row/dot — independent of them, so
-   it stays put while the menu collapses into a dot on scroll.
+   Logo mark, on the opposite (left) side from the menu/dot, but on
+   the same row — flex align-items:center on the shared .site-nav row
+   keeps it vertically centered against the dot regardless of either
+   element's own height, instead of lining them up by hand.
    ------------------------------------------------------------------- */
 .site-nav .menu-logo {
   display: flex;
   align-items: center;
   width: 26px;
-  margin-bottom: .9rem;
   color: var(--fg);
   opacity: 1;
   transition: opacity var(--dur-fast) var(--ease);
@@ -108,11 +109,13 @@ ul { margin: 0; padding: 0; list-style: none; }
 .site-nav {
   position: fixed;
   top: 2.2rem;
+  left: var(--page-pad);
   right: var(--page-pad);
   z-index: 100;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .site-nav .nav-controls {
