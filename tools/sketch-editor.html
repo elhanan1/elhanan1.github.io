@@ -173,10 +173,11 @@
     Two ways to draw: <b>Click points</b> — click to place a point at a time, straight
     lines connect them with corners rounded automatically. <b>Draw freehand</b> — click
     and drag to sketch a stroke in one motion; it's simplified down to a handful of
-    points automatically when you release. Either way, the first point becomes the top
-    entry and the last becomes the bottom exit. Drag a point to move it, double-click to
-    delete it. Load a reference photo to trace over it. When you're happy, copy the
-    generated <code>sketch: {...}</code> block into a work in <code>data/works.js</code>.
+    points automatically when you release. The line starts and ends exactly where you
+    click — nothing is added before your first point or after your last one. Drag a
+    point to move it, double-click to delete it. Load a reference photo to trace over
+    it. When you're happy, copy the generated <code>sketch: {...}</code> block into a
+    work in <code>data/works.js</code>.
   </p>
 </header>
 
@@ -406,17 +407,18 @@
 
     var first = points[0];
     var last = points[points.length - 1];
-    var entry = { x: first.x, y: 0 };
-    var exit = { x: last.x, y: 400 };
 
-    var fullVerts = [entry].concat(points).concat([exit]);
-    var fullPath = buildSmoothedPath(fullVerts, radius);
+    // The line starts at your first click and ends at your last one —
+    // no padding segment added before/after (there's no longer a shared
+    // top/bottom edge to line up with, now that the home page draws each
+    // sketch on its own instead of connecting it to its neighbors).
+    var fullPath = buildSmoothedPath(points.length > 1 ? points : [first, first], radius);
 
-    objectPath.setAttribute("d", buildSmoothedPath(points.length > 1 ? points : [first, first], radius));
-    stubTop.setAttribute("d", "M" + fmt(entry) + " L" + fmt(first));
-    stubBottom.setAttribute("d", "M" + fmt(last) + " L" + fmt(exit));
-    entryDot.setAttribute("cx", entry.x); entryDot.setAttribute("cy", entry.y);
-    exitDot.setAttribute("cx", exit.x); exitDot.setAttribute("cy", exit.y);
+    objectPath.setAttribute("d", fullPath);
+    stubTop.setAttribute("d", "");
+    stubBottom.setAttribute("d", "");
+    entryDot.setAttribute("cx", first.x); entryDot.setAttribute("cy", first.y);
+    exitDot.setAttribute("cx", last.x); exitDot.setAttribute("cy", last.y);
 
     previewPath.setAttribute("d", fullPath);
 
@@ -431,8 +433,8 @@
     output.value =
       "sketch: {\n" +
       '  viewBox: "0 0 400 400",\n' +
-      "  entry: [" + round1(entry.x) + ", 0],\n" +
-      "  exit: [" + round1(exit.x) + ", 400],\n" +
+      "  entry: [" + round1(first.x) + ", " + round1(first.y) + "],\n" +
+      "  exit: [" + round1(last.x) + ", " + round1(last.y) + "],\n" +
       '  path: "' + fullPath + '"\n' +
       "}";
   }
