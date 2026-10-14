@@ -115,6 +115,9 @@
 
       var visual = document.createElement("div");
       visual.className = "work-visual";
+      // Named so the browser can morph this exact box into the project
+      // page's hero photo on click, instead of a plain crossfade.
+      visual.style.viewTransitionName = "work-" + work.id;
 
       var svgNS = "http://www.w3.org/2000/svg";
       var svg = document.createElementNS(svgNS, "svg");
@@ -385,7 +388,9 @@
     setText("p-intro", work.intro);
     setText("p-process", work.process);
 
+    var heroVisual = document.querySelector(".project-hero-visual");
     var heroImg = document.querySelector(".project-hero-visual img");
+    if (heroVisual) heroVisual.style.viewTransitionName = "work-" + work.id;
     if (heroImg) {
       heroImg.alt = work.title;
       heroImg.loading = "lazy";
@@ -475,10 +480,16 @@
     if (cv) cv.href = about.cv;
 
     // On click, the icon+label absorb into the arrow instead of just
-    // sitting there while the mail client / new tab opens.
+    // sitting there while the mail client / new tab opens. Nothing
+    // reloads this page afterwards (mailto doesn't navigate away at
+    // all, Instagram opens in a new tab), so revert it back on a timer
+    // instead of leaving the label gone for good.
     document.querySelectorAll(".absorb-link").forEach(function (a) {
       a.addEventListener("click", function () {
         a.classList.add("clicked");
+        window.setTimeout(function () {
+          a.classList.remove("clicked");
+        }, 1600);
       });
     });
   }

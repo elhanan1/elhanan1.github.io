@@ -36,7 +36,7 @@ window.SITE_DATA = {
   },
   works: [
   {
-    id: "transit-lock",
+    id: "looker-chair",
     title: "Looker-Chair",
     year: 2024,
     category: "Transit furniture",
@@ -68,13 +68,20 @@ window.SITE_DATA = {
     {
       type: "image",
       pos: [1, 1],
+      medium: "assets/img/transit-lock-medium.webp",
+      full: "assets/img/transit-lock-full.jpg",
+      caption: "The finished study model"
+    },
+    {
+      type: "image",
+      pos: [1, 2],
       medium: "assets/img/transit-lock-2-medium.webp",
       full: "assets/img/transit-lock-2-full.jpg",
       caption: "Rear view of the chipboard study model"
     },
     {
       type: "image",
-      pos: [1, 2],
+      wide: true,
       medium: "assets/img/transit-lock-3-medium.webp",
       full: "assets/img/transit-lock-3-full.jpg",
       caption: "Storyboard: slide the case in, sit, the bolt locks"
@@ -114,13 +121,20 @@ window.SITE_DATA = {
     {
       type: "image",
       pos: [1, 1],
+      medium: "assets/img/transit-lock-medium.webp",
+      full: "assets/img/transit-lock-full.jpg",
+      caption: "The finished study model"
+    },
+    {
+      type: "image",
+      pos: [1, 2],
       medium: "assets/img/transit-lock-2-medium.webp",
       full: "assets/img/transit-lock-2-full.jpg",
       caption: "Rear view of the chipboard study model"
     },
     {
       type: "image",
-      pos: [1, 2],
+      wide: true,
       medium: "assets/img/transit-lock-3-medium.webp",
       full: "assets/img/transit-lock-3-full.jpg",
       caption: "Storyboard: slide the case in, sit, the bolt locks"

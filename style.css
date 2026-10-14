@@ -64,6 +64,15 @@
 ::view-transition-old(root) { animation-name: page-out; }
 ::view-transition-new(root) { animation-name: page-in; }
 
+/* Clicking a work's sketch morphs that exact box into the project
+   page's hero photo (matched by view-transition-name="work-<id>" in
+   shared.js) — the sketch grows into place and crossfades into the
+   photo, instead of just a plain page swap. */
+::view-transition-group(*) {
+  animation-duration: .55s;
+  animation-timing-function: var(--ease);
+}
+
 @keyframes page-out {
   to { opacity: 0; transform: translateY(-10px); }
 }
