@@ -28,8 +28,8 @@ window.SITE_DATA = {
       + "material and mechanism that make something feel inevitable once "
       + "it exists. This site collects project work from the last few years "
       + "of study, from early sketches through to finished prototypes.",
-    email: "hello@example.com",
-    instagram: "https://instagram.com/yourhandle",
+    email: "elhananitzkovich@gmail.com",
+    instagram: "https://instagram.com/elhanan_itzkovich",
     behance: "https://behance.net/yourhandle",
     linkedin: "https://linkedin.com/in/yourhandle",
     cv: "assets/cv-placeholder.pdf"
@@ -53,7 +53,7 @@ window.SITE_DATA = {
       + "onto it, and the dowel pins it in place until the seat lifts again. The "
       + "storyboard sketch maps that same three-step sequence — slide, sit, lock — "
       + "which later became the brief for the actual spring-bolt mechanism.",
-    materials: ["Moulded composite shell", "Spring-loaded steel locking bolt", "Powder-coated steel frame", "Rubber case-grip pads"],
+    materials: ["carton"],
    sketch: {
   viewBox: "0 0 400 400",
   entry: [85.2, 390.6],
@@ -67,13 +67,14 @@ window.SITE_DATA = {
     gallery: [
     {
       type: "image",
+      pos: [1, 1],
       medium: "assets/img/transit-lock-2-medium.webp",
       full: "assets/img/transit-lock-2-full.jpg",
       caption: "Rear view of the chipboard study model"
     },
     {
       type: "image",
-      wide: true,
+      pos: [1, 2],
       medium: "assets/img/transit-lock-3-medium.webp",
       full: "assets/img/transit-lock-3-full.jpg",
       caption: "Storyboard: slide the case in, sit, the bolt locks"
@@ -112,13 +113,14 @@ window.SITE_DATA = {
     gallery: [
     {
       type: "image",
+      pos: [1, 1],
       medium: "assets/img/transit-lock-2-medium.webp",
       full: "assets/img/transit-lock-2-full.jpg",
       caption: "Rear view of the chipboard study model"
     },
     {
       type: "image",
-      wide: true,
+      pos: [1, 2],
       medium: "assets/img/transit-lock-3-medium.webp",
       full: "assets/img/transit-lock-3-full.jpg",
       caption: "Storyboard: slide the case in, sit, the bolt locks"

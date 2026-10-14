@@ -45,6 +45,40 @@
   }
 }
 
+/* ---------------------------------------------------------------------
+   Page transitions: a soft fade + rise between full page navigations
+   (home -> a project, project -> project, etc). Browsers without
+   cross-document View Transitions support just navigate normally, no
+   fallback needed.
+   ------------------------------------------------------------------- */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: .45s;
+  animation-timing-function: var(--ease);
+}
+
+::view-transition-old(root) { animation-name: page-out; }
+::view-transition-new(root) { animation-name: page-in; }
+
+@keyframes page-out {
+  to { opacity: 0; transform: translateY(-10px); }
+}
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(10px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
 * { box-sizing: border-box; }
 
 html, body {
@@ -700,12 +734,46 @@ ul { margin: 0; padding: 0; list-style: none; }
   padding: 1.1rem 0;
   border-bottom: 1px solid var(--border);
   font-size: .95rem;
+  overflow: hidden;
+}
+
+.about-links .link-main {
+  display: flex;
+  align-items: center;
+  gap: .7em;
+  transform-origin: left center;
+  transition: transform .4s var(--ease), opacity .35s var(--ease);
+}
+
+.about-links .link-icon {
+  width: 19px;
+  height: 19px;
+  flex: none;
 }
 
 .about-links a .arrow {
   opacity: 0;
   transform: translateX(-4px);
   transition: opacity var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+}
+
+/* The icon+label absorb into the arrow on click, instead of the page
+   just jumping away to the mail client / a new tab. */
+.about-links a.clicked .link-main {
+  transform: translateX(85%) scale(.15);
+  opacity: 0;
+}
+
+.about-links a.clicked .arrow {
+  opacity: 1;
+  transform: translateX(0);
+  animation: arrow-absorb .45s var(--ease);
+}
+
+@keyframes arrow-absorb {
+  0%, 40% { transform: scale(1); }
+  65% { transform: scale(1.4); }
+  100% { transform: scale(1); }
 }
 
 .about-links a:hover .arrow {

@@ -470,11 +470,17 @@
 
     setLink("link-email", "mailto:" + about.email, about.email);
     setLink("link-instagram", about.instagram, "Instagram");
-    setLink("link-behance", about.behance, "Behance");
-    setLink("link-linkedin", about.linkedin, "LinkedIn");
 
     var cv = document.getElementById("cv-button");
     if (cv) cv.href = about.cv;
+
+    // On click, the icon+label absorb into the arrow instead of just
+    // sitting there while the mail client / new tab opens.
+    document.querySelectorAll(".absorb-link").forEach(function (a) {
+      a.addEventListener("click", function () {
+        a.classList.add("clicked");
+      });
+    });
   }
 
   function setLink(id, href, label) {
