@@ -432,7 +432,7 @@
           fig.appendChild(video);
         } else {
           var img = document.createElement("img");
-          img.src = item.medium;
+          img.src = (item.wide && item.full) || item.medium;
           img.alt = item.caption || work.title;
           img.loading = "lazy";
           fig.appendChild(img);

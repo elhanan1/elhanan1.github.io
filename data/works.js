@@ -81,7 +81,8 @@ window.SITE_DATA = {
       type: "image",
       medium: "assets/img/looker-chair-4-medium.webp",
       full: "assets/img/looker-chair-4-full.jpg",
-      caption: "Rear view"
+      caption: "Rear view",
+      wide: true
     }
   ]
   },

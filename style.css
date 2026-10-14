@@ -586,7 +586,10 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 
 .project-hero-visual {
-  margin: 1rem var(--page-pad) 5rem;
+  /* Capped so a photo is never scaled up past its own pixel width —
+     these are phone photos, and upscaling is what makes them look soft. */
+  margin: 1rem auto 5rem;
+  max-width: min(44em, 100% - var(--page-pad) * 2);
   background: var(--surface);
   overflow: hidden;
   border-radius: 3px;
@@ -629,7 +632,9 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 
 .project-gallery {
-  padding: 0 var(--page-pad) 5rem;
+  padding: 0 0 5rem;
+  margin-inline: auto;
+  max-width: min(52em, 100% - var(--page-pad) * 2);
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1.4rem;
@@ -654,7 +659,6 @@ ul { margin: 0; padding: 0; list-style: none; }
   color: var(--fg-faint);
 }
 
-.project-gallery .gallery-item:first-child,
 .project-gallery .gallery-item.wide {
   grid-column: 1 / -1;
 }
