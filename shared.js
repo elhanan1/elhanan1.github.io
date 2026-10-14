@@ -130,37 +130,26 @@
 
       var previewSrc = (work.images && (work.images.preview || work.images.medium)) || "";
 
-      var tooltip = document.createElement("div");
-      tooltip.className = "work-tooltip";
-      tooltip.innerHTML =
-        '<div class="tt-title">' + escapeHtml(work.title) + "</div>" +
-        '<div class="tt-sub">' + work.year + " · " + escapeHtml(work.category) + "</div>" +
-        '<div class="tt-desc">' + escapeHtml(work.blurb) + "</div>";
-
+      // The work's own image, fading in behind the sketch so the drawn
+      // line sits on top of the photo. It goes inside the same box, so
+      // nothing below it on the page moves when it appears.
       if (previewSrc) {
+        var preview = document.createElement("div");
+        preview.className = "work-preview";
         var previewImg = document.createElement("img");
-        previewImg.className = "tt-image"
-          + (work.images && work.images.cutout ? " is-cutout" : "");
         previewImg.alt = "";
         previewImg.loading = "lazy";
-        // If the image 404s (missing/not-yet-uploaded), drop it instead of
-        // showing a broken-image icon — the tooltip just falls back to text.
+        // If the image 404s (missing/not-yet-uploaded), drop the preview
+        // rather than revealing a broken-image icon.
         previewImg.addEventListener("error", function () {
-          previewImg.remove();
+          preview.remove();
         });
         previewImg.src = previewSrc;
-        tooltip.insertBefore(previewImg, tooltip.firstChild);
+        preview.appendChild(previewImg);
+        visual.appendChild(preview);
       }
 
       visual.appendChild(svg);
-      visual.appendChild(tooltip);
-
-      visual.addEventListener("pointermove", function (e) {
-        positionTooltip(e, tooltip);
-      });
-      visual.addEventListener("pointerenter", function (e) {
-        positionTooltip(e, tooltip);
-      });
 
       var meta = document.createElement("div");
       meta.className = "work-meta";
@@ -277,25 +266,6 @@
       c.path.style.strokeDasharray = len;
       if (!c.entry.drawn) c.path.style.strokeDashoffset = reduceMotion ? 0 : len;
     });
-  }
-
-  /* Keeps a work's hover tooltip glued to the cursor, offset slightly
-     so it doesn't sit directly under it, and flipped inward near the
-     edges of the viewport so it never runs off-screen. */
-  function positionTooltip(e, tooltip) {
-    var offset = 18;
-    var pad = 12;
-    var w = tooltip.offsetWidth || 260;
-    var h = tooltip.offsetHeight || 110;
-
-    var left = e.clientX + offset;
-    var top = e.clientY + offset;
-
-    if (left + w > window.innerWidth - pad) left = e.clientX - offset - w;
-    if (top + h > window.innerHeight - pad) top = e.clientY - offset - h;
-
-    tooltip.style.left = Math.max(pad, left) + "px";
-    tooltip.style.top = Math.max(pad, top) + "px";
   }
 
   function escapeHtml(str) {

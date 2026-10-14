@@ -428,66 +428,37 @@ ul { margin: 0; padding: 0; list-style: none; }
 
 .work-meta .work-tags { white-space: nowrap; }
 
-/* Hover tooltip (desktop) */
-.work-tooltip {
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 260px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  overflow: hidden;
+/* Hover preview (desktop): the work's own image fades in inside the
+   sketch's own box, so the drawn line reads as sitting on top of the
+   photo. Being an overlay, it moves nothing else on the page. Contained
+   rather than cropped, since these images are every shape from a 2.6:1
+   cut-out to an upright photo. */
+.work-preview {
+  position: absolute;
+  inset: 0;
   opacity: 0;
-  transform: scale(.98);
-  transform-origin: top left;
-  transition: opacity var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+  transition: opacity var(--dur-med) var(--ease);
   pointer-events: none;
-  z-index: 50;
-  will-change: left, top, transform;
 }
 
-.work-tooltip .tt-image {
+.work-preview img {
   display: block;
   width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
+  height: 100%;
+  object-fit: contain;
 }
 
-.work-tooltip .tt-title,
-.work-tooltip .tt-sub,
-.work-tooltip .tt-desc {
-  padding: 0 1.1rem;
+/* Keeps the line above the photo. */
+.work-visual .sketch-svg {
+  position: relative;
+  z-index: 1;
 }
-
-.work-tooltip .tt-title { margin-top: .9rem; }
 
 @media (hover: hover) {
-  .work-visual:hover .work-tooltip,
-  .work-visual:focus-visible .work-tooltip {
+  .work-link:hover .work-preview,
+  .work-link:focus-visible .work-preview {
     opacity: 1;
-    transform: scale(1);
   }
-}
-
-.work-tooltip .tt-title {
-  font-family: var(--font-display);
-  font-size: .95rem;
-  letter-spacing: .01em;
-}
-
-.work-tooltip .tt-sub {
-  margin-top: .2rem;
-  font-size: .76rem;
-  color: var(--fg-soft);
-  letter-spacing: .03em;
-}
-
-.work-tooltip .tt-desc {
-  margin-top: .5rem;
-  padding-bottom: .9rem;
-  font-size: .8rem;
-  color: var(--fg-soft);
-  max-width: 28em;
 }
 
 /* Mobile: no hover, so description sits below the sketch */
@@ -496,7 +467,7 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 
 @media (hover: none) {
-  .work-tooltip { display: none; }
+  .work-preview { opacity: 1; }
   .work-card .mobile-caption {
     display: block;
     margin-top: .9rem;
@@ -670,14 +641,8 @@ ul { margin: 0; padding: 0; list-style: none; }
 /* Cut-outs (images: { cutout: true } in data/works.js) sit on the plate
    rather than on the page, so they read the same in light and dark. */
 .project-hero-visual.is-cutout,
-.project-gallery .gallery-item.is-cutout,
-.work-tooltip .tt-image.is-cutout {
+.project-gallery .gallery-item.is-cutout {
   background: var(--plate);
-}
-
-/* And they are the shape of the object, not a 4:3 frame — don't crop. */
-.work-tooltip .tt-image.is-cutout {
-  object-fit: contain;
 }
 
 @media (max-width: 640px) {
