@@ -89,6 +89,16 @@ Hovering a sketch on the home page shows a preview photo. It uses
 useful for picking a different shot than the cover image), and otherwise
 falls back to `images.medium` — the work's first/main image.
 
+Every gallery image shows in full, at its own real proportions (no
+cropping) — a 2-column grid by default, each image as wide as its column
+and however tall it naturally is. Two ways to control where things land:
+
+- `wide: true` on a gallery item makes it span both columns, full width.
+- `pos: [row, col]` (1-based) puts an item in an exact cell — e.g. `[1, 1]`
+  and `[1, 2]` for two images side by side on the first row, `[2, 1]` for
+  the next one below the first. Leave it off and the item just falls next
+  in the grid's normal flow.
+
 ### Replacing a sketch
 
 Each work has a `sketch` object:

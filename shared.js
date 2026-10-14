@@ -408,6 +408,14 @@
       work.gallery.forEach(function (item) {
         var fig = document.createElement("figure");
         fig.className = "gallery-item" + (item.wide ? " wide" : "");
+        // Optional manual placement: pos: [row, col] (1-based, matches the
+        // grid's own numbering) puts an image exactly where you want it
+        // instead of letting it fall wherever it lands in the array —
+        // e.g. [1,1] and [1,2] for two images side by side on row 1.
+        if (item.pos) {
+          fig.style.gridRow = item.pos[0];
+          fig.style.gridColumn = item.pos[1];
+        }
         if (item.type === "video") {
           var video = document.createElement("video");
           video.src = item.src;
