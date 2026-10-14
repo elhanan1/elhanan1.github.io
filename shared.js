@@ -309,18 +309,20 @@
       // inside the viewport, so it's never still mid-draw while part of
       // it has already scrolled out of view (which looked like one part
       // of the sketch vanishing while another part was still appearing).
-      // For a work taller than the viewport (so it can never be fully on
-      // screen at once) this window would be empty/negative, so fall
-      // back to spreading the draw across its whole transit instead.
+      //
+      // On a short viewport, a tall/large work may never be fully
+      // visible at once (vh - rect.height goes to zero or negative) — a
+      // previous version fell back to a different formula for that case
+      // (finishing exactly as the work fully exits), which reintroduced
+      // the same "still mid-draw while part of it is already gone" bug,
+      // just only for the larger sizes on a short enough window. Instead
+      // we floor the window at a fraction of the viewport height, so it
+      // shrinks gracefully (finishing in a tighter stretch near the top)
+      // but never collapses into that broken behaviour.
       entries.forEach(function (entry) {
         var rect = entry.el.getBoundingClientRect();
-        var span = vh - rect.height;
-        var progress;
-        if (span > 0) {
-          progress = (span - rect.top) / span;
-        } else {
-          progress = (vh - rect.top) / (vh + rect.height);
-        }
+        var span = Math.max(vh - rect.height, vh * 0.15);
+        var progress = (span - rect.top) / span;
         progress = Math.max(0, Math.min(1, progress));
         entry.path.style.strokeDashoffset = entry.length * (1 - progress);
         if (progress >= 0.985) entry.drawn = true;
