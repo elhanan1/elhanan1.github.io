@@ -44,31 +44,37 @@ def resize_to_width(img, width):
     return img.resize((width, height), Image.LANCZOS)
 
 
-def load_rgb(path):
-    """Open an image as RGB, flattening any transparency onto white.
+def load_source(path):
+    """Open an image, keeping its alpha channel if it has one.
 
-    A cut-out PNG usually stores black under its transparent pixels, so a
-    plain .convert("RGB") would turn the background into a black block.
+    A cut-out PNG carries its own transparency, and the pixels underneath
+    it are usually black. Flattening it onto a colour here would bake a
+    backdrop into the file that can only suit one of the site's two
+    themes, so keep the alpha and let the page put a surface behind it.
     """
     img = Image.open(path)
     if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
-        img = img.convert("RGBA")
-        backdrop = Image.new("RGBA", img.size, (255, 255, 255, 255))
-        img = Image.alpha_composite(backdrop, img)
+        return img.convert("RGBA")
     return img.convert("RGB")
 
 
 def process_one(path):
     name = path.stem
-    img = load_rgb(path)
+    img = load_source(path)
+    transparent = img.mode == "RGBA"
 
     medium = resize_to_width(img, MEDIUM_WIDTH)
     medium_path = OUT_DIR / f"{name}-medium.webp"
     medium.save(medium_path, "WEBP", quality=MEDIUM_QUALITY)
 
     full = resize_to_width(img, FULL_WIDTH)
-    full_path = OUT_DIR / f"{name}-full.jpg"
-    full.save(full_path, "JPEG", quality=FULL_QUALITY)
+    if transparent:
+        # JPEG has no alpha channel, so a cut-out keeps its WebP form.
+        full_path = OUT_DIR / f"{name}-full.webp"
+        full.save(full_path, "WEBP", quality=FULL_QUALITY)
+    else:
+        full_path = OUT_DIR / f"{name}-full.jpg"
+        full.save(full_path, "JPEG", quality=FULL_QUALITY)
 
     print(f"{name}:")
     print(f"  medium -> {medium_path.relative_to(ROOT)}  ({medium.width}x{medium.height})")

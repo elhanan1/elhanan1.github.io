@@ -65,8 +65,10 @@ window.SITE_DATA = {
       path: "M48,292 L344,292 Q352,292 352,284 L352,158 Q352,150 344,152 Q312,158 296,186 Q282,210 262,196 Q242,182 226,204 Q210,226 190,210 Q170,194 142,206 Q112,219 96,240 Q78,264 62,276 L48,292 L56,286 L167,249 Q165,220 193,215 Q221,211 219,241 Q217,268 190,266 Q164,264 167,249 L330,196"
     },
     images: {
+      // Transparent background — the page puts the plate behind it.
+      cutout: true,
       medium: "assets/img/bottle-fifo-medium.webp",
-      full: "assets/img/bottle-fifo-full.jpg"
+      full: "assets/img/bottle-fifo-full.webp"
     },
     gallery: [
     {

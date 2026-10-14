@@ -139,7 +139,8 @@
 
       if (previewSrc) {
         var previewImg = document.createElement("img");
-        previewImg.className = "tt-image";
+        previewImg.className = "tt-image"
+          + (work.images && work.images.cutout ? " is-cutout" : "");
         previewImg.alt = "";
         previewImg.loading = "lazy";
         // If the image 404s (missing/not-yet-uploaded), drop it instead of
@@ -390,7 +391,10 @@
 
     var heroVisual = document.querySelector(".project-hero-visual");
     var heroImg = document.querySelector(".project-hero-visual img");
-    if (heroVisual) heroVisual.style.viewTransitionName = "work-" + work.id;
+    if (heroVisual) {
+      heroVisual.style.viewTransitionName = "work-" + work.id;
+      if (work.images.cutout) heroVisual.classList.add("is-cutout");
+    }
     if (heroImg) {
       heroImg.alt = work.title;
       heroImg.loading = "lazy";
@@ -412,7 +416,8 @@
       gallery.innerHTML = "";
       work.gallery.forEach(function (item) {
         var fig = document.createElement("figure");
-        fig.className = "gallery-item" + (item.wide ? " wide" : "");
+        fig.className = "gallery-item" + (item.wide ? " wide" : "")
+          + (item.cutout ? " is-cutout" : "");
         // Optional manual placement: pos: [row, col] (1-based, matches the
         // grid's own numbering) puts an image exactly where you want it
         // instead of letting it fall wherever it lands in the array —
