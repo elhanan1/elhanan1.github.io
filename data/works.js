@@ -37,26 +37,23 @@ window.SITE_DATA = {
   works: [
   {
     id: "bottle-fifo",
-    title: "First Out",
+    title: "Fast FIFO",
     year: 2026,
-    category: "Retail fixture",
-    size: "small",
-    blurb: "A fridge rack filled from the back, so the oldest bottle is always the one in front.",
-    intro: "First Out is an early concept for a chilled-display rack that is "
-      + "loaded from behind and emptied from the front. The bottles sit in a "
-      + "channel that falls towards the customer, so lifting the front bottle "
-      + "lets the next one run down into the space it leaves, and whatever is "
-      + "restocked behind it has no way of jumping the queue. The shelf keeps "
-      + "its own rotation, instead of depending on whoever happens to be "
-      + "refilling it to pull the older stock forward first.",
+    category: "Retail tool",
+    size: "large",
+    blurb: "A caf\u00e9 restocking tool that draws a whole row of bottles forward at once, so new stock goes in behind.",
+    intro: "While working in a caf\u00e9 I kept running into the same "
+      + "awkwardness in restocking: to put new bottles in behind the ones "
+      + "already on the shelf \u2014 which is what FIFO asks for \u2014 you "
+      + "first have to take every bottle out. I designed a device that draws "
+      + "the whole row forward in one movement and lets a new bottle be fed "
+      + "in from behind, which makes refilling far quicker.",
     process: "This is the first study model: a body cut from corrugated "
-      + "plastic, a strip of sheet metal through it standing in for the rail "
-      + "the bottles run on, and a ball of plasticine standing in for a "
-      + "bottle. At this stage the only question is the angle \u2014 shallow "
-      + "enough that a bottle stays where it is put, steep enough that it "
-      + "moves forward on its own the moment the one ahead of it is lifted "
-      + "away. It was photographed in place on a caf\u00e9 display fridge, "
-      + "against the shelf heights and the bottles it would have to work with.",
+      + "plastic, a strip of sheet metal for the rail and a ball of "
+      + "plasticine standing in for a bottle, tried in place on a working "
+      + "caf\u00e9 fridge rather than on the desk. The storyboard at the end "
+      + "of the page sets out the sequence it has to carry out, from taking "
+      + "hold of the row to feeding the new bottle in behind it.",
     materials: ["Corrugated plastic", "Sheet metal", "Plasticine"],
     sketch: {
       viewBox: "0 0 400 400",
@@ -83,7 +80,12 @@ window.SITE_DATA = {
       full: "assets/img/bottle-fifo-3-full.jpg",
       caption: "Side view: the rail and the bottle's resting position"
     }
-  ]
+  ],
+    closing: {
+      medium: "assets/img/bottle-fifo-4-medium.webp",
+      full: "assets/img/bottle-fifo-4-full.jpg",
+      caption: "Operating sequence: draw the row forward, feed the new bottle in behind"
+    }
   },
   {
     id: "looker-chair",

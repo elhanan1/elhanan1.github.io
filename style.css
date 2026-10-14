@@ -12,9 +12,9 @@
   --surface: rgba(28, 26, 23, 0.045);
   --surface-strong: rgba(28, 26, 23, 0.08);
   /* Backdrop for a cut-out photo, which has no background of its own.
-     It stays light in both themes: these are dark objects shot against
-     nothing, so a dark backdrop would swallow them. */
-  --plate: #f1eee8;
+     It follows the page, so the object sits on white on the light theme
+     and on near-black on the dark one. */
+  --plate: var(--bg);
 
   --font-display: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-body: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
@@ -37,7 +37,6 @@
     --border: rgba(236, 231, 220, 0.14);
     --surface: rgba(236, 231, 220, 0.05);
     --surface-strong: rgba(236, 231, 220, 0.09);
-    --plate: #d8d3c8;
     color-scheme: dark;
   }
 }
@@ -645,20 +644,29 @@ ul { margin: 0; padding: 0; list-style: none; }
   gap: 1.4rem;
 }
 
-.project-gallery figure {
+.project-closing {
+  padding: 0 0 5rem;
+  margin-inline: auto;
+  max-width: min(52em, 100% - var(--page-pad) * 2);
+}
+
+.project-gallery figure,
+.project-closing figure {
   margin: 0;
   background: var(--surface);
   overflow: hidden;
   border-radius: 3px;
 }
 
-.project-gallery img, .project-gallery video {
+.project-gallery img, .project-gallery video,
+.project-closing img {
   display: block;
   width: 100%;
   height: auto;
 }
 
-.project-gallery figcaption {
+.project-gallery figcaption,
+.project-closing figcaption {
   margin-top: .6rem;
   font-size: .78rem;
   color: var(--fg-faint);
