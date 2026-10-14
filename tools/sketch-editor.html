@@ -78,19 +78,50 @@
   .mode-switch .mode-btn + .mode-btn { border-left: 1px solid var(--fg); }
   .mode-switch .mode-btn.active { background: var(--fg); color: var(--bg); }
 
+  /* The same box a work gets on the home page: the card's full width at
+     1 / 1.08, with the square 400x400 sketch centred inside it (that's
+     what `preserveAspectRatio: xMidYMid meet` does there) and the photo
+     `contain`-ed in the whole box. Reference photos are framed here
+     exactly as the home page frames them, so nothing gets cropped here
+     that isn't cropped there — and nothing looks right here that won't
+     look right there. */
   #canvasWrap {
     position: relative;
     width: 560px;
     max-width: 90vw;
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 1 / 1.08;
     border: 1px solid var(--border);
-    background: #fff;
+    background: var(--bg);
     touch-action: none;
     cursor: crosshair;
   }
-  svg#stage { width: 100%; height: 100%; display: block; }
-  .grid-line { stroke: #eee; stroke-width: 1; }
-  .center-guide { stroke: #ddd; stroke-width: 1; stroke-dasharray: 4 4; }
+  /* Copied from .work-preview / .work-preview img in style.css. */
+  .ref-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .ref-layer img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  svg#stage {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    display: block;
+    /* Marks off the square you can actually draw in: the letterboxed
+       strips above and below it belong to the photo's box, not the
+       sketch's — a line there would be clipped on the home page. */
+    outline: 1px dashed var(--border);
+  }
+  .grid-line { stroke: rgba(28,26,23,0.07); stroke-width: 1; }
+  .center-guide { stroke: rgba(28,26,23,0.14); stroke-width: 1; stroke-dasharray: 4 4; }
   .stub-line { stroke: var(--fg-soft); stroke-width: 1.4; stroke-dasharray: 3 4; fill: none; }
   .object-path { stroke: var(--fg); stroke-width: 2; fill: none; stroke-linecap: round; }
   .handle {
@@ -149,14 +180,28 @@
   }
   .stat-row b { color: var(--fg); font-weight: 600; }
 
+  /* A small-card-sized rehearsal of the home page: same box, same photo
+     framing, same 50% dim the card uses on hover. */
   .preview-box {
+    position: relative;
     width: 220px;
     aspect-ratio: 1 / 1.08;
     border: 1px solid var(--border);
-    background: #fff;
+    background: var(--bg);
   }
-  .preview-box svg { width: 100%; height: 100%; }
+  .preview-box .ref-layer { opacity: .5; }
+  .preview-box svg {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+  }
   .preview-box path { fill: none; stroke: var(--fg); stroke-width: 1.6; stroke-linecap: round; }
+
+  #refStatus {
+    font-size: .78rem;
+    color: var(--accent);
+  }
 
   #copyStatus {
     font-size: .78rem;
@@ -177,7 +222,9 @@
     click — nothing is added before your first point or after your last one. Drag a
     point to move it, double-click to delete it. Load a reference photo to trace over
     it. When you're happy, copy the generated <code>sketch: {...}</code> block into a
-    work in <code>data/works.js</code>.
+    work in <code>data/works.js</code>. Pick a work from the Reference menu and its
+    main home-page image loads straight from <code>data/works.js</code>, framed in the
+    same box the home page gives it.
   </p>
 </header>
 
@@ -197,23 +244,29 @@
         <input id="labelsToggle" type="checkbox" checked />
         point numbers
       </label>
+      <label>Reference
+        <select id="workSelect"></select>
+      </label>
       <label>
         <input id="refFile" type="file" accept="image/*" />
-        reference image
+        or a file
       </label>
       <label>Opacity
-        <input id="refOpacity" type="range" min="0" max="100" value="45" />
+        <input id="refOpacity" type="range" min="0" max="100" value="50" />
       </label>
       <button id="clearRefBtn">Remove image</button>
+      <span id="refStatus"></span>
     </div>
 
     <div id="canvasWrap">
-      <svg id="stage" viewBox="0 0 400 400">
+      <div class="ref-layer" id="refLayer" style="opacity:.5">
+        <img id="refImage" alt="" style="display:none" />
+      </div>
+      <svg id="stage" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet">
         <defs>
           <clipPath id="clip400"><rect x="0" y="0" width="400" height="400"/></clipPath>
         </defs>
         <g clip-path="url(#clip400)">
-          <image id="refImage" x="0" y="0" width="400" height="400" preserveAspectRatio="xMidYMid slice" opacity="0.45" style="display:none" />
           <g id="grid"></g>
           <line class="center-guide" x1="200" y1="0" x2="200" y2="400"/>
           <path id="stubTop" class="stub-line" d=""/>
@@ -228,17 +281,23 @@
     </div>
 
     <p class="hint">
-      Tip: aim for roughly the same overall height as the existing sketches (they fill
-      most of the 400&times;400 box). Keep the shape as ONE continuous route — don't lift
-      the pen; if you need an interior detail (like a handle or a slat), route the click
-      path out to it and back rather than starting a new shape.
+      The box is the home page's card box (1&nbsp;:&nbsp;1.08) and the photo is fitted
+      into it the same way &mdash; whole, never cropped. The dashed square is the sketch's
+      own 400&times;400 area: draw inside it, since anything in the strips above or below
+      it gets clipped on the home page. Aim for roughly the same overall height as the
+      existing sketches (they fill most of the square). Keep the shape as ONE continuous
+      route &mdash; don't lift the pen; if you need an interior detail (like a handle or a
+      slat), route the click path out to it and back rather than starting a new shape.
     </p>
   </div>
 
   <div class="output-col">
-    <h2>Live preview</h2>
+    <h2>Live preview &mdash; small card, hovered</h2>
     <div class="preview-box">
-      <svg viewBox="0 0 400 400" id="previewSvg"><path id="previewPath" d=""/></svg>
+      <div class="ref-layer">
+        <img id="previewRef" alt="" style="display:none" />
+      </div>
+      <svg viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet" id="previewSvg"><path id="previewPath" d=""/></svg>
     </div>
 
     <h2>Generated code</h2>
@@ -254,6 +313,7 @@
   </div>
 </div>
 
+<script src="../data/works.js"></script>
 <script>
 (function () {
   "use strict";
@@ -271,9 +331,13 @@
   var pointCountEl = document.getElementById("pointCount");
   var pathLengthEl = document.getElementById("pathLength");
   var radiusInput = document.getElementById("radius");
+  var refLayer = document.getElementById("refLayer");
   var refImage = document.getElementById("refImage");
+  var previewRef = document.getElementById("previewRef");
   var refFile = document.getElementById("refFile");
   var refOpacity = document.getElementById("refOpacity");
+  var workSelect = document.getElementById("workSelect");
+  var refStatus = document.getElementById("refStatus");
   var modeClickBtn = document.getElementById("modeClickBtn");
   var modeDrawBtn = document.getElementById("modeDrawBtn");
   var labelsToggle = document.getElementById("labelsToggle");
@@ -534,24 +598,99 @@
   labelsToggle.addEventListener("change", render);
 
   // ---- reference image --------------------------------------------------
+  /* One source of truth for the photo: it goes into both the canvas and
+     the live preview, as a plain <img> with object-fit: contain inside a
+     1 / 1.08 box — the same two rules .work-preview uses on the home
+     page. The previous SVG <image ... slice> cropped whatever didn't fit
+     a square, which is why an upright or very wide photo (the FIFO
+     bottle rack, say) lost its top and bottom here while the home page
+     showed all of it. */
+  function setRefSrc(src) {
+    refStatus.textContent = "";
+    [refImage, previewRef].forEach(function (img) {
+      if (src) {
+        img.src = src;
+        img.style.display = "";
+      } else {
+        img.removeAttribute("src");
+        img.style.display = "none";
+      }
+    });
+  }
+
+  /* Same as the home page, which drops the preview rather than showing a
+     broken-image icon when a work's image isn't there yet — except here
+     it's worth saying so out loud, otherwise picking a work with a
+     missing file just looks like the editor did nothing. */
+  refImage.addEventListener("error", function () {
+    refImage.style.display = "none";
+    previewRef.style.display = "none";
+    refStatus.textContent = "That image is missing from assets/img — nothing to trace.";
+  });
+
   refFile.addEventListener("change", function () {
     var file = refFile.files[0];
     if (!file) return;
     var reader = new FileReader();
     reader.onload = function () {
-      refImage.setAttribute("href", reader.result);
-      refImage.style.display = "";
+      if (workSelect) workSelect.value = "";
+      setRefSrc(reader.result);
     };
     reader.readAsDataURL(file);
   });
   refOpacity.addEventListener("input", function () {
-    refImage.setAttribute("opacity", refOpacity.value / 100);
+    refLayer.style.opacity = refOpacity.value / 100;
   });
   document.getElementById("clearRefBtn").addEventListener("click", function () {
-    refImage.style.display = "none";
-    refImage.removeAttribute("href");
+    setRefSrc(null);
     refFile.value = "";
+    if (workSelect) workSelect.value = "";
   });
+
+  /* The Reference menu: every work in data/works.js, loading the exact
+     image its home-page card shows (images.preview || images.medium, the
+     same fallback shared.js uses), so what you trace over here is what
+     will sit behind the line there. Paths in works.js are relative to
+     the site root and this file lives in tools/, hence the "../". */
+  (function initWorkPicker() {
+    var data = window.SITE_DATA;
+    if (!workSelect) return;
+    if (!data || !data.works || !data.works.length) {
+      var opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "data/works.js not loaded";
+      workSelect.appendChild(opt);
+      workSelect.disabled = true;
+      return;
+    }
+
+    var blank = document.createElement("option");
+    blank.value = "";
+    blank.textContent = "— none —";
+    workSelect.appendChild(blank);
+
+    data.works.forEach(function (work, i) {
+      var src = (work.images && (work.images.preview || work.images.medium)) || "";
+      if (!src) return;
+      var o = document.createElement("option");
+      o.value = "../" + src;
+      o.textContent = work.title;
+      o.dataset.index = i;
+      workSelect.appendChild(o);
+    });
+
+    workSelect.addEventListener("change", function () {
+      refFile.value = "";
+      setRefSrc(workSelect.value || null);
+    });
+
+    // Open on the first work rather than an empty canvas — the usual
+    // reason to be here is to draw over one of them.
+    if (workSelect.options.length > 1) {
+      workSelect.selectedIndex = 1;
+      setRefSrc(workSelect.value);
+    }
+  })();
 
   // ---- copy ----------------------------------------------------------
   document.getElementById("copyBtn").addEventListener("click", function () {
