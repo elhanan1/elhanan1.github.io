@@ -617,16 +617,28 @@
        the page being left behind on the way back. The intro gets a name
        purely so it can have an entrance of its own (it has no twin on
        the card; see the CSS). */
-    // Not when this page slid in from a swipe: there the whole page
-    // travels sideways in one piece, and a title morphing into the next
-    // work's title inside that would be two moves at once.
-    if (!document.documentElement.dataset.slide) {
+    function nameTheTravellers() {
       nameForTransition("p-title", "lift-title");
       nameForTransition("p-meta", "lift-meta");
       nameForTransition("p-blurb", "lift-blurb");
+      nameForTransition("p-intro", "project-intro");
       if (heroVisual) heroVisual.style.viewTransitionName = "lift-visual";
     }
-    nameForTransition("p-intro", "project-intro");
+
+    /* Nothing is named while a sideways move is arriving: a flick
+       between works carries the whole page in one piece, and a title
+       morphing into the next work's title — or the intro climbing up
+       from below — inside a page that is itself sliding is two moves at
+       once. Once it has arrived, the names go back on, so that leaving
+       for the feed lifts them as usual. */
+    if (document.documentElement.dataset.slide) {
+      afterArrival(function () {
+        delete document.documentElement.dataset.slide;
+        nameTheTravellers();
+      });
+    } else {
+      nameTheTravellers();
+    }
 
     /* Back to this work's own card in the feed rather than the top of
        the page — both because that's where the reader was, and because
@@ -829,7 +841,31 @@
   function goToWork(work, direction) {
     if (!work) return;
     writeSlide(direction);
+    // And nothing is named on the way out either, for the same reason.
+    ["p-title", "p-meta", "p-blurb", "p-intro"].forEach(function (id) {
+      nameForTransition(id, "");
+    });
+    var hero = document.querySelector(".project-hero-visual");
+    if (hero) hero.style.viewTransitionName = "";
     window.location.href = "project.html?id=" + encodeURIComponent(work.id);
+  }
+
+  /* Runs once this page's arrival is over and the stage is clear. The
+     transition's own promise says so exactly, but pagereveal can fire
+     before a script at the end of the body is reached, so a timer backs
+     it up — whichever comes first. */
+  function afterArrival(run) {
+    var done = false;
+    function once() {
+      if (done) return;
+      done = true;
+      run();
+    }
+    window.addEventListener("pagereveal", function (e) {
+      if (e.viewTransition) e.viewTransition.finished.then(once, once);
+      else once();
+    });
+    window.setTimeout(once, 2200);
   }
 
 
