@@ -62,23 +62,40 @@
   navigation: auto;
 }
 
+/* Clicking a work morphs the named pieces of its card into their places
+   on the project page (view-transition-name="work-<id>" and the three
+   "work-title/meta/blurb-<id>" lines, set in shared.js): the photo grows
+   into the hero, and the lines of text under the sketch travel up to the
+   header. They take the long way on purpose — at half a second the trip
+   was over before the eye had found what was moving, so the whole thing
+   read as a flicker rather than as the card's own text and photo being
+   carried to a new place. */
+::view-transition-group(*) {
+  animation-duration: var(--dur-slow);
+  animation-timing-function: var(--ease);
+}
+
+/* The crossfade between a pair's old and new content runs the full trip
+   as well. The browser's own default is a quarter second, which had the
+   card's small grey title already faded into the big header title while
+   its box was still only a third of the way up the screen. */
+::view-transition-old(*),
+::view-transition-new(*) {
+  animation-duration: var(--dur-slow);
+  animation-timing-function: var(--ease);
+}
+
+/* Everything that isn't travelling — the rest of both pages — changes
+   over faster, so what you watch is the pieces moving. Declared after
+   the rules above so it wins for the root snapshot. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: .45s;
+  animation-duration: var(--dur-med);
   animation-timing-function: var(--ease);
 }
 
 ::view-transition-old(root) { animation-name: page-out; }
 ::view-transition-new(root) { animation-name: page-in; }
-
-/* Clicking a work's sketch morphs that exact box into the project
-   page's hero photo (matched by view-transition-name="work-<id>" in
-   shared.js) — the sketch grows into place and crossfades into the
-   photo, instead of just a plain page swap. */
-::view-transition-group(*) {
-  animation-duration: .55s;
-  animation-timing-function: var(--ease);
-}
 
 @keyframes page-out {
   to { opacity: 0; transform: translateY(-10px); }
@@ -137,6 +154,7 @@ ul { margin: 0; padding: 0; list-style: none; }
    element's own height, instead of lining them up by hand.
    ------------------------------------------------------------------- */
 .site-nav .menu-logo {
+  position: relative;
   display: flex;
   align-items: center;
   width: 26px;
@@ -145,13 +163,25 @@ ul { margin: 0; padding: 0; list-style: none; }
   transition: opacity var(--dur-fast) var(--ease);
 }
 
+/* The mark itself is 26x20 — far too small to hit with a thumb. This
+   pads the touch target out to roughly 58x48 without changing anything
+   that's drawn. Absolutely positioned, so it stays out of the flex
+   layout rather than becoming a second item in it. */
+.site-nav .menu-logo::before {
+  content: "";
+  position: absolute;
+  inset: -14px -16px;
+}
+
 .site-nav .menu-logo svg {
   display: block;
   width: 100%;
   height: auto;
 }
 
-.site-nav .menu-logo:hover { opacity: .6; }
+@media (hover: hover) and (pointer: fine) {
+  .site-nav .menu-logo:hover { opacity: .6; }
+}
 
 /* ---------------------------------------------------------------------
    Nav: Work · About · Contact, collapsing into a dot on scroll.
@@ -203,9 +233,12 @@ ul { margin: 0; padding: 0; list-style: none; }
   transition: right var(--dur-fast) var(--ease);
 }
 
-.site-nav .menu-row a:hover::after,
 .site-nav .menu-row a[aria-current="page"]::after {
   right: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .site-nav .menu-row a:hover::after { right: 0; }
 }
 
 .site-nav .dot {
@@ -222,6 +255,16 @@ ul { margin: 0; padding: 0; list-style: none; }
   opacity: 0;
   transition: opacity var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
   cursor: pointer;
+}
+
+/* Same as the logo: a 22px dot is a small thing to aim at, so the
+   target is padded out to ~48px. It sits inside the button, so it
+   scales away with it and catches nothing while the dot is hidden. */
+.site-nav .dot::before {
+  content: "";
+  position: absolute;
+  inset: -13px;
+  border-radius: 50%;
 }
 
 @keyframes dot-pop-in {
@@ -258,7 +301,7 @@ ul { margin: 0; padding: 0; list-style: none; }
   animation: dot-pop-out var(--dur-med) var(--ease) both;
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
   .site-nav.collapsed:hover .menu-row {
     opacity: 1;
     pointer-events: auto;
@@ -457,7 +500,14 @@ ul { margin: 0; padding: 0; list-style: none; }
   z-index: 1;
 }
 
-@media (hover: hover) {
+/* `hover: hover` alone isn't enough to mean "a mouse": some phones and
+   tablets answer it yes, and there the first tap on a card is spent
+   turning the hover state on instead of following the link — the photo
+   came up, the tap did nothing, and you had to tap again to actually
+   open the work. Pairing it with `pointer: fine` keeps hover-only
+   styling for real pointers, so a touch never has a hover state to
+   spend a tap on. */
+@media (hover: hover) and (pointer: fine) {
   .work-link:hover .work-preview,
   .work-link:focus-visible .work-preview {
     opacity: var(--preview-dim);
@@ -469,7 +519,9 @@ ul { margin: 0; padding: 0; list-style: none; }
   display: none;
 }
 
-@media (hover: none) {
+/* The other side of the same coin: anything that isn't a fine pointer
+   gets the photo and the description outright, with nothing to hover. */
+@media (hover: none), (pointer: coarse) {
   .work-preview { opacity: var(--preview-dim); }
   .work-card .mobile-caption {
     display: block;
@@ -552,7 +604,20 @@ ul { margin: 0; padding: 0; list-style: none; }
   letter-spacing: .04em;
   color: var(--fg-soft);
   text-transform: uppercase;
-  margin-bottom: 1.6rem;
+  margin-bottom: 1.2rem;
+}
+
+/* The one-liner from the work's card, landing here as the first thing
+   you read — the same sentence that sits under the sketch on the home
+   page, carried up by the page transition. */
+.project-header .p-blurb {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(1.05rem, 2.4vw, 1.35rem);
+  line-height: 1.45;
+  color: var(--fg);
+  margin: 0 0 1.6rem;
+  max-width: 32em;
 }
 
 .project-header .p-meta span + span::before { content: " \2014 "; }
@@ -650,6 +715,18 @@ ul { margin: 0; padding: 0; list-style: none; }
 
 @media (max-width: 640px) {
   .project-gallery { grid-template-columns: 1fr; }
+  /* `pos: [row, col]` in works.js places an image in the two-column
+     grid, and shared.js writes it as an inline grid-row/grid-column.
+     Once there's only one column, a `col: 2` doesn't wrap — it opens an
+     implicit second column outside the grid, 0px wide, and the image in
+     it disappeared (the chair's gallery showed two of its three photos).
+     Below the breakpoint the placement is dropped so everything simply
+     flows down the single column; `!important` because the value it has
+     to beat is an inline style. */
+  .project-gallery .gallery-item {
+    grid-row: auto !important;
+    grid-column: auto !important;
+  }
 }
 
 .project-nav {

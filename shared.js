@@ -33,24 +33,44 @@
     if (!nav) return;
     var dot = nav.querySelector(".dot");
     var threshold = 72;
+    // Where the page stood when the menu was tapped open, so scrolling
+    // away can close it again. Null whenever the menu isn't open.
+    var openedAt = null;
+
+    function collapse() {
+      nav.classList.remove("expanded");
+      openedAt = null;
+    }
 
     function onScroll() {
       var collapsed = window.scrollY > threshold;
       nav.classList.toggle("collapsed", collapsed);
-      if (!collapsed) nav.classList.remove("expanded");
+      if (!collapsed) {
+        collapse();
+        return;
+      }
+      // Scrolling with the menu open closes it — on a touch screen it
+      // otherwise sits over the work you're scrolling to, with no way
+      // back but tapping exactly beside it. The few pixels of slack are
+      // for the scroll a tap itself often nudges out of the page, which
+      // would otherwise shut the menu the instant it opened.
+      if (openedAt !== null && Math.abs(window.scrollY - openedAt) > 8) {
+        collapse();
+      }
     }
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
 
     if (dot) {
       dot.addEventListener("click", function () {
-        nav.classList.toggle("expanded");
+        var open = nav.classList.toggle("expanded");
+        openedAt = open ? window.scrollY : null;
       });
     }
 
     document.addEventListener("click", function (e) {
       if (nav.classList.contains("expanded") && !nav.contains(e.target)) {
-        nav.classList.remove("expanded");
+        collapse();
       }
     });
 
@@ -151,16 +171,21 @@
 
       visual.appendChild(svg);
 
+      /* The card's three lines of text are named, so that opening the
+         work carries each one up to its place at the top of the project
+         page instead of fading the whole card out and a new header in:
+         the title, the year/category line, and the one-line description
+         (which the card only shows on a touch screen, where there's no
+         hover; on a mouse the project page's copy simply fades in). */
       var meta = document.createElement("div");
       meta.className = "work-meta";
-      meta.innerHTML =
-        '<span class="work-title">' + escapeHtml(work.title) + "</span>" +
-        '<span class="work-tags">' + work.year + " · " + escapeHtml(work.category) + "</span>";
+      meta.appendChild(namedSpan("work-title", work.title, "work-title-" + work.id));
+      meta.appendChild(namedSpan("work-tags", work.year + " · " + work.category,
+        "work-meta-" + work.id));
 
       var mobileCaption = document.createElement("div");
       mobileCaption.className = "mobile-caption";
-      mobileCaption.innerHTML =
-        '<div class="tt-desc">' + escapeHtml(work.blurb) + "</div>";
+      mobileCaption.appendChild(namedSpan("tt-desc", work.blurb, "work-blurb-" + work.id, "div"));
 
       link.appendChild(visual);
       card.appendChild(link);
@@ -268,10 +293,12 @@
     });
   }
 
-  function escapeHtml(str) {
-    var div = document.createElement("div");
-    div.textContent = str;
-    return div.innerHTML;
+  function namedSpan(className, text, transitionName, tag) {
+    var el = document.createElement(tag || "span");
+    el.className = className;
+    el.textContent = text;
+    el.style.viewTransitionName = transitionName;
+    return el;
   }
 
   /* How long a path's stroke actually is on screen. These lines are
@@ -407,8 +434,15 @@
     setText("p-title", work.title);
     setText("p-year", work.year);
     setText("p-category", work.category);
+    setText("p-blurb", work.blurb);
     setText("p-intro", work.intro);
     setText("p-process", work.process);
+
+    // The other end of the lift: these carry the same names as the lines
+    // under the work's card, so each one travels from there to here.
+    nameForTransition("p-title", "work-title-" + work.id);
+    nameForTransition("p-meta", "work-meta-" + work.id);
+    nameForTransition("p-blurb", "work-blurb-" + work.id);
 
     var heroVisual = document.querySelector(".project-hero-visual");
     var heroImg = document.querySelector(".project-hero-visual img");
@@ -489,6 +523,11 @@
   function setText(id, value) {
     var el = document.getElementById(id);
     if (el) el.textContent = value;
+  }
+
+  function nameForTransition(id, name) {
+    var el = document.getElementById(id);
+    if (el) el.style.viewTransitionName = name;
   }
 
   /* -------------------------------------------------------------------
