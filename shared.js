@@ -337,9 +337,27 @@
       // — and the stretch leading up to that is floored at a fraction of
       // the viewport height, so it tightens on a short window rather
       // than collapsing into that broken behaviour.
+      //
+      // The last work has one more constraint: the page stops scrolling
+      // while it is still some way down the screen (there is only its own
+      // bottom margin, the feed's padding and the footer underneath it),
+      // so its top edge never reaches the top of the viewport and a draw
+      // aimed there would stop partway — on a tall window it froze around
+      // three quarters drawn, with no scroll left to finish it. So the
+      // end position is also clamped to the highest the work can actually
+      // get: whatever its top edge reads once the page is scrolled all
+      // the way down. Works that aren't last can still reach their own
+      // end long before that, and are unaffected.
+      var maxScroll = Math.max(
+        0,
+        document.documentElement.scrollHeight - vh
+      );
+      var scrolled = window.scrollY || window.pageYOffset || 0;
+
       entries.forEach(function (entry) {
         var rect = entry.el.getBoundingClientRect();
-        var end = Math.min(0, (vh - rect.height) / 2);
+        var reachableTop = rect.top + scrolled - maxScroll;
+        var end = Math.max(reachableTop, Math.min(0, (vh - rect.height) / 2));
         var start = Math.max(vh - rect.height, end + vh * 0.15);
         var progress = (start - rect.top) / (start - end);
         progress = Math.max(0, Math.min(1, progress));
