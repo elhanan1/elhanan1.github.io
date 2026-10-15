@@ -709,6 +709,9 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 
 .project-header .back-link {
+  /* Furniture, like the nav: it belongs to the site rather than to the
+     work, so it stays where it is while the work moves. */
+  view-transition-name: back-link;
   display: inline-flex;
   align-items: center;
   gap: .5em;
@@ -844,6 +847,29 @@ ul { margin: 0; padding: 0; list-style: none; }
 .project-gallery .gallery-item.wide {
   grid-column: 1 / -1;
 }
+
+/* The work either side of this one, parked just off screen so that a
+   sideways drag can bring it in with the finger — and so that letting
+   go halfway puts it back. It holds the same header and photo, in the
+   same markup, so that when the real page takes over there is nothing
+   to notice. */
+.work-peek {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  overflow: hidden;
+  background: var(--bg);
+  pointer-events: none;
+  visibility: hidden;
+  will-change: transform;
+}
+
+.work-peek.prev { transform: translateX(-100%); }
+.work-peek.next { transform: translateX(100%); }
+.work-peek.is-showing { visibility: visible; }
+
+/* It is only ever the top of a page, so it mustn't scroll or stretch. */
+.work-peek .project-hero-visual { margin-bottom: 0; }
 
 /* Previous and next, for a mouse: a thin chevron resting in the page's
    margin either side of a project. A touch screen gets the swipe

@@ -284,7 +284,20 @@
        already named costs nothing. */
     function restoreFromWork() {
       var id = workIdFromUrl(cameFrom());
-      if (!id || !liftCard(id)) return;
+      if (!id) return;
+
+      /* Only a way back that actually asks for the work returns you to
+         its card: its Back link and the drag back both carry the card's
+         own anchor, and the browser's back restores where you were. The
+         logo asks for the site, so it lands at the top of the feed like
+         any other visit. */
+      var asked = window.location.hash === "#w-" + id;
+      var nav = window.navigation;
+      var traversal = !!(nav && nav.activation
+        && nav.activation.navigationType === "traverse");
+      if (!asked && !traversal) return;
+
+      if (!liftCard(id)) return;
       bringIntoView(lifts[id].entry);
     }
 
@@ -714,7 +727,7 @@
     linkProjectNav("nav-next", nextWork);
 
     tapLinks(".site-nav a, .site-footer a, .back-link, .project-nav a");
-    swipeBetweenWorks(prevWork, nextWork);
+    slideDeck(prevWork, nextWork);
     edgeSwipeBack("index.html#w-" + work.id);
     addSideArrows(prevWork, nextWork);
   }
@@ -794,40 +807,58 @@
      gallery does: left for the next one, right for the one before. The
      page doesn't follow the finger — it's a flick, not a drag — but it
      does leave in the direction of the flick (see data-slide). */
-  function swipeBetweenWorks(prevWork, nextWork) {
+  /* Sliding between works, as a deck of slides rather than a gesture
+     with a hidden threshold: the work either side is built and parked
+     just off screen, and a sideways drag brings it in with the finger.
+     Let go halfway and both fall back into place; carry it far enough
+     and the move finishes on its own. Before, nothing moved but the
+     page you were on, so there was no telling how far was far enough —
+     and then the next work simply appeared. */
+  function slideDeck(prevWork, nextWork) {
     var surface = document.getElementById("project-root");
+    var peeks = { prev: buildPeek(prevWork, "prev"), next: buildPeek(nextWork, "next") };
     var from = null;
     var last = null;
     var sideways = false;
-    // The edges belong to the system's own gestures (and to the drag
-    // back to the feed, below).
+    var leaving = false;
+    // The edges belong to the system's gestures and to the drag back
+    // to the feed.
     var EDGE = 28;
-    var TRAVEL = 50;
 
-    /* The page follows the finger. Without it a flick had nothing to
-       show for itself until the next work simply appeared — no sense
-       that anything was being moved, or that there was anything either
-       side to move to. */
-    function follow(dx) {
-      if (!surface) return;
-      surface.style.transition = "none";
-      surface.style.transform = "translateX(" + Math.round(dx) + "px)";
+    function travelNeeded() {
+      return Math.max(50, window.innerWidth * 0.22);
     }
 
-    function springBack() {
-      if (!surface) return;
-      surface.style.transition = "transform var(--dur-med) var(--ease)";
-      surface.style.transform = "";
-      window.setTimeout(function () { surface.style.transition = ""; }, 800);
+    function place(el, value, animate) {
+      if (!el) return;
+      el.style.transition = animate
+        ? "transform var(--dur-swipe) var(--ease)"
+        : "none";
+      el.style.transform = value;
     }
 
-    /* Touch events rather than pointer events, which was why this did
-       nothing on a phone: the browser claims a touch the moment it
-       thinks the page is being scrolled and ends the pointer stream
-       with a cancel, mid-flick, whereas touchmove and touchend keep
-       coming either way. There's no time limit either — a slow, "drag
-       it across" gesture is still a swipe. */
+    function show(side, dx) {
+      ["prev", "next"].forEach(function (other) {
+        if (peeks[other]) peeks[other].classList.toggle("is-showing", other === side);
+      });
+      var peek = peeks[side];
+      if (!peek) return;
+      var parked = side === "next" ? "100%" : "-100%";
+      place(peek, "translateX(calc(" + parked + " + " + Math.round(dx) + "px))", false);
+    }
+
+    function rest(animate) {
+      place(surface, "", animate);
+      ["prev", "next"].forEach(function (side) {
+        var peek = peeks[side];
+        if (!peek) return;
+        place(peek, "", animate);
+        window.setTimeout(function () { peek.classList.remove("is-showing"); }, 700);
+      });
+    }
+
     document.addEventListener("touchstart", function (e) {
+      if (leaving) return;
       var touch = e.touches.length === 1 && e.touches[0];
       sideways = false;
       if (!touch || touch.clientX < EDGE || touch.clientX > window.innerWidth - EDGE) {
@@ -839,11 +870,10 @@
     }, { passive: true });
 
     document.addEventListener("touchmove", function (e) {
-      if (!from) return;
-      // A second finger means a pinch, not a swipe.
+      if (!from || leaving) return;
       if (e.touches.length > 1) {
         from = null;
-        if (sideways) springBack();
+        if (sideways) rest(true);
         sideways = false;
         return;
       }
@@ -853,17 +883,23 @@
       var dx = last.x - from.x;
       var dy = last.y - from.y;
       if (!sideways && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) sideways = true;
-      if (sideways) follow(dx);
+      if (!sideways) return;
+      // Nothing to pull in from that side: the page itself gives a
+      // little and springs back, rather than pretending.
+      var side = dx < 0 ? "next" : "prev";
+      var pull = peeks[side] ? dx : dx * 0.25;
+      place(surface, "translateX(" + Math.round(pull) + "px)", false);
+      show(side, pull);
     }, { passive: true });
 
     document.addEventListener("touchcancel", function () {
-      if (sideways) springBack();
+      if (sideways) rest(true);
       from = null;
       sideways = false;
     });
 
     document.addEventListener("touchend", function (e) {
-      if (!from) return;
+      if (!from || leaving) return;
       var touch = e.changedTouches && e.changedTouches[0];
       if (touch) last = { x: touch.clientX, y: touch.clientY };
       var dx = last.x - from.x;
@@ -871,27 +907,71 @@
       var wasSideways = sideways;
       from = null;
       sideways = false;
-      // Sideways, far enough, not a drag down the page — and with
-      // somewhere to go: at the two ends of the collection the page
-      // falls back into place instead.
-      var going = dx < 0 ? nextWork : prevWork;
-      if (!wasSideways || !going
-        || Math.abs(dx) < TRAVEL
-        || Math.abs(dx) < Math.abs(dy) * 1.5) {
-        if (wasSideways) springBack();
+      if (!wasSideways) return;
+
+      var side = dx < 0 ? "next" : "prev";
+      var going = side === "next" ? nextWork : prevWork;
+      if (!going || Math.abs(dx) < travelNeeded() || Math.abs(dx) < Math.abs(dy) * 1.5) {
+        rest(true);
         return;
       }
-      // The page is left where the finger put it: the snapshot the
-      // transition takes carries that offset, so it goes on out from
-      // there instead of jumping back to centre first.
-      goToWork(going, dx < 0 ? "next" : "prev");
+
+      // Carry both the rest of the way, then step across to the real
+      // page underneath what is already on screen.
+      leaving = true;
+      place(surface, "translateX(" + (side === "next" ? "-100vw" : "100vw") + ")", true);
+      place(peeks[side], "translateX(0)", true);
+      window.setTimeout(function () { goToWork(going, side, true); }, 320);
     });
   }
 
+  /* The next or previous work, built just far enough to be the thing
+     you see coming: its header and its photo, in the same markup as the
+     real page, so that when the real one takes over there is nothing to
+     notice. */
+  function buildPeek(work, side) {
+    if (!work) return null;
 
-  function goToWork(work, direction) {
+    var peek = document.createElement("div");
+    peek.className = "work-peek " + side;
+    peek.setAttribute("aria-hidden", "true");
+
+    var header = document.createElement("header");
+    header.className = "project-header";
+    header.appendChild(textEl("span", "back-link", "\u2190 Back to work"));
+    header.appendChild(textEl("h1", "p-title", work.title));
+
+    var meta = document.createElement("div");
+    meta.className = "p-meta";
+    meta.appendChild(textEl("span", "", String(work.year)));
+    meta.appendChild(textEl("span", "", work.category));
+    header.appendChild(meta);
+
+    header.appendChild(textEl("p", "p-blurb", work.blurb));
+    header.appendChild(textEl("p", "p-intro", work.intro));
+    peek.appendChild(header);
+
+    var visual = document.createElement("div");
+    visual.className = "project-hero-visual"
+      + (work.images && work.images.cutout ? " is-cutout" : "");
+    var img = document.createElement("img");
+    img.alt = "";
+    img.src = (work.images && (work.images.medium || work.images.full)) || "";
+    visual.appendChild(img);
+    peek.appendChild(visual);
+
+    document.body.appendChild(peek);
+    return peek;
+  }
+
+
+
+  function goToWork(work, direction, alreadyMoved) {
     if (!work) return;
     writeSlide(direction);
+    // The drag has already carried both pages across, so the browser's
+    // own transition would only play the same move a second time.
+    if (alreadyMoved) skipNextTransition();
     // And nothing is named on the way out either, for the same reason.
     ["p-title", "p-meta", "p-blurb", "p-intro"].forEach(function (id) {
       nameForTransition(id, "");
@@ -899,6 +979,20 @@
     var hero = document.querySelector(".project-hero-visual");
     if (hero) hero.style.viewTransitionName = "";
     window.location.href = "project.html?id=" + encodeURIComponent(work.id);
+  }
+
+  function skipNextTransition() {
+    window.addEventListener("pageswap", function (e) {
+      if (!e.viewTransition) return;
+      // Skipping rejects the transition's own promises. Nothing is
+      // waiting on them, but an unhandled rejection still lands in the
+      // console as an error that looks like a fault.
+      ["ready", "finished", "updateCallbackDone"].forEach(function (name) {
+        var promise = e.viewTransition[name];
+        if (promise && promise.catch) promise.catch(function () {});
+      });
+      e.viewTransition.skipTransition();
+    });
   }
 
   /* Runs once this page's arrival is over and the stage is clear. The
