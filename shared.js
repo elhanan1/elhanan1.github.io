@@ -19,6 +19,14 @@
   function start() {
     initNav();
     var page = document.body.dataset.page;
+    // On the root element, where the view-transition pseudo-elements
+    // live: the CSS needs to know which of a pair's two snapshots is the
+    // project page's (the bigger, sharper one) to keep on screen.
+    document.documentElement.dataset.page = page;
+    // Set by a sideways swipe just before it navigates, and consumed
+    // here: this arrival slides in from the side instead of lifting.
+    var slide = readSlide();
+    if (slide) document.documentElement.dataset.slide = slide;
     if (page === "home") initHome();
     if (page === "project") initProject();
     if (page === "about") initAbout();
@@ -74,7 +82,7 @@
     onScroll();
 
     if (dot) {
-      dot.addEventListener("click", function () {
+      onTap(dot, function () {
         var open = nav.classList.toggle("expanded");
         openedAt = open ? window.scrollY : null;
       });
@@ -188,10 +196,10 @@
       meta.appendChild(titleEl);
       meta.appendChild(tagsEl);
 
-      var mobileCaption = document.createElement("div");
-      mobileCaption.className = "mobile-caption";
+      var caption = document.createElement("div");
+      caption.className = "work-caption";
       var descEl = textEl("div", "tt-desc", work.blurb);
-      mobileCaption.appendChild(descEl);
+      caption.appendChild(descEl);
 
       // The four pieces that travel to (and back from) the project page.
       // They are named only while that work is the one being opened or
@@ -209,11 +217,10 @@
       article.id = "w-" + work.id;
 
       tapToOpen(link);
-
       link.appendChild(visual);
       card.appendChild(link);
       card.appendChild(meta);
-      card.appendChild(mobileCaption);
+      card.appendChild(caption);
       article.appendChild(card);
       feed.appendChild(article);
 
@@ -281,6 +288,8 @@
 
     restoreFromWork();
     window.addEventListener("pagereveal", restoreFromWork);
+
+    tapLinks(".site-nav a, .site-footer a");
   }
 
   function textEl(tag, className, text) {
@@ -322,25 +331,60 @@
     if (!inView) el.scrollIntoView({ block: "center" });
   }
 
-  /* On a touch screen the first tap on a card kept being swallowed —
-     the card showed a press and nothing else, and it took a second tap
-     to open the work. Rather than keep guessing which hover heuristic
-     eats it, a tap that lands and lifts in the same spot opens the work
+  /* On a touch screen the first tap kept being swallowed — the link
+     showed a press and nothing else, and it took a second tap to go
+     anywhere. Rather than keep guessing which hover heuristic eats it,
+     a tap that lands and lifts in the same spot follows the link
      outright. Mouse pointers are left alone: the link's own click still
-     handles those. */
-  function tapToOpen(link) {
-    var start = null;
+     handles those. Every link that navigates within the site goes
+     through this, not just the cards — Back to work and the
+     Previous/Next pair at the foot of a project had it too. */
+  function tapLinks(selector) {
+    document.querySelectorAll(selector).forEach(tapToOpen);
+  }
 
-    link.addEventListener("pointerdown", function (e) {
+  /* The touch half of this: a tap that lands and lifts in one spot runs
+     the action straight from the pointer events, without waiting for a
+     click that may never come. A click is withheld whenever the browser
+     decides the touch meant something else — settling a hover state, or
+     stopping the page's momentum, which is why this bit anything tapped
+     just after a scroll: a card, the menu dot, Back to work, the
+     Previous/Next pair. The click listener still serves mouse and
+     keyboard, and ignores the click the browser may send after a tap
+     this already handled. */
+  function onTap(el, run) {
+    var start = null;
+    var ranAt = 0;
+
+    el.addEventListener("pointerdown", function (e) {
       start = e.pointerType === "mouse" ? null : { x: e.clientX, y: e.clientY };
     });
-    // Scrolling away from the tap cancels the pointer: not a tap.
-    link.addEventListener("pointercancel", function () { start = null; });
-    link.addEventListener("pointerup", function (e) {
+    // The browser took the gesture over to scroll with it: not a tap.
+    el.addEventListener("pointercancel", function () { start = null; });
+
+    el.addEventListener("pointerup", function (e) {
       if (!start) return;
       var slid = Math.hypot(e.clientX - start.x, e.clientY - start.y) > 10;
       start = null;
       if (slid) return;
+      ranAt = Date.now();
+      run(e);
+    });
+
+    el.addEventListener("click", function (e) {
+      if (Date.now() - ranAt < 700) {
+        e.preventDefault();
+        return;
+      }
+      run(e);
+    });
+  }
+
+  function tapToOpen(link) {
+    // New-tab links and mailto:/tel: are the browser's business.
+    if (link.target && link.target !== "_self") return;
+    if (link.protocol !== "http:" && link.protocol !== "https:") return;
+    onTap(link, function (e) {
       e.preventDefault();
       window.location.href = link.href;
     });
@@ -571,11 +615,16 @@
        the page being left behind on the way back. The intro gets a name
        purely so it can have an entrance of its own (it has no twin on
        the card; see the CSS). */
-    nameForTransition("p-title", "lift-title");
-    nameForTransition("p-meta", "lift-meta");
-    nameForTransition("p-blurb", "lift-blurb");
+    // Not when this page slid in from a swipe: there the whole page
+    // travels sideways in one piece, and a title morphing into the next
+    // work's title inside that would be two moves at once.
+    if (!document.documentElement.dataset.slide) {
+      nameForTransition("p-title", "lift-title");
+      nameForTransition("p-meta", "lift-meta");
+      nameForTransition("p-blurb", "lift-blurb");
+      if (heroVisual) heroVisual.style.viewTransitionName = "lift-visual";
+    }
     nameForTransition("p-intro", "project-intro");
-    if (heroVisual) heroVisual.style.viewTransitionName = "lift-visual";
 
     /* Back to this work's own card in the feed rather than the top of
        the page — both because that's where the reader was, and because
@@ -646,6 +695,63 @@
     var nextWork = works[(index + 1) % works.length];
     linkProjectNav("nav-prev", prevWork);
     linkProjectNav("nav-next", nextWork);
+
+    tapLinks(".site-nav a, .site-footer a, .back-link, .project-nav a");
+    swipeBetweenWorks(prevWork, nextWork);
+  }
+
+  /* Flicking sideways moves to the next or previous work, the way a
+     gallery does: left for the next one, right for the one before. The
+     page doesn't follow the finger — it's a flick, not a drag — but it
+     does leave in the direction of the flick (see data-slide). */
+  function swipeBetweenWorks(prevWork, nextWork) {
+    var start = null;
+    // The edges belong to the system's own back/forward gestures.
+    var EDGE = 28;
+    var TRAVEL = 60;
+
+    document.addEventListener("pointerdown", function (e) {
+      if (e.pointerType === "mouse"
+        || e.clientX < EDGE
+        || e.clientX > window.innerWidth - EDGE) {
+        start = null;
+        return;
+      }
+      start = { x: e.clientX, y: e.clientY, at: Date.now() };
+    }, { passive: true });
+
+    // The browser takes the gesture over to scroll with it: not a swipe.
+    document.addEventListener("pointercancel", function () { start = null; });
+
+    document.addEventListener("pointerup", function (e) {
+      if (!start) return;
+      var dx = e.clientX - start.x;
+      var dy = e.clientY - start.y;
+      var took = Date.now() - start.at;
+      start = null;
+      // Sideways, far enough, and clearly not a slow drag down the page.
+      if (took > 800 || Math.abs(dx) < TRAVEL || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+      var going = dx < 0 ? nextWork : prevWork;
+      if (!going) return;
+      writeSlide(dx < 0 ? "next" : "prev");
+      window.location.href = "project.html?id=" + encodeURIComponent(going.id);
+    });
+  }
+
+  /* Which way the next page should come in from. It has to survive the
+     navigation, and the incoming document reads it before it paints. */
+  function writeSlide(direction) {
+    try { sessionStorage.setItem("slide", direction); } catch (e) {}
+  }
+
+  function readSlide() {
+    try {
+      var value = sessionStorage.getItem("slide");
+      if (value) sessionStorage.removeItem("slide");
+      return value;
+    } catch (e) {
+      return null;
+    }
   }
 
   function linkProjectNav(elId, work) {
@@ -672,6 +778,7 @@
   function initAbout() {
     if (!DATA) return;
     var about = DATA.about;
+    tapLinks(".site-nav a, .site-footer a");
     setText("about-bio", about.bio);
 
     setLink("link-email", "mailto:" + about.email, about.email);

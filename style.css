@@ -101,52 +101,67 @@
    lift-blurb; shared.js hands these names to whichever card is being
    opened or returned to).
 
-   Their two snapshots are very different sizes — a 1rem grey title at
-   one end, a 3rem heading at the other — and left to the default the
-   browser stretches each snapshot to fill the box as it animates, so
-   the small one was blown up into a soft oversized ghost lying across
-   the real text for the whole trip. Pinning them to their own size at
-   the top left stops the stretch; the old line then leaves early and
-   the new one arrives late, so the two are never both at full strength
-   on top of each other. The box itself still takes the whole trip,
-   which is the part you're meant to watch. */
-::view-transition-old(lift-title),
-::view-transition-new(lift-title),
-::view-transition-old(lift-meta),
-::view-transition-new(lift-meta),
-::view-transition-old(lift-blurb),
-::view-transition-new(lift-blurb) {
-  height: auto;
-  object-fit: none;
-  object-position: top left;
+   A pair is two snapshots, and crossfading them is what made the text
+   dissolve and a new one appear in its place. So only one of the two is
+   ever shown, for the whole trip: the project page's, which is the
+   larger and sharper of the two, scaled down into the card's box at the
+   card end and growing to full size at the other. The words are the
+   same at both ends, so what you watch is one line of text moving and
+   changing size — which is what it is.
+
+   Whichever page is arriving tells us which snapshot that is: on the
+   way into a work the project's text is the new one, and on the way
+   back out it's the old one. */
+html[data-page="project"]::view-transition-old(lift-title),
+html[data-page="project"]::view-transition-old(lift-meta),
+html[data-page="project"]::view-transition-old(lift-blurb),
+html[data-page="home"]::view-transition-new(lift-title),
+html[data-page="home"]::view-transition-new(lift-meta),
+html[data-page="home"]::view-transition-new(lift-blurb) {
+  animation: none;
+  opacity: 0;
 }
 
-::view-transition-old(lift-title),
-::view-transition-old(lift-meta),
-::view-transition-old(lift-blurb) {
-  animation: lift-leave calc(var(--dur-slow) * .45) var(--ease) both;
+html[data-page="project"]::view-transition-new(lift-title),
+html[data-page="project"]::view-transition-new(lift-meta),
+html[data-page="project"]::view-transition-new(lift-blurb),
+html[data-page="home"]::view-transition-old(lift-title),
+html[data-page="home"]::view-transition-old(lift-meta),
+html[data-page="home"]::view-transition-old(lift-blurb) {
+  animation: none;
+  opacity: 1;
 }
 
-::view-transition-new(lift-title),
-::view-transition-new(lift-meta),
-::view-transition-new(lift-blurb) {
-  animation: lift-arrive calc(var(--dur-slow) * .6)
-             calc(var(--dur-slow) * .4) var(--ease) both;
-}
-
-@keyframes lift-leave { to { opacity: 0; } }
-@keyframes lift-arrive { from { opacity: 0; } }
-
-/* The long intro has no counterpart on the card, so rather than being
-   there already when the page arrives, it comes up from below once the
-   lifted lines have landed above it. */
+/* The long intro has no counterpart on the card, so instead of fading
+   in and out where it stands it slides: up from below the fold as the
+   work opens, and straight back down off the bottom as you leave. */
 ::view-transition-new(project-intro) {
-  animation: intro-rise var(--dur-med) calc(var(--dur-slow) * .5) var(--ease) both;
+  animation: intro-up var(--dur-slow) calc(var(--dur-slow) * .35) var(--ease) both;
 }
 
-@keyframes intro-rise {
-  from { opacity: 0; transform: translateY(2rem); }
+::view-transition-old(project-intro) {
+  animation: intro-down var(--dur-med) var(--ease) both;
 }
+
+@keyframes intro-up {
+  from { transform: translateY(70vh); }
+}
+
+@keyframes intro-down {
+  to { transform: translateY(70vh); }
+}
+
+/* A sideways flick between works carries the whole page with it, in the
+   direction of the flick (shared.js sets data-slide on the way out). */
+html[data-slide="next"]::view-transition-old(root) { animation-name: slide-out-left; }
+html[data-slide="next"]::view-transition-new(root) { animation-name: slide-in-right; }
+html[data-slide="prev"]::view-transition-old(root) { animation-name: slide-out-right; }
+html[data-slide="prev"]::view-transition-new(root) { animation-name: slide-in-left; }
+
+@keyframes slide-out-left { to { opacity: 0; transform: translateX(-18%); } }
+@keyframes slide-in-right { from { opacity: 0; transform: translateX(18%); } }
+@keyframes slide-out-right { to { opacity: 0; transform: translateX(18%); } }
+@keyframes slide-in-left { from { opacity: 0; transform: translateX(-18%); } }
 
 @keyframes page-out {
   to { opacity: 0; transform: translateY(-10px); }
@@ -565,32 +580,25 @@ ul { margin: 0; padding: 0; list-style: none; }
   }
 }
 
-/* Mobile: no hover, so description sits below the sketch */
-.work-card .mobile-caption {
-  display: none;
+/* The work's one-line description, under its title. It used to be
+   mobile-only — on a mouse the same sentence lived in a hover tooltip,
+   and when that went the line had nowhere left to show, so on a desktop
+   the cards lost their description entirely. It belongs on the card at
+   every size: it is also the line that travels up to the top of the
+   project page when the work opens. */
+.work-card .work-caption {
+  margin-top: .55rem;
+  font-size: .85rem;
+  line-height: 1.5;
+  color: var(--fg-soft);
+  max-width: 34em;
 }
 
-/* The other side of the same coin: anything that isn't a fine pointer
-   gets the photo and the description outright, with nothing to hover. */
+/* The other side of the hover coin: anything that isn't a fine pointer
+   gets the photo outright, with nothing to hover. */
 @media (hover: none), (pointer: coarse) {
   .work-preview { opacity: var(--preview-dim); }
-  .work-card .mobile-caption {
-    display: block;
-    margin-top: .9rem;
-    font-size: .85rem;
-    color: var(--fg-soft);
-  }
-  .work-card .mobile-caption .tt-title {
-    font-family: var(--font-display);
-    font-size: 1rem;
-    color: var(--fg);
-  }
-  .work-card .mobile-caption .tt-sub {
-    margin-top: .15rem;
-    font-size: .76rem;
-    letter-spacing: .03em;
-  }
-  .work-card .mobile-caption .tt-desc { margin-top: .45rem; }
+  .work-card .work-caption { margin-top: .9rem; }
 }
 
 @media (max-width: 720px) {
