@@ -35,61 +35,7 @@ window.SITE_DATA = {
     cv: "assets/cv-placeholder.pdf"
   },
   works: [
-  {
-    id: "bottle-fifo",
-    title: "Fast FIFO",
-    year: 2026,
-    category: "Retail tool",
-    size: "small",
-    blurb: "A caf\u00e9 restocking tool that draws a whole row of bottles forward at once, so new stock goes in behind.",
-    intro: "While working in a caf\u00e9 I kept running into the same "
-      + "awkwardness in restocking: to put new bottles in behind the ones "
-      + "already on the shelf \u2014 which is what FIFO asks for \u2014 you "
-      + "first have to take every bottle out. I designed a device that draws "
-      + "the whole row forward in one movement and lets a new bottle be fed "
-      + "in from behind, which makes refilling far quicker.",
-    process: "This is the first study model: a body cut from corrugated "
-      + "plastic, a strip of sheet metal for the rail and a ball of "
-      + "plasticine standing in for a bottle, tried in place on a working "
-      + "caf\u00e9 fridge rather than on the desk. The storyboard at the end "
-      + "of the page sets out the sequence it has to carry out, from taking "
-      + "hold of the row to feeding the new bottle in behind it.",
-    materials: ["Corrugated plastic", "Sheet metal", "Plasticine"],
-    sketch: {
-      viewBox: "0 0 400 400",
-      entry: [48, 292],
-      exit: [330, 196],
-      path: "M48,292 L344,292 Q352,292 352,284 L352,158 Q352,150 344,152 Q312,158 296,186 Q282,210 262,196 Q242,182 226,204 Q210,226 190,210 Q170,194 142,206 Q112,219 96,240 Q78,264 62,276 L48,292 L56,286 L167,249 Q165,220 193,215 Q221,211 219,241 Q217,268 190,266 Q164,264 167,249 L330,196"
-    },
-    images: {
-      // Transparent background — the page puts the plate behind it.
-      cutout: true,
-      medium: "assets/img/bottle-fifo-medium.webp",
-      full: "assets/img/bottle-fifo-full.webp"
-    },
-    gallery: [
     {
-      type: "image",
-      medium: "assets/img/bottle-fifo-2-medium.webp",
-      full: "assets/img/bottle-fifo-2-full.jpg",
-      caption: "The model tried in place on a caf\u00e9 display fridge"
-    },
-    {
-      type: "image",
-      medium: "assets/img/bottle-fifo-3-medium.webp",
-      full: "assets/img/bottle-fifo-3-full.jpg",
-      caption: "Side view: the rail and the bottle's resting position"
-    },
-    {
-      type: "image",
-      wide: true,
-      medium: "assets/img/bottle-fifo-4-medium.webp",
-      full: "assets/img/bottle-fifo-4-full.jpg",
-      caption: "Operating sequence: draw the row forward, feed the new bottle in behind"
-    }
-  ]
-  },
-  {
     id: "looker-chair",
     title: "Looker-Chair",
     year: 2024,
@@ -121,22 +67,81 @@ window.SITE_DATA = {
     gallery: [
     {
       type: "image",
+      pos: [1, 1],
       medium: "assets/img/looker-chair-2-medium.webp",
       full: "assets/img/looker-chair-2-full.jpg",
-      caption: "Front view"
     },
     {
       type: "image",
+      pos: [1, 2],
       medium: "assets/img/looker-chair-3-medium.webp",
       full: "assets/img/looker-chair-3-full.jpg",
-      caption: "Rear detail, leg assembly"
     },
     {
       type: "image",
+      wide: true,
       medium: "assets/img/looker-chair-4-medium.webp",
       full: "assets/img/looker-chair-4-full.jpg",
-      caption: "Rear view",
       wide: true
+    }
+  ]
+  },
+  {
+    id: "bottle-fifo",
+    title: "Fast FIFO",
+    year: 2026,
+    category: "Retail tool",
+    size: "small",
+    blurb: "A caf\u00e9 restocking tool that draws a whole row of bottles forward at once, so new stock goes in behind.",
+    intro: "While working in a caf\u00e9 I kept running into the same "
+      + "awkwardness in restocking: to put new bottles in behind the ones "
+      + "already on the shelf \u2014 which is what FIFO asks for \u2014 you "
+      + "first have to take every bottle out. I designed a device that draws "
+      + "the whole row forward in one movement and lets a new bottle be fed "
+      + "in from behind, which makes refilling far quicker.",
+    process: "This is the first study model: a body cut from corrugated "
+      + "plastic, a strip of sheet metal for the rail and a ball of "
+      + "plasticine standing in for a bottle, tried in place on a working "
+      + "caf\u00e9 fridge rather than on the desk. The storyboard at the end "
+      + "of the page sets out the sequence it has to carry out, from taking "
+      + "hold of the row to feeding the new bottle in behind it.",
+    materials: ["Corrugated plastic", "Sheet metal", "Plasticine"],
+    sketch: {
+  viewBox: "0 0 400 400",
+  entry: [139.5, 259.3],
+  exit: [399.6, 129.1],
+  path: "M139.5,259.3 L126.1,256.6 Q112.8,253.9 108,241.1 L107.8,240.5 Q102.8,227.1 101.7,212.9 L97.5,156.9 Q96.9,148.3 100.2,140.4 L102.1,135.8 Q103.5,132.5 107.1,131.9 L107.1,131.9 Q110.6,131.4 113.5,133.6 L113.8,133.8 Q116.9,136.3 119,139.7 L143.3,178.6 Q145,181.3 147.4,183.4 L147.4,183.4 Q149.8,185.5 153,185.7 L155.6,185.8 Q161.3,186.2 166.9,184.9 L202.8,176.6 Q218.4,173 234.4,172.2 L274.1,170.1 Q290.1,169.2 305.8,172.1 L325.5,175.7 Q341.3,178.6 350.1,165.2 L352.2,162.1 Q361.1,148.7 374.6,140.2 L385.1,133.6 Q398.6,125 382.6,125.6 L376.1,125.9 Q360.1,126.5 349.7,138.6 L342.3,147.2 Q334.4,156.3 324,162.4 L321,164.1 Q313.5,168.5 304.9,168.4 L304.9,168.4 Q296.2,168.4 288.5,164.6 L278.9,159.9 Q272.7,156.8 265.8,156 L265.8,156 Q259,155.2 252.1,155.8 L204.4,160.3 Q189.8,161.6 175.7,166 L170,167.8 Q161.7,170.3 154.5,165.4 L154.5,165.4 Q147.4,160.5 143,153 L129.4,129.9 Q127.1,126 122.9,124.3 L122.9,124.3 Q118.7,122.7 116.8,126.7 L115.4,129.6 Q112.1,136.6 110.9,144.2 L102.2,198.5 Q99.7,214.3 83.9,217.1 L63.7,220.8 Q48,223.7 34,231.5 L13.8,242.8 Q8.1,246 5.3,252 L4.6,253.7 Q2.6,258 7.2,259.3 L7.2,259.3 Q11.9,260.5 16.4,258.9 L41.3,250.4 Q56.5,245.2 72.3,242.9 L154.4,231 Q164.1,229.6 172.1,224.1 L178.5,219.7 Q180.1,218.6 179.3,216.8 L179.3,216.8 Q178.5,215 176.6,214.8 L173.2,214.4 Q168.2,213.7 165,217.6 L164.1,218.7 Q161.7,221.5 162.7,225 L162.7,225 Q163.7,228.5 167.4,228.6 L173.1,228.7 Q180.6,228.9 187.1,225.2 L190,223.5 Q193.6,221.4 195.5,217.7 L195.5,217.7 Q197.4,214 193.5,212.6 L189.8,211.3 Q184.2,209.4 179.2,212.7 L178.6,213 Q174.2,215.9 172.4,220.9 L172.4,220.9 Q170.7,225.8 175.8,226.8 L181.5,227.9 Q186.2,228.9 190.2,226.2 L190.6,225.9 Q194.2,223.5 195.5,219.4 L196.2,217.2 Q196.9,215.2 196.4,213.2 L196.4,213.2 Q196,211.2 194.1,210.4 L191.6,209.4 Q187.1,207.6 183.3,210.4 L181.8,211.5 Q176.5,215.4 174.4,221.6 L173,226 Q171.5,230.6 175,233.7 L175,233.7 Q178.6,236.9 183.4,237.5 L183.6,237.5 Q188.5,238.1 191.5,234.1 L193.3,231.6 Q196.6,227.3 196.5,221.9 L196.5,220.8 Q196.4,216.5 193.8,213.2 L193.8,213.2 Q191.2,209.8 187,209.1 L184.7,208.7 Q180.2,208 177.5,211.6 L177.5,211.6 Q174.9,215.3 174.7,219.8 L174.5,222.6 Q174.2,229.9 179.5,235 L187.9,243 Q191.4,246.3 195.4,243.5 L195.4,243.5 Q199.3,240.6 200.2,235.8 L201.1,231.4 Q202.1,226.1 200.1,221 L199.8,220.1 Q198.2,215.9 194.2,214 L194.2,214 Q190.2,212.1 193.9,214.5 L199.1,217.9 Q203.4,220.6 208.5,221.2 L208.5,221.2 Q213.5,221.7 217.4,218.4 L218.9,217.1 Q224.3,212.5 231.1,210.7 L272,199.7 Q278.4,198 279.3,204.5 L279.3,204.5 Q280.2,211.1 273.6,211.4 L268.9,211.6 Q257.7,212.2 246.9,215.5 L224.7,222.4 Q209.4,227.2 193.6,229.6 L155.7,235.4 Q139.9,237.9 124.4,242.1 L101.3,248.3 Q85.9,252.5 69.9,253.9 L42.8,256.1 Q31.7,257 21.2,260.4 L21.2,260.4 Q10.7,263.8 21.6,262 L85.5,251.2 Q101.3,248.5 116.3,254.1 L126.1,257.8 Q133,260.4 136.7,266.9 L136.7,266.9 Q140.4,273.3 147.8,274 L222.7,280.8 Q238.7,282.3 254.6,280.8 L297.4,276.8 Q313.4,275.3 329.4,275.1 L360.3,274.6 Q376.3,274.4 379.7,258.8 L394.2,192.3 Q397.6,176.7 398.3,160.7 L399.6,129.1"
+},
+    //sketch: {
+      //viewBox: "0 0 400 400",
+      //entry: [48, 292],
+      //exit: [330, 196],
+      //path: "M48,292 L344,292 Q352,292 352,284 L352,158 Q352,150 344,152 Q312,158 296,186 Q282,210 262,196 Q242,182 226,204 Q210,226 190,210 Q170,194 142,206 Q112,219 96,240 Q78,264 62,276 L48,292 L56,286 L167,249 Q165,220 193,215 Q221,211 219,241 Q217,268 190,266 Q164,264 167,249 L330,196"
+    //},
+    images: {
+      // Transparent background — the page puts the plate behind it.
+      cutout: true,
+      medium: "assets/img/bottle-fifo-medium.webp",
+      full: "assets/img/bottle-fifo-full.webp"
+    },
+    gallery: [
+    {
+      type: "image",
+      pos: [1, 1],
+      medium: "assets/img/bottle-fifo-2-medium.webp",
+      full: "assets/img/bottle-fifo-2-full.jpg",
+    },
+    {
+      type: "image",
+      pos: [1, 2],
+      medium: "assets/img/bottle-fifo-3-medium.webp",
+      full: "assets/img/bottle-fifo-3-full.jpg",
+    },
+    {
+      type: "image",
+      wide: true,
+      medium: "assets/img/bottle-fifo-4-medium.webp",
+      full: "assets/img/bottle-fifo-4-full.jpg",
     }
   ]
   },

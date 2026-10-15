@@ -27,7 +27,7 @@
   --page-pad: 7vw;
   /* How far up the hover preview comes. Short of 1 on purpose: the photo
      is a hint of the work, and the drawn line stays the thing you read. */
-  --preview-dim: .28;
+  --preview-dim: .50;
   color-scheme: light;
 }
 
