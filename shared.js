@@ -700,6 +700,52 @@
 
     tapLinks(".site-nav a, .site-footer a, .back-link, .project-nav a");
     swipeBetweenWorks(prevWork, nextWork);
+    edgeSwipeBack("index.html#w-" + work.id);
+  }
+
+  /* On a phone, dragging in from the left edge is how you go back, and
+     the browser answers it itself — on an iPhone (in any browser there,
+     since they all run WebKit) with a plain system swap that no page
+     transition can take part in. Where the browser will let the page
+     have that gesture instead — by preventing a touchmove it hasn't
+     claimed yet — we take it and leave the same way the Back link does,
+     so the work's text and photo travel back to its card. Where it
+     won't, nothing is prevented and the browser's own back works as it
+     always did.
+
+     It only ever takes over once the drag is clearly sideways, so a
+     scroll that happens to start at the edge still scrolls. */
+  function edgeSwipeBack(href) {
+    var EDGE = 28;
+    var SIDEWAYS = 12;
+    var TRAVEL = 64;
+    var from = null;
+    var mine = false;
+
+    document.addEventListener("touchstart", function (e) {
+      var touch = e.touches[0];
+      from = touch && touch.clientX <= EDGE ? { x: touch.clientX, y: touch.clientY } : null;
+      mine = false;
+    }, { passive: true });
+
+    document.addEventListener("touchmove", function (e) {
+      if (!from) return;
+      var touch = e.touches[0];
+      if (!touch) return;
+      var dx = touch.clientX - from.x;
+      var dy = touch.clientY - from.y;
+      if (!mine && dx > SIDEWAYS && Math.abs(dx) > Math.abs(dy)) mine = true;
+      if (mine && e.cancelable) e.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener("touchend", function (e) {
+      var took = mine;
+      var touch = e.changedTouches && e.changedTouches[0];
+      var dx = from && touch ? touch.clientX - from.x : 0;
+      from = null;
+      mine = false;
+      if (took && dx > TRAVEL) window.location.href = href;
+    });
   }
 
   /* Flicking sideways moves to the next or previous work, the way a
