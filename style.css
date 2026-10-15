@@ -97,6 +97,57 @@
 ::view-transition-old(root) { animation-name: page-out; }
 ::view-transition-new(root) { animation-name: page-in; }
 
+/* The three lines of text that travel (lift-title / lift-meta /
+   lift-blurb; shared.js hands these names to whichever card is being
+   opened or returned to).
+
+   Their two snapshots are very different sizes — a 1rem grey title at
+   one end, a 3rem heading at the other — and left to the default the
+   browser stretches each snapshot to fill the box as it animates, so
+   the small one was blown up into a soft oversized ghost lying across
+   the real text for the whole trip. Pinning them to their own size at
+   the top left stops the stretch; the old line then leaves early and
+   the new one arrives late, so the two are never both at full strength
+   on top of each other. The box itself still takes the whole trip,
+   which is the part you're meant to watch. */
+::view-transition-old(lift-title),
+::view-transition-new(lift-title),
+::view-transition-old(lift-meta),
+::view-transition-new(lift-meta),
+::view-transition-old(lift-blurb),
+::view-transition-new(lift-blurb) {
+  height: auto;
+  object-fit: none;
+  object-position: top left;
+}
+
+::view-transition-old(lift-title),
+::view-transition-old(lift-meta),
+::view-transition-old(lift-blurb) {
+  animation: lift-leave calc(var(--dur-slow) * .45) var(--ease) both;
+}
+
+::view-transition-new(lift-title),
+::view-transition-new(lift-meta),
+::view-transition-new(lift-blurb) {
+  animation: lift-arrive calc(var(--dur-slow) * .6)
+             calc(var(--dur-slow) * .4) var(--ease) both;
+}
+
+@keyframes lift-leave { to { opacity: 0; } }
+@keyframes lift-arrive { from { opacity: 0; } }
+
+/* The long intro has no counterpart on the card, so rather than being
+   there already when the page arrives, it comes up from below once the
+   lifted lines have landed above it. */
+::view-transition-new(project-intro) {
+  animation: intro-rise var(--dur-med) calc(var(--dur-slow) * .5) var(--ease) both;
+}
+
+@keyframes intro-rise {
+  from { opacity: 0; transform: translateY(2rem); }
+}
+
 @keyframes page-out {
   to { opacity: 0; transform: translateY(-10px); }
 }

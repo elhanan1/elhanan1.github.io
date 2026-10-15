@@ -16,13 +16,25 @@
   // untouched and still do exactly what they did before.
   var CONNECTORS_ENABLED = false;
 
-  document.addEventListener("DOMContentLoaded", function () {
+  function start() {
     initNav();
     var page = document.body.dataset.page;
     if (page === "home") initHome();
     if (page === "project") initProject();
     if (page === "about") initAbout();
-  });
+  }
+
+  /* As early as possible rather than on DOMContentLoaded: a page can get
+     its first render — and with it the view transition's snapshot of
+     this document — before the parser reaches the end of the body, and a
+     feed that doesn't exist yet has nothing to hand the incoming text
+     back to. This script tag sits after the feed's container, so the
+     markup it needs is already there. */
+  if (document.body) {
+    start();
+  } else {
+    document.addEventListener("DOMContentLoaded", start);
+  }
 
   /* -------------------------------------------------------------------
      Nav: collapses into a dot after a small scroll, expands on
@@ -108,6 +120,7 @@
     var connectors = [];
     var prevSvg = null;
     var prevExit = null;
+    var lifts = {};
 
     DATA.works.forEach(function (work, i) {
       var size = work.size || sizes[i % sizes.length];
@@ -135,9 +148,6 @@
 
       var visual = document.createElement("div");
       visual.className = "work-visual";
-      // Named so the browser can morph this exact box into the project
-      // page's hero photo on click, instead of a plain crossfade.
-      visual.style.viewTransitionName = "work-" + work.id;
 
       var svgNS = "http://www.w3.org/2000/svg";
       var svg = document.createElementNS(svgNS, "svg");
@@ -171,21 +181,34 @@
 
       visual.appendChild(svg);
 
-      /* The card's three lines of text are named, so that opening the
-         work carries each one up to its place at the top of the project
-         page instead of fading the whole card out and a new header in:
-         the title, the year/category line, and the one-line description
-         (which the card only shows on a touch screen, where there's no
-         hover; on a mouse the project page's copy simply fades in). */
       var meta = document.createElement("div");
       meta.className = "work-meta";
-      meta.appendChild(namedSpan("work-title", work.title, "work-title-" + work.id));
-      meta.appendChild(namedSpan("work-tags", work.year + " · " + work.category,
-        "work-meta-" + work.id));
+      var titleEl = textEl("span", "work-title", work.title);
+      var tagsEl = textEl("span", "work-tags", work.year + " · " + work.category);
+      meta.appendChild(titleEl);
+      meta.appendChild(tagsEl);
 
       var mobileCaption = document.createElement("div");
       mobileCaption.className = "mobile-caption";
-      mobileCaption.appendChild(namedSpan("tt-desc", work.blurb, "work-blurb-" + work.id, "div"));
+      var descEl = textEl("div", "tt-desc", work.blurb);
+      mobileCaption.appendChild(descEl);
+
+      // The four pieces that travel to (and back from) the project page.
+      // They are named only while that work is the one being opened or
+      // returned to — see liftCard below.
+      lifts[work.id] = {
+        entry: article,
+        visual: visual,
+        title: titleEl,
+        meta: tagsEl,
+        blurb: descEl
+      };
+
+      // Anchor for coming back to this exact card rather than the top of
+      // the feed, used by the project page's back links.
+      article.id = "w-" + work.id;
+
+      tapToOpen(link);
 
       link.appendChild(visual);
       card.appendChild(link);
@@ -211,6 +234,116 @@
     }
 
     setupSketchDraw(entries.concat(connectors.map(function (c) { return c.entry; })));
+
+    /* Hands the four travelling names to one work's card and takes them
+       off every other one. The names are fixed rather than built from
+       the work's id (which is what they were at first) so that the CSS
+       can address each one by name — a rule per work can't be written
+       ahead of time, and without rules of their own the text pairs got
+       the browser's default crossfade, which blew the card's small grey
+       title up to the size of the project page's heading and faded that
+       ghost across the whole trip. */
+    function liftCard(id) {
+      Object.keys(lifts).forEach(function (key) {
+        var card = lifts[key];
+        ["visual", "title", "meta", "blurb"].forEach(function (part) {
+          card[part].style.viewTransitionName = key === id ? "lift-" + part : "";
+        });
+      });
+      return !!lifts[id];
+    }
+
+    /* Leaving for a work: name that card's pieces, so the browser has
+       something to carry from here to the project page. */
+    window.addEventListener("pageswap", function (e) {
+      var going = e.activation && e.activation.entry && e.activation.entry.url;
+      var id = workIdFromUrl(going);
+      if (id) liftCard(id);
+    });
+
+    /* Arriving from a work — by its Back link, or by the phone's own
+       back gesture, which is a history traversal. Name the same pieces
+       again so the project page's text and photo land back on the card
+       they came from, and make sure that card is on screen, since the
+       transition animates to wherever it actually is.
+
+       Done twice over, because the two ways in arrive differently: a
+       fresh load may have rendered (and so been snapshotted) before
+       `pagereveal` could reach a listener added down here, while a
+       restore from the back/forward cache doesn't run this script again
+       at all and has nothing but that event. Naming a card that is
+       already named costs nothing. */
+    function restoreFromWork() {
+      var id = workIdFromUrl(cameFrom());
+      if (!id || !liftCard(id)) return;
+      bringIntoView(lifts[id].entry);
+    }
+
+    restoreFromWork();
+    window.addEventListener("pagereveal", restoreFromWork);
+  }
+
+  function textEl(tag, className, text) {
+    var el = document.createElement(tag);
+    el.className = className;
+    el.textContent = text;
+    return el;
+  }
+
+  /* Which work a project.html URL points at, or null for anything else. */
+  function workIdFromUrl(url) {
+    if (!url) return null;
+    try {
+      var parsed = new URL(url, window.location.href);
+      if (parsed.pathname.indexOf("project.html") === -1) return null;
+      return parsed.searchParams.get("id");
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /* Where this page was arrived from. The Navigation API knows it for
+     traversals too, which document.referrer doesn't, so it's preferred
+     where it exists. */
+  function cameFrom() {
+    var nav = window.navigation;
+    if (nav && nav.activation && nav.activation.from) return nav.activation.from.url;
+    return document.referrer || null;
+  }
+
+  function bringIntoView(el) {
+    var rect = el.getBoundingClientRect();
+    var margin = Math.min(80, window.innerHeight * 0.1);
+    var inView = rect.top >= -margin && rect.bottom <= window.innerHeight + margin;
+    // A traversal restores the scroll position on its own, and the back
+    // link lands on the card's own anchor — in both cases the card is
+    // already where the reader left it, and moving the page would be the
+    // surprise. This is for everything else.
+    if (!inView) el.scrollIntoView({ block: "center" });
+  }
+
+  /* On a touch screen the first tap on a card kept being swallowed —
+     the card showed a press and nothing else, and it took a second tap
+     to open the work. Rather than keep guessing which hover heuristic
+     eats it, a tap that lands and lifts in the same spot opens the work
+     outright. Mouse pointers are left alone: the link's own click still
+     handles those. */
+  function tapToOpen(link) {
+    var start = null;
+
+    link.addEventListener("pointerdown", function (e) {
+      start = e.pointerType === "mouse" ? null : { x: e.clientX, y: e.clientY };
+    });
+    // Scrolling away from the tap cancels the pointer: not a tap.
+    link.addEventListener("pointercancel", function () { start = null; });
+    link.addEventListener("pointerup", function (e) {
+      if (!start) return;
+      var slid = Math.hypot(e.clientX - start.x, e.clientY - start.y) > 10;
+      start = null;
+      if (slid) return;
+      e.preventDefault();
+      window.location.href = link.href;
+    });
   }
 
   /* Translates a point in an SVG's own viewBox coordinates (e.g. a
@@ -291,14 +424,6 @@
       c.path.style.strokeDasharray = len;
       if (!c.entry.drawn) c.path.style.strokeDashoffset = reduceMotion ? 0 : len;
     });
-  }
-
-  function namedSpan(className, text, transitionName, tag) {
-    var el = document.createElement(tag || "span");
-    el.className = className;
-    el.textContent = text;
-    el.style.viewTransitionName = transitionName;
-    return el;
   }
 
   /* How long a path's stroke actually is on screen. These lines are
@@ -431,6 +556,8 @@
     var work = works[index];
     document.title = work.title + " — " + DATA.person.name;
 
+    var heroVisual = document.querySelector(".project-hero-visual");
+
     setText("p-title", work.title);
     setText("p-year", work.year);
     setText("p-category", work.category);
@@ -438,18 +565,27 @@
     setText("p-intro", work.intro);
     setText("p-process", work.process);
 
-    // The other end of the lift: these carry the same names as the lines
-    // under the work's card, so each one travels from there to here.
-    nameForTransition("p-title", "work-title-" + work.id);
-    nameForTransition("p-meta", "work-meta-" + work.id);
-    nameForTransition("p-blurb", "work-blurb-" + work.id);
+    /* The other end of the lift. The same four names as on the card, so
+       each piece travels between the two — in both directions, since
+       these are set whenever this page is shown, including when it is
+       the page being left behind on the way back. The intro gets a name
+       purely so it can have an entrance of its own (it has no twin on
+       the card; see the CSS). */
+    nameForTransition("p-title", "lift-title");
+    nameForTransition("p-meta", "lift-meta");
+    nameForTransition("p-blurb", "lift-blurb");
+    nameForTransition("p-intro", "project-intro");
+    if (heroVisual) heroVisual.style.viewTransitionName = "lift-visual";
 
-    var heroVisual = document.querySelector(".project-hero-visual");
+    /* Back to this work's own card in the feed rather than the top of
+       the page — both because that's where the reader was, and because
+       the text has to have somewhere on screen to fly back to. */
+    document.querySelectorAll('a[href="index.html#work"]').forEach(function (a) {
+      a.href = "index.html#w-" + work.id;
+    });
+
+    if (heroVisual && work.images.cutout) heroVisual.classList.add("is-cutout");
     var heroImg = document.querySelector(".project-hero-visual img");
-    if (heroVisual) {
-      heroVisual.style.viewTransitionName = "work-" + work.id;
-      if (work.images.cutout) heroVisual.classList.add("is-cutout");
-    }
     if (heroImg) {
       heroImg.alt = work.title;
       heroImg.loading = "lazy";
