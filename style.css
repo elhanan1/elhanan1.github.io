@@ -866,10 +866,46 @@ ul { margin: 0; padding: 0; list-style: none; }
 
 .work-peek.prev { transform: translateX(-100%); }
 .work-peek.next { transform: translateX(100%); }
-.work-peek.is-showing { visibility: visible; }
+
+/* Promoted only while it is actually moving: a full-screen layer held
+   ready on every project page was making the page itself heavier to
+   scroll. */
+.work-peek.is-showing {
+  visibility: visible;
+  will-change: transform;
+}
 
 /* It is only ever the top of a page, so it mustn't scroll or stretch. */
 .work-peek .project-hero-visual { margin-bottom: 0; }
+
+/* Two elements can't carry the same transition name: the browser throws
+   the whole transition away, which is what stopped the lift happening
+   at all once this copy of the header existed. The real Back link is
+   also held still while the work slides out from under it, so the one
+   in here would only be a second copy drifting past it. */
+.work-peek .back-link {
+  view-transition-name: none;
+  visibility: hidden;
+}
+
+/* The strip of screen the back-drag is read from. It has to be its own
+   element: the listener behind it has to be able to prevent the
+   browser's gesture, and a listener like that on the whole document
+   makes every scroll wait on JavaScript before it can move. It sits in
+   the page's own gutter, where there is nothing to tap. */
+.edge-back {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 24px;
+  z-index: 45;
+  touch-action: pan-y;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .edge-back { display: none; }
+}
 
 /* Previous and next, for a mouse: a thin chevron resting in the page's
    margin either side of a project. A touch screen gets the swipe

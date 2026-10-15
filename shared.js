@@ -664,7 +664,11 @@
     var heroImg = document.querySelector(".project-hero-visual img");
     if (heroImg) {
       heroImg.alt = work.title;
-      heroImg.loading = "lazy";
+      // Eager, and first in the queue: it's the top of the page, and
+      // lazily fetching it left a gap where the photo had been during
+      // the transition in.
+      heroImg.loading = "eager";
+      heroImg.fetchPriority = "high";
       heroImg.src = work.images.full;
     }
 
@@ -771,19 +775,29 @@
      It only ever takes over once the drag is clearly sideways, so a
      scroll that happens to start at the edge still scrolls. */
   function edgeSwipeBack(href) {
-    var EDGE = 28;
     var SIDEWAYS = 12;
     var TRAVEL = 64;
     var from = null;
     var mine = false;
 
-    document.addEventListener("touchstart", function (e) {
+    /* Its own strip down the left edge rather than the whole document:
+       the listener below has to be able to prevent the browser's own
+       gesture, and a listener that might do that, bound to everything,
+       makes every scroll on the page wait for it first. A touch is
+       delivered to the element it began on for the whole of its life,
+       so the drag is still followed once the finger leaves the strip. */
+    var strip = document.createElement("div");
+    strip.className = "edge-back";
+    strip.setAttribute("aria-hidden", "true");
+    document.body.appendChild(strip);
+
+    strip.addEventListener("touchstart", function (e) {
       var touch = e.touches[0];
-      from = touch && touch.clientX <= EDGE ? { x: touch.clientX, y: touch.clientY } : null;
+      from = touch ? { x: touch.clientX, y: touch.clientY } : null;
       mine = false;
     }, { passive: true });
 
-    document.addEventListener("touchmove", function (e) {
+    strip.addEventListener("touchmove", function (e) {
       if (!from) return;
       var touch = e.touches[0];
       if (!touch) return;
@@ -793,7 +807,7 @@
       if (mine && e.cancelable) e.preventDefault();
     }, { passive: false });
 
-    document.addEventListener("touchend", function (e) {
+    strip.addEventListener("touchend", function (e) {
       var took = mine;
       var touch = e.changedTouches && e.changedTouches[0];
       var dx = from && touch ? touch.clientX - from.x : 0;
@@ -816,6 +830,7 @@
      and then the next work simply appeared. */
   function slideDeck(prevWork, nextWork) {
     var surface = document.getElementById("project-root");
+    var backLink = document.querySelector(".project-header .back-link");
     var peeks = { prev: buildPeek(prevWork, "prev"), next: buildPeek(nextWork, "next") };
     var from = null;
     var last = null;
@@ -837,6 +852,14 @@
       el.style.transform = value;
     }
 
+    /* The work moves; Back to work doesn't. It sits inside the page, so
+       holding it still means moving it back by exactly as much as the
+       page goes forward. */
+    function moveSurface(offset, animate) {
+      place(surface, offset ? "translateX(" + offset + ")" : "", animate);
+      place(backLink, offset ? "translateX(calc(-1 * " + offset + "))" : "", animate);
+    }
+
     function show(side, dx) {
       ["prev", "next"].forEach(function (other) {
         if (peeks[other]) peeks[other].classList.toggle("is-showing", other === side);
@@ -848,7 +871,7 @@
     }
 
     function rest(animate) {
-      place(surface, "", animate);
+      moveSurface("", animate);
       ["prev", "next"].forEach(function (side) {
         var peek = peeks[side];
         if (!peek) return;
@@ -888,7 +911,7 @@
       // little and springs back, rather than pretending.
       var side = dx < 0 ? "next" : "prev";
       var pull = peeks[side] ? dx : dx * 0.25;
-      place(surface, "translateX(" + Math.round(pull) + "px)", false);
+      moveSurface(Math.round(pull) + "px", false);
       show(side, pull);
     }, { passive: true });
 
@@ -919,7 +942,7 @@
       // Carry both the rest of the way, then step across to the real
       // page underneath what is already on screen.
       leaving = true;
-      place(surface, "translateX(" + (side === "next" ? "-100vw" : "100vw") + ")", true);
+      moveSurface(side === "next" ? "-100vw" : "100vw", true);
       place(peeks[side], "translateX(0)", true);
       window.setTimeout(function () { goToWork(going, side, true); }, 320);
     });
@@ -956,7 +979,11 @@
       + (work.images && work.images.cutout ? " is-cutout" : "");
     var img = document.createElement("img");
     img.alt = "";
-    img.src = (work.images && (work.images.medium || work.images.full)) || "";
+    // The same file the real page's hero uses, fetched quietly in the
+    // background: when the real page takes over it is already cached
+    // and paints at once, instead of the photo blinking out and back.
+    img.fetchPriority = "low";
+    img.src = (work.images && (work.images.full || work.images.medium)) || "";
     visual.appendChild(img);
     peek.appendChild(visual);
 
