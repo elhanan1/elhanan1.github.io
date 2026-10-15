@@ -26,6 +26,8 @@
   /* How long the card's photo and text take to travel to the project
      page and back. */
   --dur-lift: 1.1s;
+  /* A work sliding aside for the next one. */
+  --dur-swipe: .45s;
 
   --page-pad: 7vw;
   /* How far up the hover preview comes. Short of 1 on purpose: the photo
@@ -53,6 +55,7 @@
     --dur-med: .001s;
     --dur-slow: .001s;
     --dur-lift: .001s;
+    --dur-swipe: .001s;
   }
 }
 
@@ -175,15 +178,28 @@ body[data-page="project"] {
 
 /* A flick carries the whole page with it, in the direction of the flick
    (shared.js sets data-slide on the way out). */
-html[data-slide="next"]::view-transition-old(root) { animation-name: slide-out-left; }
-html[data-slide="next"]::view-transition-new(root) { animation-name: slide-in-right; }
-html[data-slide="prev"]::view-transition-old(root) { animation-name: slide-out-right; }
-html[data-slide="prev"]::view-transition-new(root) { animation-name: slide-in-left; }
+/* The page leaves the screen rather than dimming a little on its way
+   out: it is the same page being moved aside, so it travels the whole
+   width, and the one arriving comes the whole width from the other
+   side. Nothing fades — a fade is what made this read as the page
+   quietly swapping itself while you weren't looking. */
+html[data-slide="next"]::view-transition-old(root) {
+  animation: slide-out-left var(--dur-swipe) var(--ease) both;
+}
+html[data-slide="next"]::view-transition-new(root) {
+  animation: slide-in-right var(--dur-swipe) var(--ease) both;
+}
+html[data-slide="prev"]::view-transition-old(root) {
+  animation: slide-out-right var(--dur-swipe) var(--ease) both;
+}
+html[data-slide="prev"]::view-transition-new(root) {
+  animation: slide-in-left var(--dur-swipe) var(--ease) both;
+}
 
-@keyframes slide-out-left { to { opacity: 0; transform: translateX(-18%); } }
-@keyframes slide-in-right { from { opacity: 0; transform: translateX(18%); } }
-@keyframes slide-out-right { to { opacity: 0; transform: translateX(18%); } }
-@keyframes slide-in-left { from { opacity: 0; transform: translateX(-18%); } }
+@keyframes slide-out-left { to { transform: translateX(-100%); } }
+@keyframes slide-in-right { from { transform: translateX(100%); } }
+@keyframes slide-out-right { to { transform: translateX(100%); } }
+@keyframes slide-in-left { from { transform: translateX(-100%); } }
 
 @keyframes page-out {
   to { opacity: 0; transform: translateY(-10px); }

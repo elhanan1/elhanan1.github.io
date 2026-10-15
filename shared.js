@@ -792,12 +792,31 @@
      page doesn't follow the finger — it's a flick, not a drag — but it
      does leave in the direction of the flick (see data-slide). */
   function swipeBetweenWorks(prevWork, nextWork) {
+    var surface = document.getElementById("project-root");
     var from = null;
     var last = null;
+    var sideways = false;
     // The edges belong to the system's own gestures (and to the drag
     // back to the feed, below).
     var EDGE = 28;
     var TRAVEL = 50;
+
+    /* The page follows the finger. Without it a flick had nothing to
+       show for itself until the next work simply appeared — no sense
+       that anything was being moved, or that there was anything either
+       side to move to. */
+    function follow(dx) {
+      if (!surface) return;
+      surface.style.transition = "none";
+      surface.style.transform = "translateX(" + Math.round(dx) + "px)";
+    }
+
+    function springBack() {
+      if (!surface) return;
+      surface.style.transition = "transform var(--dur-med) var(--ease)";
+      surface.style.transform = "";
+      window.setTimeout(function () { surface.style.transition = ""; }, 800);
+    }
 
     /* Touch events rather than pointer events, which was why this did
        nothing on a phone: the browser claims a touch the moment it
@@ -807,6 +826,7 @@
        it across" gesture is still a swipe. */
     document.addEventListener("touchstart", function (e) {
       var touch = e.touches.length === 1 && e.touches[0];
+      sideways = false;
       if (!touch || touch.clientX < EDGE || touch.clientX > window.innerWidth - EDGE) {
         from = null;
         return;
@@ -818,12 +838,26 @@
     document.addEventListener("touchmove", function (e) {
       if (!from) return;
       // A second finger means a pinch, not a swipe.
-      if (e.touches.length > 1) { from = null; return; }
+      if (e.touches.length > 1) {
+        from = null;
+        if (sideways) springBack();
+        sideways = false;
+        return;
+      }
       var touch = e.touches[0];
-      if (touch) last = { x: touch.clientX, y: touch.clientY };
+      if (!touch) return;
+      last = { x: touch.clientX, y: touch.clientY };
+      var dx = last.x - from.x;
+      var dy = last.y - from.y;
+      if (!sideways && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) sideways = true;
+      if (sideways) follow(dx);
     }, { passive: true });
 
-    document.addEventListener("touchcancel", function () { from = null; });
+    document.addEventListener("touchcancel", function () {
+      if (sideways) springBack();
+      from = null;
+      sideways = false;
+    });
 
     document.addEventListener("touchend", function (e) {
       if (!from) return;
@@ -831,12 +865,21 @@
       if (touch) last = { x: touch.clientX, y: touch.clientY };
       var dx = last.x - from.x;
       var dy = last.y - from.y;
+      var wasSideways = sideways;
       from = null;
+      sideways = false;
       // Sideways, far enough, and not a drag down the page.
-      if (Math.abs(dx) < TRAVEL || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+      if (!wasSideways || Math.abs(dx) < TRAVEL || Math.abs(dx) < Math.abs(dy) * 1.5) {
+        if (wasSideways) springBack();
+        return;
+      }
+      // The page is left where the finger put it: the snapshot the
+      // transition takes carries that offset, so it goes on out from
+      // there instead of jumping back to centre first.
       goToWork(dx < 0 ? nextWork : prevWork, dx < 0 ? "next" : "prev");
     });
   }
+
 
   function goToWork(work, direction) {
     if (!work) return;
