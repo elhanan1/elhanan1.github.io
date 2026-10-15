@@ -701,6 +701,33 @@
     tapLinks(".site-nav a, .site-footer a, .back-link, .project-nav a");
     swipeBetweenWorks(prevWork, nextWork);
     edgeSwipeBack("index.html#w-" + work.id);
+    addSideArrows(prevWork, nextWork);
+  }
+
+  /* What the swipe is on a phone, a mouse gets as a chevron resting in
+     the margin on either side. */
+  function addSideArrows(prevWork, nextWork) {
+    [["prev", prevWork, "Previous work"], ["next", nextWork, "Next work"]]
+      .forEach(function (side) {
+        var where = side[0];
+        var work = side[1];
+        if (!work) return;
+
+        var arrow = document.createElement("a");
+        arrow.className = "work-arrow " + where;
+        arrow.href = "project.html?id=" + encodeURIComponent(work.id);
+        arrow.setAttribute("aria-label", side[2] + ": " + work.title);
+        arrow.innerHTML = where === "prev"
+          ? '<svg viewBox="0 0 20 44" aria-hidden="true"><path d="M15 4 L5 22 L15 40"/></svg>'
+          : '<svg viewBox="0 0 20 44" aria-hidden="true"><path d="M5 4 L15 22 L5 40"/></svg>';
+
+        onTap(arrow, function (e) {
+          e.preventDefault();
+          goToWork(work, where === "prev" ? "prev" : "next");
+        });
+
+        document.body.appendChild(arrow);
+      });
   }
 
   /* On a phone, dragging in from the left edge is how you go back, and
@@ -753,52 +780,58 @@
      page doesn't follow the finger — it's a flick, not a drag — but it
      does leave in the direction of the flick (see data-slide). */
   function swipeBetweenWorks(prevWork, nextWork) {
-    var start = null;
+    var from = null;
     var last = null;
-    // The edges belong to the system's own back/forward gestures.
+    // The edges belong to the system's own gestures (and to the drag
+    // back to the feed, below).
     var EDGE = 28;
-    var TRAVEL = 60;
+    var TRAVEL = 50;
 
-    document.addEventListener("pointerdown", function (e) {
-      if (e.pointerType === "mouse"
-        || e.clientX < EDGE
-        || e.clientX > window.innerWidth - EDGE) {
-        start = null;
+    /* Touch events rather than pointer events, which was why this did
+       nothing on a phone: the browser claims a touch the moment it
+       thinks the page is being scrolled and ends the pointer stream
+       with a cancel, mid-flick, whereas touchmove and touchend keep
+       coming either way. There's no time limit either — a slow, "drag
+       it across" gesture is still a swipe. */
+    document.addEventListener("touchstart", function (e) {
+      var touch = e.touches.length === 1 && e.touches[0];
+      if (!touch || touch.clientX < EDGE || touch.clientX > window.innerWidth - EDGE) {
+        from = null;
         return;
       }
-      start = { x: e.clientX, y: e.clientY, at: Date.now() };
-      last = { x: e.clientX, y: e.clientY };
+      from = { x: touch.clientX, y: touch.clientY };
+      last = { x: touch.clientX, y: touch.clientY };
     }, { passive: true });
 
-    document.addEventListener("pointermove", function (e) {
-      if (start) last = { x: e.clientX, y: e.clientY };
+    document.addEventListener("touchmove", function (e) {
+      if (!from) return;
+      // A second finger means a pinch, not a swipe.
+      if (e.touches.length > 1) { from = null; return; }
+      var touch = e.touches[0];
+      if (touch) last = { x: touch.clientX, y: touch.clientY };
     }, { passive: true });
 
-    /* Both ways a gesture can end. A phone often takes the touch over
-       mid-flick and sends pointercancel instead of pointerup, and
-       throwing those away was why the swipe did nothing there — so the
-       same reckoning runs either way. It can afford to: the page now
-       keeps only the vertical pan for itself (touch-action below), so a
-       cancel during a sideways flick isn't the browser scrolling with
-       it, and a gesture that really was a scroll fails the test anyway. */
-    function finish(e) {
-      if (!start) return;
-      if (e && typeof e.clientX === "number") last = { x: e.clientX, y: e.clientY };
-      var dx = last.x - start.x;
-      var dy = last.y - start.y;
-      var took = Date.now() - start.at;
-      start = null;
-      // Sideways, far enough, and not a slow drag down the page.
-      if (took > 800 || Math.abs(dx) < TRAVEL || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-      var going = dx < 0 ? nextWork : prevWork;
-      if (!going) return;
-      writeSlide(dx < 0 ? "next" : "prev");
-      window.location.href = "project.html?id=" + encodeURIComponent(going.id);
-    }
+    document.addEventListener("touchcancel", function () { from = null; });
 
-    document.addEventListener("pointerup", finish);
-    document.addEventListener("pointercancel", finish);
+    document.addEventListener("touchend", function (e) {
+      if (!from) return;
+      var touch = e.changedTouches && e.changedTouches[0];
+      if (touch) last = { x: touch.clientX, y: touch.clientY };
+      var dx = last.x - from.x;
+      var dy = last.y - from.y;
+      from = null;
+      // Sideways, far enough, and not a drag down the page.
+      if (Math.abs(dx) < TRAVEL || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+      goToWork(dx < 0 ? nextWork : prevWork, dx < 0 ? "next" : "prev");
+    });
   }
+
+  function goToWork(work, direction) {
+    if (!work) return;
+    writeSlide(direction);
+    window.location.href = "project.html?id=" + encodeURIComponent(work.id);
+  }
+
 
 
   /* Which way the next page should come in from. It has to survive the
