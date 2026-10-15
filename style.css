@@ -291,6 +291,12 @@ ul { margin: 0; padding: 0; list-style: none; }
    Nav: Work · About · Contact, collapsing into a dot on scroll.
    ------------------------------------------------------------------- */
 .site-nav {
+  /* Named, so that it sits out every page transition instead of being
+     carried off with the page: the logo and the menu are the one thing
+     on screen that doesn't belong to the work you're leaving, and
+     watching them slide away with it was wrong. Named on every page, so
+     the two always pair and it simply stays where it is. */
+  view-transition-name: site-nav;
   position: fixed;
   top: 2.2rem;
   left: var(--page-pad);
@@ -856,8 +862,17 @@ ul { margin: 0; padding: 0; list-style: none; }
               transform var(--dur-fast) var(--ease);
 }
 
-.work-arrow.prev { left: calc(var(--page-pad) / 2.6); }
-.work-arrow.next { right: calc(var(--page-pad) / 2.6); }
+/* Same reasoning as the nav: the arrows are the furniture around the
+   work, not part of it. */
+.work-arrow.prev {
+  view-transition-name: arrow-prev;
+  left: calc(var(--page-pad) / 2.6);
+}
+
+.work-arrow.next {
+  view-transition-name: arrow-next;
+  right: calc(var(--page-pad) / 2.6);
+}
 
 .work-arrow svg {
   display: block;
@@ -922,7 +937,17 @@ ul { margin: 0; padding: 0; list-style: none; }
 
 .project-nav a:hover { color: var(--fg); }
 
-.project-nav a.next { text-align: right; align-items: flex-end; }
+/* The first work has nothing before it and the last nothing after, so
+   one of the pair can be missing. Alone it wraps its own text rather
+   than stretching across the row — a link as wide as the page would
+   take clicks nowhere near its words — and Next keeps to the right. */
+.project-nav a.next {
+  margin-left: auto;
+  text-align: right;
+  align-items: flex-end;
+}
+
+.project-nav a:only-child { flex: 0 1 auto; }
 
 .project-nav .nav-label {
   font-size: .72rem;

@@ -705,8 +705,11 @@
       });
     }
 
-    var prevWork = works[(index - 1 + works.length) % works.length];
-    var nextWork = works[(index + 1) % works.length];
+    // No wrapping around: the first work has nothing before it and the
+    // last has nothing after it, and an arrow that only brings you back
+    // to where you started says the collection is a loop when it isn't.
+    var prevWork = index > 0 ? works[index - 1] : null;
+    var nextWork = index < works.length - 1 ? works[index + 1] : null;
     linkProjectNav("nav-prev", prevWork);
     linkProjectNav("nav-next", nextWork);
 
@@ -868,15 +871,20 @@
       var wasSideways = sideways;
       from = null;
       sideways = false;
-      // Sideways, far enough, and not a drag down the page.
-      if (!wasSideways || Math.abs(dx) < TRAVEL || Math.abs(dx) < Math.abs(dy) * 1.5) {
+      // Sideways, far enough, not a drag down the page — and with
+      // somewhere to go: at the two ends of the collection the page
+      // falls back into place instead.
+      var going = dx < 0 ? nextWork : prevWork;
+      if (!wasSideways || !going
+        || Math.abs(dx) < TRAVEL
+        || Math.abs(dx) < Math.abs(dy) * 1.5) {
         if (wasSideways) springBack();
         return;
       }
       // The page is left where the finger put it: the snapshot the
       // transition takes carries that offset, so it goes on out from
       // there instead of jumping back to centre first.
-      goToWork(dx < 0 ? nextWork : prevWork, dx < 0 ? "next" : "prev");
+      goToWork(going, dx < 0 ? "next" : "prev");
     });
   }
 
@@ -932,6 +940,10 @@
   function linkProjectNav(elId, work) {
     var el = document.getElementById(elId);
     if (!el) return;
+    if (!work) {
+      el.remove();
+      return;
+    }
     el.href = "project.html?id=" + encodeURIComponent(work.id);
     var titleEl = el.querySelector(".nav-title");
     if (titleEl) titleEl.textContent = work.title;
