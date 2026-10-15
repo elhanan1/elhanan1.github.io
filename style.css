@@ -151,8 +151,16 @@ html[data-page="home"]::view-transition-old(lift-blurb) {
   to { transform: translateY(70vh); }
 }
 
-/* A sideways flick between works carries the whole page with it, in the
-   direction of the flick (shared.js sets data-slide on the way out). */
+/* A sideways flick on a project moves between works, so the page claims
+   only vertical panning (and pinch) and leaves horizontal gestures to
+   the script. Without this the browser takes the flick for a scroll and
+   cancels the pointer halfway through it. */
+body[data-page="project"] {
+  touch-action: pan-y pinch-zoom;
+}
+
+/* A flick carries the whole page with it, in the direction of the flick
+   (shared.js sets data-slide on the way out). */
 html[data-slide="next"]::view-transition-old(root) { animation-name: slide-out-left; }
 html[data-slide="next"]::view-transition-new(root) { animation-name: slide-in-right; }
 html[data-slide="prev"]::view-transition-old(root) { animation-name: slide-out-right; }
@@ -531,14 +539,29 @@ ul { margin: 0; padding: 0; list-style: none; }
   color: var(--fg-soft);
 }
 
+/* The card's title and meta line are the project header's, in small:
+   same family, same weight, same lowercase, same uppercase meta with
+   the same letter-spacing and the same em dash. That isn't only for
+   looks — a pair in a view transition is matched by the box each end
+   occupies, so only type that is genuinely the same shape at both ends
+   scales from one to the other. When they differed, the heading was
+   carried down to whatever width the little title happened to have,
+   which is why it arrived far too small and then snapped. */
 .work-meta .work-title {
   font-family: var(--font-display);
+  font-weight: 300;
   font-size: 1rem;
   color: var(--fg);
-  letter-spacing: .01em;
+  letter-spacing: .02em;
+  text-transform: lowercase;
 }
 
-.work-meta .work-tags { white-space: nowrap; }
+.work-meta .work-tags {
+  white-space: nowrap;
+  font-size: .85rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
 
 /* Hover preview (desktop): the work's own image fades in inside the
    sketch's own box, so the drawn line reads as sitting on top of the
@@ -588,10 +611,16 @@ ul { margin: 0; padding: 0; list-style: none; }
    project page when the work opens. */
 .work-card .work-caption {
   margin-top: .55rem;
-  font-size: .85rem;
-  line-height: 1.5;
+  font-family: var(--font-display);
+  font-weight: 300;
+  /* Close to the size the same sentence has at the top of the project
+     page: on a phone both run the full width of the screen, so whatever
+     is left between the two sizes is the one step the eye sees when the
+     line arrives. */
+  font-size: .95rem;
+  line-height: 1.45;
   color: var(--fg-soft);
-  max-width: 34em;
+  max-width: 32em;
 }
 
 /* The other side of the hover coin: anything that isn't a fine pointer
@@ -649,6 +678,10 @@ ul { margin: 0; padding: 0; list-style: none; }
 
 .project-header .back-link:hover { color: var(--fg); }
 
+/* Each of these wraps its own text rather than the whole column: the
+   travelling pair is matched box to box, and a heading whose box is the
+   full width of the page would hand the card a box that has little to
+   do with the words in it. */
 .project-header .p-title {
   font-family: var(--font-display);
   font-weight: 300;
@@ -656,6 +689,8 @@ ul { margin: 0; padding: 0; list-style: none; }
   letter-spacing: .02em;
   margin: 0 0 .9rem;
   text-transform: lowercase;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .project-header .p-meta {
@@ -664,6 +699,8 @@ ul { margin: 0; padding: 0; list-style: none; }
   color: var(--fg-soft);
   text-transform: uppercase;
   margin-bottom: 1.2rem;
+  width: fit-content;
+  max-width: 100%;
 }
 
 /* The one-liner from the work's card, landing here as the first thing
@@ -672,10 +709,11 @@ ul { margin: 0; padding: 0; list-style: none; }
 .project-header .p-blurb {
   font-family: var(--font-display);
   font-weight: 300;
-  font-size: clamp(1.05rem, 2.4vw, 1.35rem);
+  font-size: clamp(1rem, 2.4vw, 1.25rem);
   line-height: 1.45;
   color: var(--fg);
   margin: 0 0 1.6rem;
+  width: fit-content;
   max-width: 32em;
 }
 

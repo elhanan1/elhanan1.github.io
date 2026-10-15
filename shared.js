@@ -192,7 +192,9 @@
       var meta = document.createElement("div");
       meta.className = "work-meta";
       var titleEl = textEl("span", "work-title", work.title);
-      var tagsEl = textEl("span", "work-tags", work.year + " · " + work.category);
+      // Same wording and separator as the project page's meta line: the
+      // two ends of the lift have to be the same text, set the same way.
+      var tagsEl = textEl("span", "work-tags", work.year + " — " + work.category);
       meta.appendChild(titleEl);
       meta.appendChild(tagsEl);
 
@@ -706,6 +708,7 @@
      does leave in the direction of the flick (see data-slide). */
   function swipeBetweenWorks(prevWork, nextWork) {
     var start = null;
+    var last = null;
     // The edges belong to the system's own back/forward gestures.
     var EDGE = 28;
     var TRAVEL = 60;
@@ -718,25 +721,39 @@
         return;
       }
       start = { x: e.clientX, y: e.clientY, at: Date.now() };
+      last = { x: e.clientX, y: e.clientY };
     }, { passive: true });
 
-    // The browser takes the gesture over to scroll with it: not a swipe.
-    document.addEventListener("pointercancel", function () { start = null; });
+    document.addEventListener("pointermove", function (e) {
+      if (start) last = { x: e.clientX, y: e.clientY };
+    }, { passive: true });
 
-    document.addEventListener("pointerup", function (e) {
+    /* Both ways a gesture can end. A phone often takes the touch over
+       mid-flick and sends pointercancel instead of pointerup, and
+       throwing those away was why the swipe did nothing there — so the
+       same reckoning runs either way. It can afford to: the page now
+       keeps only the vertical pan for itself (touch-action below), so a
+       cancel during a sideways flick isn't the browser scrolling with
+       it, and a gesture that really was a scroll fails the test anyway. */
+    function finish(e) {
       if (!start) return;
-      var dx = e.clientX - start.x;
-      var dy = e.clientY - start.y;
+      if (e && typeof e.clientX === "number") last = { x: e.clientX, y: e.clientY };
+      var dx = last.x - start.x;
+      var dy = last.y - start.y;
       var took = Date.now() - start.at;
       start = null;
-      // Sideways, far enough, and clearly not a slow drag down the page.
+      // Sideways, far enough, and not a slow drag down the page.
       if (took > 800 || Math.abs(dx) < TRAVEL || Math.abs(dx) < Math.abs(dy) * 1.5) return;
       var going = dx < 0 ? nextWork : prevWork;
       if (!going) return;
       writeSlide(dx < 0 ? "next" : "prev");
       window.location.href = "project.html?id=" + encodeURIComponent(going.id);
-    });
+    }
+
+    document.addEventListener("pointerup", finish);
+    document.addEventListener("pointercancel", finish);
   }
+
 
   /* Which way the next page should come in from. It has to survive the
      navigation, and the incoming document reads it before it paints. */
