@@ -10,11 +10,6 @@
   var DATA = window.SITE_DATA;
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // Paused (not removed): the connecting thread between consecutive
-  // works' sketches wasn't reading well yet. Flip to true to bring it
-  // back — buildConnector/layoutConnectors/svgPointToScreen below are
-  // untouched and still do exactly what they did before.
-  var CONNECTORS_ENABLED = false;
 
   function start() {
     initNav();
@@ -111,7 +106,7 @@
     if (!feed || !DATA) return;
 
     var nameEl = document.querySelector(".hero .name");
-    if (nameEl) nameEl.textContent = DATA.person.name;
+    if (nameEl) writeAsWave(nameEl, DATA.person.name);
     var tagEl = document.querySelector(".hero .tagline");
     if (tagEl) tagEl.textContent = DATA.person.tagline;
 
@@ -125,19 +120,10 @@
     // next instead of ping-ponging between two fixed positions.
     var indentPattern = [0.04, 0.88, 0.30, 0.96, 0.54, 0.74, 0.14, 0.62, 0.40, 0.84];
     var entries = [];
-    var connectors = [];
-    var prevSvg = null;
-    var prevExit = null;
     var lifts = {};
 
     DATA.works.forEach(function (work, i) {
       var size = work.size || sizes[i % sizes.length];
-      var pendingConnector = null;
-
-      if (CONNECTORS_ENABLED && prevSvg) {
-        pendingConnector = buildConnector(prevSvg, prevExit);
-        feed.appendChild(pendingConnector.el);
-      }
 
       var article = document.createElement("article");
       article.className = "work-entry";
@@ -167,6 +153,7 @@
       svg.appendChild(path);
 
       var previewSrc = (work.images && (work.images.preview || work.images.medium)) || "";
+      var previewImg = null;
 
       // The work's own image, fading in behind the sketch so the drawn
       // line sits on top of the photo. It goes inside the same box, so
@@ -174,13 +161,20 @@
       if (previewSrc) {
         var preview = document.createElement("div");
         preview.className = "work-preview";
-        var previewImg = document.createElement("img");
+        previewImg = document.createElement("img");
         previewImg.alt = "";
-        previewImg.loading = "lazy";
+        /* Eager, but at the back of the queue. The image is sized by
+           the photo rather than by its box now, so until it loads it
+           has no size at all — and the lift would have nothing to
+           carry if a card were opened before then. They are a few tens
+           of kilobytes each, and nothing waits on them. */
+        previewImg.loading = "eager";
+        previewImg.fetchPriority = "low";
         // If the image 404s (missing/not-yet-uploaded), drop the preview
         // rather than revealing a broken-image icon.
         previewImg.addEventListener("error", function () {
           preview.remove();
+          if (lifts[work.id]) lifts[work.id].visual = visual;
         });
         previewImg.src = previewSrc;
         preview.appendChild(previewImg);
@@ -208,7 +202,12 @@
       // returned to — see liftCard below.
       lifts[work.id] = {
         entry: article,
-        visual: visual,
+        // The <img> itself, not the box it sits in: a box is padded out
+        // to the card's shape, and a photo letterboxed inside one can't
+        // scale cleanly into a photo letterboxed inside another. The
+        // image's own edges are the same shape at both ends, whatever
+        // shape the photo is.
+        visual: previewImg || visual,
         title: titleEl,
         meta: tagsEl,
         blurb: descEl
@@ -226,23 +225,10 @@
       article.appendChild(card);
       feed.appendChild(article);
 
-      if (pendingConnector) {
-        pendingConnector.toSvg = svg;
-        pendingConnector.toPoint = work.sketch.entry;
-        connectors.push(pendingConnector);
-      }
-      prevSvg = svg;
-      prevExit = work.sketch.exit;
-
       entries.push({ el: visual, path: path, progress: 0, drawn: false });
     });
 
-    if (CONNECTORS_ENABLED) {
-      layoutConnectors(feed, connectors);
-      window.addEventListener("resize", function () { layoutConnectors(feed, connectors); }, { passive: true });
-    }
-
-    setupSketchDraw(entries.concat(connectors.map(function (c) { return c.entry; })));
+    setupSketchDraw(entries);
 
     /* Hands the four travelling names to one work's card and takes them
        off every other one. The names are fixed rather than built from
@@ -269,6 +255,7 @@
       var id = workIdFromUrl(going);
       if (id) liftCard(id);
     });
+
 
     /* Arriving from a work — by its Back link, or by the phone's own
        back gesture, which is a history traversal. Name the same pieces
@@ -298,6 +285,10 @@
       if (!asked && !traversal) return;
 
       if (!liftCard(id)) return;
+      // Both ends exist: the project page's text and photo have a card
+      // to come back to, and the CSS can carry one snapshot across
+      // rather than cross-fading two.
+      document.documentElement.dataset.lift = "pair";
       bringIntoView(lifts[id].entry);
     }
 
@@ -307,11 +298,55 @@
     tapLinks(".site-nav a, .site-footer a");
   }
 
+  /* The name, letter by letter, each one told how far it stands from
+     the middle. The CSS turns that distance into a delay, so the middle
+     drops first and draws the rest down after it. */
+  function writeAsWave(el, text) {
+    el.textContent = "";
+    var middle = (text.length - 1) / 2;
+    var at = 0;
+
+    // Word by word, because a letter in a box of its own is something
+    // the line can be broken after, and a name that wraps in the middle
+    // of itself is worse than one that doesn't move at all.
+    text.split(" ").forEach(function (word, w, words) {
+      var wordEl = document.createElement("span");
+      wordEl.className = "wave-word";
+
+      word.split("").forEach(function (letter) {
+        var span = document.createElement("span");
+        span.className = "wave-letter";
+        span.textContent = letter;
+        span.style.setProperty("--from-middle", Math.round(Math.abs(at - middle)));
+        wordEl.appendChild(span);
+        at++;
+      });
+
+      el.appendChild(wordEl);
+      if (w < words.length - 1) {
+        el.appendChild(textEl("span", "wave-space", "\u00a0"));
+        at++;
+      }
+    });
+  }
+
   function textEl(tag, className, text) {
     var el = document.createElement(tag);
     el.className = className;
     el.textContent = text;
     return el;
+  }
+
+  /* Whether this page was arrived at from the works feed. */
+  function cameFromFeed() {
+    var from = cameFrom();
+    if (!from) return false;
+    try {
+      var path = new URL(from, window.location.href).pathname;
+      return path === "/" || path.indexOf("index.html") !== -1;
+    } catch (e) {
+      return false;
+    }
   }
 
   /* Which work a project.html URL points at, or null for anything else. */
@@ -402,86 +437,6 @@
     onTap(link, function (e) {
       e.preventDefault();
       window.location.href = link.href;
-    });
-  }
-
-  /* Translates a point in an SVG's own viewBox coordinates (e.g. a
-     sketch's entry/exit point) into actual on-screen pixels, accounting
-     for however that SVG's viewBox is scaled/letterboxed into its box —
-     so a connector can start and end exactly where a sketch's line
-     really does, not at an assumed edge or center of its box. */
-  function svgPointToScreen(svg, point) {
-    var ctm = svg.getScreenCTM();
-    if (!ctm) return null;
-    var pt = svg.createSVGPoint();
-    pt.x = point[0];
-    pt.y = point[1];
-    var screenPt = pt.matrixTransform(ctm);
-    return { x: screenPt.x, y: screenPt.y };
-  }
-
-  /* Builds one connector between two consecutive works: an SVG whose
-     path is computed once both works are laid out, from the exact exit
-     point of the work above to the exact entry point of the work below. */
-  function buildConnector(fromSvg, fromPoint) {
-    var el = document.createElement("div");
-    el.className = "work-connector";
-    el.setAttribute("aria-hidden", "true");
-
-    var svgNS = "http://www.w3.org/2000/svg";
-    var svg = document.createElementNS(svgNS, "svg");
-    svg.setAttribute("preserveAspectRatio", "none");
-    var path = document.createElementNS(svgNS, "path");
-    svg.appendChild(path);
-    el.appendChild(svg);
-
-    return {
-      el: el,
-      svg: svg,
-      path: path,
-      fromSvg: fromSvg,
-      fromPoint: fromPoint,
-      toSvg: null,
-      toPoint: null,
-      entry: { el: el, path: path, progress: 0, drawn: false }
-    };
-  }
-
-  /* Points each connector from the work above's exact exit point to the
-     work below's exact entry point, measured on-screen (via each
-     sketch's own coordinate transform) rather than assumed — works sit
-     at varying indents and sizes, not stacked directly, so an assumed
-     box edge or center would miss. */
-  function layoutConnectors(feed, connectors) {
-    var feedBox = feed.getBoundingClientRect();
-
-    connectors.forEach(function (c) {
-      var from = svgPointToScreen(c.fromSvg, c.fromPoint);
-      var to = svgPointToScreen(c.toSvg, c.toPoint);
-      if (!from || !to) return;
-
-      var top = Math.min(from.y, to.y) - feedBox.top;
-      var bottom = Math.max(from.y, to.y) - feedBox.top;
-      var height = Math.max(1, bottom - top);
-      var w = feedBox.width || 1;
-      var x1 = from.x - feedBox.left;
-      var x2 = to.x - feedBox.left;
-      var y1 = from.y - feedBox.top - top;
-      var y2 = to.y - feedBox.top - top;
-      var midY = (y1 + y2) / 2;
-
-      c.el.style.top = top + "px";
-      c.el.style.height = height + "px";
-      c.svg.setAttribute("viewBox", "0 0 " + w + " " + height);
-      c.path.setAttribute(
-        "d",
-        "M" + x1 + "," + y1 + " C" + x1 + "," + midY + " " + x2 + "," + midY + " " + x2 + "," + y2
-      );
-
-      var len = strokeLength(c.path);
-      c.entry.length = len;
-      c.path.style.strokeDasharray = len;
-      if (!c.entry.drawn) c.path.style.strokeDashoffset = reduceMotion ? 0 : len;
     });
   }
 
@@ -616,6 +571,17 @@
     document.title = work.title + " — " + DATA.person.name;
 
     var heroVisual = document.querySelector(".project-hero-visual");
+    var heroImg = document.querySelector(".project-hero-visual img");
+    if (heroVisual && work.images.cutout) heroVisual.classList.add("is-cutout");
+    if (heroImg) {
+      heroImg.alt = work.title;
+      // Eager, and first in the queue: it's the top of the page, and
+      // lazily fetching it left a gap where the photo had been during
+      // the transition in.
+      heroImg.loading = "eager";
+      heroImg.fetchPriority = "high";
+      heroImg.src = work.images.full;
+    }
 
     setText("p-title", work.title);
     setText("p-year", work.year);
@@ -635,7 +601,7 @@
       nameForTransition("p-meta", "lift-meta");
       nameForTransition("p-blurb", "lift-blurb");
       nameForTransition("p-intro", "project-intro");
-      if (heroVisual) heroVisual.style.viewTransitionName = "lift-visual";
+      if (heroImg) heroImg.style.viewTransitionName = "lift-visual";
     }
 
     /* Nothing is named while a sideways move is arriving: a flick
@@ -651,6 +617,15 @@
       });
     } else {
       nameTheTravellers();
+      /* Only when there is a card on the other side of this arrival —
+         that is, when it came from the feed — does a pair of snapshots
+         exist to carry one of across. Arriving from anywhere else (the
+         About page, a bookmark, a reload) leaves the project page's
+         text and photo with no twin, and telling the browser to hold
+         one of them on screen for the whole transition would mean
+         holding something that has nowhere to go: the work's words sat
+         over the page you were heading to until the clock ran out. */
+      if (cameFromFeed()) document.documentElement.dataset.lift = "pair";
     }
 
     /* Back to this work's own card in the feed rather than the top of
@@ -659,18 +634,6 @@
     document.querySelectorAll('a[href="index.html#work"]').forEach(function (a) {
       a.href = "index.html#w-" + work.id;
     });
-
-    if (heroVisual && work.images.cutout) heroVisual.classList.add("is-cutout");
-    var heroImg = document.querySelector(".project-hero-visual img");
-    if (heroImg) {
-      heroImg.alt = work.title;
-      // Eager, and first in the queue: it's the top of the page, and
-      // lazily fetching it left a gap where the photo had been during
-      // the transition in.
-      heroImg.loading = "eager";
-      heroImg.fetchPriority = "high";
-      heroImg.src = work.images.full;
-    }
 
     var materialsList = document.getElementById("p-materials");
     if (materialsList) {
@@ -730,6 +693,7 @@
     linkProjectNav("nav-prev", prevWork);
     linkProjectNav("nav-next", nextWork);
 
+    floatingWayBack("index.html#w-" + work.id);
     tapLinks(".site-nav a, .site-footer a, .back-link, .project-nav a");
     slideDeck(prevWork, nextWork);
     edgeSwipeBack("index.html#w-" + work.id);
@@ -760,6 +724,39 @@
 
         document.body.appendChild(arrow);
       });
+  }
+
+  /* Deep in a work, the way back is far above you. This brings it to
+     where you are the moment you start heading back up the page, and
+     takes it away again when you turn round and carry on down. */
+  function floatingWayBack(href) {
+    var button = document.createElement("a");
+    button.className = "back-float";
+    button.href = href;
+    button.textContent = "\u2190 Back to work";
+    document.body.appendChild(button);
+    tapToOpen(button);
+
+    var lastY = window.scrollY;
+    var ticking = false;
+
+    function update() {
+      var y = window.scrollY;
+      var rising = y < lastY - 4;
+      var falling = y > lastY + 4;
+      // Not while the top of the page — with its own Back link — is
+      // still in reach.
+      if (rising && y > window.innerHeight) button.classList.add("is-shown");
+      if (falling || y <= window.innerHeight) button.classList.remove("is-shown");
+      if (rising || falling) lastY = y;
+      ticking = false;
+    }
+
+    window.addEventListener("scroll", function () {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(update);
+    }, { passive: true });
   }
 
   /* On a phone, dragging in from the left edge is how you go back, and
@@ -1003,7 +1000,7 @@
     ["p-title", "p-meta", "p-blurb", "p-intro"].forEach(function (id) {
       nameForTransition(id, "");
     });
-    var hero = document.querySelector(".project-hero-visual");
+    var hero = document.querySelector(".project-hero-visual img");
     if (hero) hero.style.viewTransitionName = "";
     window.location.href = "project.html?id=" + encodeURIComponent(work.id);
   }
