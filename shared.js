@@ -113,7 +113,7 @@
        that really is a lift — Work, which a work's page re-points at
        its own card in the feed. */
     nav.querySelectorAll("a").forEach(function (a) {
-      onTap(a, unnameEverything);
+      tapToOpen(a, unnameEverything);
     });
 
     if (dot) {
@@ -290,14 +290,13 @@
       // the feed, used by the project page's back links.
       article.id = "w-" + work.id;
 
-      /* Registered before tapToOpen, so the lines are gone on the tap
-         rather than once the next page has started arriving — opening
-         a work used to show its sketch for a beat before the lift
-         carried the photo out from under it. */
-      onTap(link, function () {
+      /* The lines go on the tap that navigates rather than once the
+         next page has started arriving — opening a work used to show
+         its sketch for a beat before the lift carried the photo out
+         from under it. */
+      tapToOpen(link, function () {
         document.documentElement.dataset.settling = "";
       });
-      tapToOpen(link);
       link.appendChild(visual);
       card.appendChild(link);
       card.appendChild(meta);
@@ -574,7 +573,11 @@
      through this, not just the cards — Back to work and the
      Previous/Next pair at the foot of a project had it too. */
   function tapLinks(selector) {
-    document.querySelectorAll(selector).forEach(tapToOpen);
+    // Not forEach(tapToOpen): forEach would hand it the index as its
+    // second argument, and the second argument is a function to run.
+    document.querySelectorAll(selector).forEach(function (a) {
+      tapToOpen(a);
+    });
   }
 
   /* The touch half of this: a tap that lands and lifts in one spot runs
@@ -642,12 +645,23 @@
     }
   }
 
-  function tapToOpen(link) {
+  /* `before` runs on the tap that navigates, in the same handler, so
+     whatever it does is done by the time the page leaves.
+
+     One handler per link, ever. Two of these on the same anchor each
+     keep their own idea of whether the gesture was a tap, and a second
+     one that decides it wasn't leaves the first having already done its
+     half — the sketch gone, the page still there. A tap that goes
+     nowhere is the worst of both. */
+  function tapToOpen(link, before) {
+    if (link.dataset.tapWired) return;
     // New-tab links and mailto:/tel: are the browser's business.
     if (link.target && link.target !== "_self") return;
     if (link.protocol !== "http:" && link.protocol !== "https:") return;
+    link.dataset.tapWired = "1";
     onTap(link, function (e) {
       e.preventDefault();
+      if (before) before();
       window.location.href = link.href;
     });
   }

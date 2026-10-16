@@ -728,8 +728,17 @@ html[data-settling] .work-visual .sketch-svg {
   width: 2.6em;
   height: 2.6em;
   border-radius: 50%;
-  background: var(--bg);
-  color: var(--fg);
+  /* Not the page's own background: a photo is whatever colour it is,
+     and on a pale one a white disc disappeared and left the arrow
+     floating by itself. A dark wash with the photo blurred under it
+     carries its own contrast wherever it lands — it takes its colour
+     from what is behind it while staying dark enough for a white
+     arrow. Safari needs the prefix; without either the flat wash still
+     stands on its own. */
+  background: rgba(16, 15, 13, .42);
+  -webkit-backdrop-filter: blur(10px) brightness(.72);
+  backdrop-filter: blur(10px) brightness(.72);
+  color: #fff;
   font-size: .9rem;
   line-height: 1;
   /* The photo underneath is the thing being pointed at; the arrow is
