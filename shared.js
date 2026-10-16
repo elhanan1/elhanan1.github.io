@@ -180,6 +180,10 @@
           if (lifts[work.id]) lifts[work.id].visual = visual;
         });
         previewImg.src = previewSrc;
+        // The card is the full width of the screen on a phone, and up to
+        // 640px of a desktop one.
+        sizedSources(previewImg, work.images.medium, work.images.full,
+          "(max-width: 720px) 100vw, 640px");
         preview.appendChild(previewImg);
         visual.appendChild(preview);
       }
@@ -191,7 +195,7 @@
       var titleEl = textEl("span", "work-title", work.title);
       // Same wording and separator as the project page's meta line: the
       // two ends of the lift have to be the same text, set the same way.
-      var tagsEl = textEl("span", "work-tags", work.year + " — " + work.category);
+      var tagsEl = textEl("span", "work-tags", work.year + " · " + work.category);
       meta.appendChild(titleEl);
       meta.appendChild(tagsEl);
 
@@ -480,6 +484,21 @@
     });
   }
 
+  /* Both files the image script makes, handed to the browser at their
+     own widths so it can pick by how wide the photo actually lands.
+     A photo now runs the full width of its card and the full width of
+     the screen on a phone, where the 600px medium on its own is short
+     of the pixels the screen has. The widths are the two the script is
+     set to (MEDIUM_WIDTH / FULL_WIDTH in scripts/generate-images.py);
+     an original narrower than 1600px is simply left at its own size by
+     that script, and claiming the full width here only ever makes the
+     browser reach for the larger of the two files sooner. */
+  function sizedSources(img, medium, full, sizes) {
+    if (!medium || !full) return;
+    img.srcset = medium + " 600w, " + full + " 1600w";
+    img.sizes = sizes;
+  }
+
   function tapToOpen(link) {
     // New-tab links and mailto:/tel: are the browser's business.
     if (link.target && link.target !== "_self") return;
@@ -724,6 +743,11 @@
           img.src = (item.wide && item.full) || item.medium;
           img.alt = item.caption || work.title;
           img.loading = "lazy";
+          /* One column of full-width photos on a phone; on a desktop
+             half the gallery's 52em, or all of it for a wide one. */
+          sizedSources(img, item.medium, item.full, item.wide
+            ? "(max-width: 720px) 100vw, 52em"
+            : "(max-width: 720px) 100vw, 25em");
           fig.appendChild(img);
         }
         if (item.caption) {

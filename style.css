@@ -557,10 +557,22 @@ ul { margin: 0; padding: 0; list-style: none; }
   color: inherit;
 }
 
+/* The photo and the sketch share one grid cell, so both run the card's
+   full width — the same width as the title and the line of text under
+   them — and the box is as tall as whichever of the two is taller: a
+   tall photo makes it taller than the sketch, a letterbox cut-out
+   leaves the sketch at its own height. Neither is cropped, and neither
+   is letterboxed inside a box of the other's shape. */
 .work-visual {
   position: relative;
+  display: grid;
   cursor: pointer;
   overflow: hidden;
+}
+
+.work-visual > * {
+  grid-area: 1 / 1;
+  align-self: center;
 }
 
 /* The sketch SVG sizes itself directly from its own width + aspect-ratio
@@ -624,29 +636,25 @@ ul { margin: 0; padding: 0; list-style: none; }
    rather than cropped, since these images are every shape from a 2.6:1
    cut-out to an upright photo. */
 .work-preview {
-  position: absolute;
-  inset: 0;
+  width: 100%;
   opacity: 0;
   transition: opacity var(--dur-med) var(--ease);
   pointer-events: none;
 }
 
-/* Centred at its own proportions rather than filling the box, so that
-   the element's edges are the photo's edges — which is what lets it
-   scale into the same photo on the project page instead of one
-   letterboxed shape sliding against another. */
-.work-preview {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
+/* The photo runs the card's full width and takes its height from its own
+   proportions, so the element's edges are the photo's edges — which is
+   what lets it scale into the same photo on the project page instead of
+   one letterboxed shape sliding against another. */
 .work-preview img {
   display: block;
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
+  width: 100%;
   height: auto;
+  /* `auto` first: the photo's own ratio once it has loaded, and the
+     sketch's box as the fallback before that — so the card reserves the
+     height it would have had anyway and nothing below it jumps when the
+     photo arrives. */
+  aspect-ratio: auto 1 / 1.08;
 }
 
 /* Keeps the line above the photo. */
@@ -702,12 +710,19 @@ ul { margin: 0; padding: 0; list-style: none; }
   .work-card .work-caption { margin-top: .9rem; }
 }
 
+/* On a phone the card is the whole screen: the feed's own side padding
+   goes, and the photo, the title and the description all run from one
+   edge to the other. The description drops its measure here as well —
+   a line counted in ems is shorter than the screen, and on a phone the
+   screen is the measure. */
 @media (max-width: 720px) {
+  .works-feed { padding-inline: 0; }
   .work-entry[data-size="large"] .work-card,
   .work-entry[data-size="medium"] .work-card,
   .work-entry[data-size="small"] .work-card {
-    width: 88vw;
+    width: 100%;
   }
+  .work-card .work-caption { max-width: none; }
   .work-entry { justify-content: center; margin-left: 0 !important; }
   .hero { padding: 7rem var(--page-pad) 3rem; min-height: 60vh; }
 }
@@ -1038,8 +1053,20 @@ ul { margin: 0; padding: 0; list-style: none; }
   background: var(--plate);
 }
 
-@media (max-width: 640px) {
-  .project-gallery { grid-template-columns: 1fr; }
+/* The same edge to edge as the hero above them, and at the same width
+   the breakpoint gives everything else: below it there is one column of
+   photos, each one the full width of the screen, with only their
+   captions keeping the page's margins. Two columns of half a phone
+   screen each were the one place a work's photos were smaller than the
+   text beside them. */
+@media (max-width: 720px) {
+  .project-gallery {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    gap: 2rem;
+  }
+  .project-gallery figure { border-radius: 0; }
+  .project-gallery figcaption { padding-inline: var(--page-pad); }
   /* `pos: [row, col]` in works.js places an image in the two-column
      grid, and shared.js writes it as an inline grid-row/grid-column.
      Once there's only one column, a `col: 2` doesn't wrap — it opens an
