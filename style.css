@@ -694,29 +694,13 @@ ul { margin: 0; padding: 0; list-style: none; }
   aspect-ratio: 1 / 1.08;
 }
 
-/* The line keeps off a photo that is still moving. It is drawn in a
-   frame of its own and has no fixed place on the photo, so watching it
-   appear over one that is mid-flight read as two unrelated things
-   sharing a box. shared.js wears data-settling for the length of an
-   arriving transition, and the line fades in once the photo is down. */
-html[data-settling] .work-visual .sketch-svg {
-  opacity: 0;
-  /* Out at once. Fading away over half a second is the beat you saw
-     the line linger for after tapping a work; only the way back in is
-     worth watching. */
-  transition: none;
-}
-
-.work-visual .sketch-svg {
-  /* Quick: the hold is released the moment the photo is down, so half a
-     second of fading after that is just the line arriving late to its
-     own card. */
-  transition: opacity var(--dur-fast) var(--ease);
-}
-
+/* The line and the arrow stay on the photo throughout. They were held
+   back while a photo was travelling, which meant the card was only ever
+   whole once everything had stopped; now the photo carries its drawing
+   and its arrow from the first frame to the last, and what moves is a
+   finished card rather than one still assembling itself. */
 /* The photo is a link and the card has no chrome to say so, so an
-   arrow rests in its bottom corner. Held back with the line while a
-   photo is still travelling, for the same reason. */
+   arrow rests in its bottom corner. */
 .work-visual .work-cue {
   position: absolute;
   right: .9rem;
@@ -744,11 +728,6 @@ html[data-settling] .work-visual .sketch-svg {
   /* The photo underneath is the thing being pointed at; the arrow is
      never the thing you hit. */
   pointer-events: none;
-}
-
-html[data-settling] .work-visual .work-cue {
-  opacity: 0;
-  transition: none;
 }
 
 /* Under a pointer it arrives with the photo, on the same small travel
