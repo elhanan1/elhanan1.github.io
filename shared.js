@@ -120,7 +120,10 @@
 
     var current = document.body.dataset.page;
     nav.querySelectorAll("a[data-nav]").forEach(function (a) {
-      if (a.dataset.nav === current || (current === "project" && a.dataset.nav === "work")) {
+      // A work's own page is not the works page: marking Work as the
+      // current one drew it the same underline hovering does, so every
+      // project looked like the link was being held down.
+      if (a.dataset.nav === current) {
         a.setAttribute("aria-current", "page");
       }
     });
@@ -356,6 +359,19 @@
 
     restoreFromWork();
     window.addEventListener("pagereveal", restoreFromWork);
+
+    /* Hold the sketches back for the length of an arriving transition,
+       so a line is never drawn across a photo that is still travelling
+       (see the data-settling rule). Only when there really is one: on
+       an ordinary load nothing is hidden, and if pagereveal has already
+       gone by the time this runs, the lines simply stay as they were. */
+    window.addEventListener("pagereveal", function (e) {
+      if (!e.viewTransition) return;
+      var root = document.documentElement;
+      root.dataset.settling = "";
+      function settled() { delete root.dataset.settling; }
+      e.viewTransition.finished.then(settled, settled);
+    });
 
     tapLinks(".site-nav a, .site-footer a");
   }

@@ -261,8 +261,26 @@ html[data-slide="prev"]::view-transition-new(root) {
    shadow under its leading edge, and the page it covers sinks a little
    and dims rather than leaving. shared.js marks the tap on the way out
    (data-enter) and takes the mark off once the arrival is over. */
+/* Both snapshots are solid for the whole trip. Two things were making
+   the card see-through: the browser's own default blends a transition's
+   two snapshots with plus-lighter, which adds the page underneath to
+   whatever is laid over it, and the page being covered was fading out
+   as well. Normal blending and an opaque ground under the arriving
+   snapshot leave it a card rather than a film. */
+html[data-enter="push"]::view-transition-old(root),
+html[data-enter="push"]::view-transition-new(root) {
+  mix-blend-mode: normal;
+  /* The snapshot stays the size of the screen it was taken on instead
+     of being stretched into a box of the other page's shape, which is
+     what left it hanging off to one side and clipped until it settled. */
+  height: 100%;
+  object-fit: cover;
+  object-position: top left;
+}
+
 html[data-enter="push"]::view-transition-new(root) {
   animation: push-in-top var(--dur-med) var(--ease) both;
+  background: var(--bg);
   box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, .3);
 }
 
@@ -271,7 +289,8 @@ html[data-enter="push"]::view-transition-old(root) {
 }
 
 @keyframes push-in-top { from { transform: translateY(-100%); } }
-@keyframes push-under { to { transform: translateY(8vh); opacity: .55; } }
+/* It sinks, it doesn't fade: the page is still there under the card. */
+@keyframes push-under { to { transform: translateY(8vh); } }
 
 @keyframes slide-out-left { to { transform: translateX(-100%); } }
 @keyframes slide-in-right { from { transform: translateX(100%); } }
@@ -651,6 +670,19 @@ ul { margin: 0; padding: 0; list-style: none; }
   aspect-ratio: 1 / 1.08;
 }
 
+/* The line keeps off a photo that is still moving. It is drawn in a
+   frame of its own and has no fixed place on the photo, so watching it
+   appear over one that is mid-flight read as two unrelated things
+   sharing a box. shared.js wears data-settling for the length of an
+   arriving transition, and the line fades in once the photo is down. */
+html[data-settling] .work-visual .sketch-svg {
+  opacity: 0;
+}
+
+.work-visual .sketch-svg {
+  transition: opacity var(--dur-med) var(--ease);
+}
+
 .work-visual .sketch-svg path {
   fill: none;
   stroke: var(--fg);
@@ -785,6 +817,17 @@ ul { margin: 0; padding: 0; list-style: none; }
     width: 100%;
   }
   .work-card .work-caption { max-width: none; }
+  /* Only the photo touches the edges. The title and the description
+     keep the page's own margins — which is also what puts the
+     description in the same box as its copy at the top of the work's
+     page: running it edge to edge made the card's line WIDER than the
+     bigger one it travels to, so on the way back the sentence was
+     stretched out to the full width of the screen before it dropped
+     into place. Same box, same gutter, nothing to overshoot. */
+  .work-card .work-meta,
+  .work-card .work-caption {
+    padding-inline: var(--page-pad);
+  }
   .work-entry { justify-content: center; margin-left: 0 !important; }
   .hero { padding: 7rem var(--page-pad) 3rem; min-height: 60vh; }
 }
