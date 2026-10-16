@@ -100,20 +100,24 @@
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
 
-    /* Registered before tapLinks reaches the same anchor, so the mark
-       is written on the tap that navigates rather than after it. */
-    var logo = nav.querySelector(".menu-logo");
-    if (logo) onTap(logo, function () { writeEnter("push"); });
+    /* One handler for every way out through the menu, doing both jobs.
+       The logo had kept a second one of its own for the mark, which is
+       the arrangement that leaves a tap half done: one listener writes
+       the mark while the other decides the finger moved, and the link
+       goes nowhere.
 
-    /* The names a work's page puts on when it loads stay on until
-       something takes them off, so any way out through the menu would
-       otherwise carry them into a transition with nothing to pair them
-       with. They come off on the tap, before a snapshot is taken; the
-       pageswap in initProject puts them back for the one menu link
-       that really is a lift — Work, which a work's page re-points at
-       its own card in the feed. */
+       The jobs: a work's page names five of its pieces when it loads
+       and the stylesheet names three more, and those names stay on
+       until something takes them off — so any way out through the menu
+       would otherwise carry them into a transition with nothing to pair
+       them with. And the logo asks for the site itself rather than a
+       card, which is the arrival the feed comes down for. */
     nav.querySelectorAll("a").forEach(function (a) {
-      tapToOpen(a, unnameEverything);
+      var isLogo = a.classList.contains("menu-logo");
+      tapToOpen(a, function () {
+        if (isLogo) writeEnter("push");
+        unnameEverything();
+      });
     });
 
     if (dot) {
