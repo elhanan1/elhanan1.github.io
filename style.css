@@ -824,17 +824,6 @@ html[data-settling] .work-visual .sketch-svg {
     width: 100%;
   }
   .work-card .work-caption { max-width: none; }
-  /* Only the photo touches the edges. The title and the description
-     keep the page's own margins — which is also what puts the
-     description in the same box as its copy at the top of the work's
-     page: running it edge to edge made the card's line WIDER than the
-     bigger one it travels to, so on the way back the sentence was
-     stretched out to the full width of the screen before it dropped
-     into place. Same box, same gutter, nothing to overshoot. */
-  .work-card .work-meta,
-  .work-card .work-caption {
-    padding-inline: var(--page-pad);
-  }
   .work-entry { justify-content: center; margin-left: 0 !important; }
   .hero { padding: 7rem var(--page-pad) 3rem; min-height: 60vh; }
 }
