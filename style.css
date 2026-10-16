@@ -289,8 +289,11 @@ html[data-enter="push"]::view-transition-old(root) {
 }
 
 @keyframes push-in-top { from { transform: translateY(-100%); } }
-/* It sinks, it doesn't fade: the page is still there under the card. */
-@keyframes push-under { to { transform: translateY(8vh); } }
+/* Pushed, not covered: the page that was here goes down by as much as
+   the card coming in takes, so the two travel as one and what you watch
+   is the old page being shoved out of the way rather than something
+   being laid on top of it. */
+@keyframes push-under { to { transform: translateY(100%); } }
 
 @keyframes slide-out-left { to { transform: translateX(-100%); } }
 @keyframes slide-in-right { from { transform: translateX(100%); } }
@@ -677,6 +680,10 @@ ul { margin: 0; padding: 0; list-style: none; }
    arriving transition, and the line fades in once the photo is down. */
 html[data-settling] .work-visual .sketch-svg {
   opacity: 0;
+  /* Out at once. Fading away over half a second is the beat you saw
+     the line linger for after tapping a work; only the way back in is
+     worth watching. */
+  transition: none;
 }
 
 .work-visual .sketch-svg {

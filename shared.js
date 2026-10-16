@@ -147,6 +147,17 @@
     var tagEl = document.querySelector(".hero .tagline");
     if (tagEl) tagEl.textContent = DATA.person.tagline;
 
+    /* The lines are off before a single card is built. Hiding them from
+       a pagereveal listener meant this script had already drawn them,
+       so a sketch appeared, went out as the transition took hold, and
+       came back at the end — three states where there should be one.
+       Only on the one load that has a photo on its way in: arriving
+       from a work. A visit that starts here has nothing to wait for. */
+    if (workIdFromUrl(cameFrom())) holdTheLines();
+    window.addEventListener("pageshow", function (e) {
+      if (e.persisted) showTheLines();
+    });
+
     var sizes = ["large", "medium", "small"];
     var sizePercent = { large: 72, medium: 58, small: 46 };
     // How far each work sits from the left edge, as a fraction of the
@@ -259,6 +270,13 @@
       // the feed, used by the project page's back links.
       article.id = "w-" + work.id;
 
+      /* Registered before tapToOpen, so the lines are gone on the tap
+         rather than once the next page has started arriving — opening
+         a work used to show its sketch for a beat before the lift
+         carried the photo out from under it. */
+      onTap(link, function () {
+        document.documentElement.dataset.settling = "";
+      });
       tapToOpen(link);
       link.appendChild(visual);
       card.appendChild(link);
@@ -360,18 +378,6 @@
     restoreFromWork();
     window.addEventListener("pagereveal", restoreFromWork);
 
-    /* Hold the sketches back for the length of an arriving transition,
-       so a line is never drawn across a photo that is still travelling
-       (see the data-settling rule). Only when there really is one: on
-       an ordinary load nothing is hidden, and if pagereveal has already
-       gone by the time this runs, the lines simply stay as they were. */
-    window.addEventListener("pagereveal", function (e) {
-      if (!e.viewTransition) return;
-      var root = document.documentElement;
-      root.dataset.settling = "";
-      function settled() { delete root.dataset.settling; }
-      e.viewTransition.finished.then(settled, settled);
-    });
 
     tapLinks(".site-nav a, .site-footer a");
   }
@@ -667,6 +673,39 @@
     var rect = visual.getBoundingClientRect();
     var end = drawnTop(rect, vh, maxScroll, scrolled);
     return Math.max(0, Math.min(maxScroll, scrolled + rect.top - end));
+  }
+
+  /* Holds every sketch back until the photo it shares a box with has
+     landed. The transition says when that is, but it is not a promise
+     worth trusting on its own: a transition the browser drops can leave
+     `finished` sitting there, and a line that never comes back is a
+     worse bug than one that comes back early. So the trip's own length
+     is the longest any of this can last. */
+  function holdTheLines() {
+    var root = document.documentElement;
+    var done = false;
+    root.dataset.settling = "";
+
+    function settled() {
+      if (done) return;
+      done = true;
+      delete root.dataset.settling;
+    }
+
+    window.addEventListener("pagereveal", function (e) {
+      if (e.viewTransition) e.viewTransition.finished.then(settled, settled);
+      else settled();
+    });
+
+    window.setTimeout(settled, 1600);
+  }
+
+  /* Leaving a work takes the lines out on the tap itself (see the feed
+     above), and a document frozen on its way out comes back from the
+     back/forward cache still wearing that. Nothing re-runs on a restore,
+     so it is taken off by hand. */
+  function showTheLines() {
+    delete document.documentElement.dataset.settling;
   }
 
   function setupSketchDraw(entries) {
