@@ -250,7 +250,7 @@
          under a mouse it comes in with the photo, and on a touch
          screen, where there is no hover to find anything with, it is
          simply always there. */
-      var cue = textEl("span", "work-cue", "\u2192");
+      var cue = textEl("span", "work-cue", "\u2198");
       cue.setAttribute("aria-hidden", "true");
       visual.appendChild(cue);
 

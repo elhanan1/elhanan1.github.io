@@ -745,7 +745,9 @@ html[data-settling] .work-visual .work-cue {
 @media (hover: hover) and (pointer: fine) {
   .work-visual .work-cue {
     opacity: 0;
-    transform: translateX(-.4rem);
+    /* It travels the way it points, up out of the corner it is heading
+       into rather than in from the side. */
+    transform: translate(-.3rem, -.3rem);
     transition: opacity var(--dur-fast) var(--ease),
                 transform var(--dur-fast) var(--ease);
   }
@@ -753,7 +755,7 @@ html[data-settling] .work-visual .work-cue {
   .work-link:hover .work-cue,
   .work-link:focus-visible .work-cue {
     opacity: 1;
-    transform: translateX(0);
+    transform: translate(0, 0);
   }
 }
 
