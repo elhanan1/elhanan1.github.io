@@ -113,7 +113,7 @@
        that really is a lift — Work, which a work's page re-points at
        its own card in the feed. */
     nav.querySelectorAll("a").forEach(function (a) {
-      onTap(a, unnameTheTravellers);
+      onTap(a, unnameEverything);
     });
 
     if (dot) {
@@ -1377,6 +1377,24 @@
     });
     var hero = document.querySelector(".project-hero-visual img");
     if (hero) hero.style.viewTransitionName = "";
+  }
+
+  /* Leaving a work for somewhere that is neither another work nor its
+     own card in the feed. Then nothing on this page is travelling, so
+     nothing on it keeps a name — not the pieces above, and not the
+     furniture a work carries that the feed has no answer for: its Back
+     to work and the two arrows in the margins, which are named in the
+     stylesheet and so have to be told "none" rather than emptied.
+
+     A name with nothing to pair it is still a layer of its own, lifted
+     out of the page and painted above it on its own clock. That is what
+     the words were doing over the card coming down from the logo, and
+     these three are the rest of the same list: they are the reason a
+     work behaves differently from the about page, which has none. */
+  function unnameEverything() {
+    unnameTheTravellers();
+    document.querySelectorAll(".project-header .back-link, .work-arrow")
+      .forEach(function (el) { el.style.viewTransitionName = "none"; });
   }
 
   function nameForTransition(id, name) {

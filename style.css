@@ -303,7 +303,6 @@ html[data-enter="push"]::view-transition-new(root) {
 html[data-enter="push"]::view-transition-new(root) {
   animation: push-in-top var(--dur-med) var(--ease) both;
   background: var(--bg);
-  box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, .3);
 }
 
 html[data-enter="push"]::view-transition-old(root) {
