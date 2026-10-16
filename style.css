@@ -234,7 +234,7 @@ html[data-lift="pair"][data-page="project"]::view-transition-new(lift-visual) {
    in and out where it stands it slides: up from below the fold as the
    work opens, and straight back down off the bottom as you leave. */
 ::view-transition-new(project-intro) {
-  animation: intro-up var(--dur-lift) calc(var(--dur-lift) * .35) var(--ease) both;
+  animation: intro-up var(--dur-lift) var(--ease) both;
 }
 
 ::view-transition-old(project-intro) {
@@ -712,6 +712,53 @@ html[data-settling] .work-visual .sketch-svg {
      second of fading after that is just the line arriving late to its
      own card. */
   transition: opacity var(--dur-fast) var(--ease);
+}
+
+/* The photo is a link and the card has no chrome to say so, so an
+   arrow rests in its bottom corner. Held back with the line while a
+   photo is still travelling, for the same reason. */
+.work-visual .work-cue {
+  position: absolute;
+  right: .9rem;
+  bottom: .9rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.6em;
+  height: 2.6em;
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: .9rem;
+  line-height: 1;
+  /* The photo underneath is the thing being pointed at; the arrow is
+     never the thing you hit. */
+  pointer-events: none;
+}
+
+html[data-settling] .work-visual .work-cue {
+  opacity: 0;
+  transition: none;
+}
+
+/* Under a pointer it arrives with the photo, on the same small travel
+   the about page's links use. Outside this it simply stays put, which
+   is the touch screen's answer: there is no hover there to discover
+   anything with. */
+@media (hover: hover) and (pointer: fine) {
+  .work-visual .work-cue {
+    opacity: 0;
+    transform: translateX(-.4rem);
+    transition: opacity var(--dur-fast) var(--ease),
+                transform var(--dur-fast) var(--ease);
+  }
+
+  .work-link:hover .work-cue,
+  .work-link:focus-visible .work-cue {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .work-visual .sketch-svg path {

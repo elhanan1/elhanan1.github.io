@@ -245,6 +245,15 @@
         visual.appendChild(preview);
       }
 
+      /* The photo is a link, and a card with no chrome around it has
+         nothing that says so. An arrow rests in its bottom corner:
+         under a mouse it comes in with the photo, and on a touch
+         screen, where there is no hover to find anything with, it is
+         simply always there. */
+      var cue = textEl("span", "work-cue", "\u2192");
+      cue.setAttribute("aria-hidden", "true");
+      visual.appendChild(cue);
+
       visual.appendChild(svg);
 
       var meta = document.createElement("div");
