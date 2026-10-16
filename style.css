@@ -707,14 +707,20 @@ ul { margin: 0; padding: 0; list-style: none; }
   height: 100%;
 }
 
+/* One clean line, no shadow under it. Which of the two it is comes from
+   shared.js, which reads the corner of the photo it lands on; until it
+   has, and on a card with no photo at all, it is the page's own ink. */
 .work-visual .work-cue path {
   fill: none;
-  stroke: #fff;
+  stroke: var(--fg);
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
 }
+
+.work-visual .work-cue.on-dark path { stroke: #fff; }
+.work-visual .work-cue.on-light path { stroke: #14130f; }
 
 html[data-settling] .work-visual .sketch-svg,
 html[data-settling] .work-visual .work-cue {
@@ -734,11 +740,6 @@ html[data-settling] .work-visual .work-cue {
   justify-content: center;
   width: 2.4rem;
   height: 2.4rem;
-  /* No disc. A photo is whatever colour it is, so the line carries its
-     own contrast instead: white, with a tight dark halo under it that
-     holds it up even against a pale wall. */
-  filter: drop-shadow(0 0 3px rgba(0, 0, 0, .55))
-          drop-shadow(0 1px 2px rgba(0, 0, 0, .45));
   /* The photo underneath is the thing being pointed at; the arrow is
      never the thing you hit. */
   pointer-events: none;

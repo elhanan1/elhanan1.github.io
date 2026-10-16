@@ -259,6 +259,7 @@
       cue.innerHTML = '<svg viewBox="0 0 32 32" aria-hidden="true">' +
         '<path d="M26 6 L6 26 M6 13 L6 26 L19 26"/></svg>';
       visual.appendChild(cue);
+      if (previewImg) tintCue(previewImg, cue);
 
       visual.appendChild(svg);
 
@@ -680,6 +681,97 @@
      feed that has already scrolled to a card lands beside it instead of
      on it. w and h are the photo's own pixel size, from data/works.js;
      the image script prints them for each file it makes. */
+  /* Black or white, whichever the corner it lands in is not. A line of
+     one fixed colour is legible over about half the photos a feed like
+     this will ever hold, and invisible over the rest; the honest answer
+     is to look.
+
+     What it looks at is not the photo but what the photo actually
+     paints: these sit at --preview-dim over the page's own background,
+     so a pale picture on the dark theme is not pale by the time it
+     reaches the screen. The corner is read once, the background is
+     mixed in at the same strength the card shows it, and the arrow
+     takes the opposite. Re-read when the theme flips, since that moves
+     the half it is mixed with.
+
+     A photo the canvas will not hand back — none here, but a drawing
+     this far from its source should not throw — leaves the arrow at the
+     page's own ink, which is the sane default either way. */
+  function tintCue(img, cue) {
+    var ink = null;
+    var cover = null;
+
+    function sample() {
+      if (ink !== null) return true;
+      var w = img.naturalWidth;
+      var h = img.naturalHeight;
+      if (!w || !h) return false;
+      try {
+        var box = 8;
+        var canvas = document.createElement("canvas");
+        canvas.width = box;
+        canvas.height = box;
+        var ctx = canvas.getContext("2d");
+        // The bottom left of the photo, where the arrow sits.
+        var sw = Math.max(1, Math.round(w * .3));
+        var sh = Math.max(1, Math.round(h * .25));
+        ctx.drawImage(img, 0, h - sh, sw, sh, 0, 0, box, box);
+        var px = ctx.getImageData(0, 0, box, box).data;
+        var lit = 0;
+        var alpha = 0;
+        for (var i = 0; i < px.length; i += 4) {
+          /* Carrying the alpha, because one of these is a cut-out: its
+             corner is not black, it is nothing at all, and what shows
+             there is the page. Counting it as black would paint a white
+             arrow onto white. */
+          var a = px[i + 3] / 255;
+          lit += luminance(px[i], px[i + 1], px[i + 2]) * a;
+          alpha += a;
+        }
+        var n = px.length / 4;
+        ink = lit / n;
+        cover = alpha / n;
+      } catch (e) {
+        ink = null;
+      }
+      return ink !== null;
+    }
+
+    function decide() {
+      if (!sample()) return;
+      var root = getComputedStyle(document.documentElement);
+      var dim = parseFloat(root.getPropertyValue("--preview-dim"));
+      if (!(dim >= 0 && dim <= 1)) dim = 1;
+      var behind = rgbLuminance(getComputedStyle(document.body).backgroundColor);
+      if (behind === null) behind = 0;
+      // What that corner actually ends up being: the photo at the
+      // strength the card shows it, over however much of the page is
+      // still visible through it.
+      var shown = ink * dim + behind * (1 - cover * dim);
+      cue.classList.toggle("on-light", shown > 140);
+      cue.classList.toggle("on-dark", shown <= 140);
+    }
+
+    if (img.complete && img.naturalWidth) decide();
+    else img.addEventListener("load", decide);
+
+    var dark = window.matchMedia("(prefers-color-scheme: dark)");
+    if (dark.addEventListener) dark.addEventListener("change", decide);
+    else if (dark.addListener) dark.addListener(decide);
+  }
+
+  function luminance(r, g, b) {
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+
+  function rgbLuminance(colour) {
+    var parts = /rgba?\(([^)]+)\)/.exec(colour || "");
+    if (!parts) return null;
+    var n = parts[1].split(",").map(parseFloat);
+    if (n.length < 3 || n.some(isNaN)) return null;
+    return luminance(n[0], n[1], n[2]);
+  }
+
   function reserveShape(img, source) {
     if (source && source.w && source.h) {
       img.width = source.w;
