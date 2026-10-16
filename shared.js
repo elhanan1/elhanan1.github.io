@@ -162,6 +162,13 @@
     var tagEl = document.querySelector(".hero .tagline");
     if (tagEl) tagEl.textContent = DATA.person.tagline;
 
+    /* Only the load that has a photo on its way in: arriving from a
+       work. A visit that starts at the feed has nothing to wait for. */
+    if (workIdFromUrl(cameFrom())) holdTheLines();
+    window.addEventListener("pageshow", function (e) {
+      if (e.persisted) showTheLines();
+    });
+
     var sizes = ["large", "medium", "small"];
     var sizePercent = { large: 72, medium: 58, small: 46 };
     // How far each work sits from the left edge, as a fraction of the
@@ -283,7 +290,12 @@
       // the feed, used by the project page's back links.
       article.id = "w-" + work.id;
 
-      tapToOpen(link);
+      /* Out on the tap that navigates, so the photo lifts away from a
+         card that is already bare rather than leaving its drawing
+         standing there. One handler, not two: see tapToOpen. */
+      tapToOpen(link, function () {
+        document.documentElement.dataset.settling = "";
+      });
       link.appendChild(visual);
       card.appendChild(link);
       card.appendChild(meta);
@@ -694,6 +706,39 @@
     var rect = visual.getBoundingClientRect();
     var end = drawnTop(rect, vh, maxScroll, scrolled);
     return Math.max(0, Math.min(maxScroll, scrolled + rect.top - end));
+  }
+
+  /* The line and the arrow keep off a photo that is still travelling,
+     and come back the instant it has landed — not a moment after it,
+     which is what a fade here would be. The transition's own promise
+     says when that instant is. It is not worth trusting on its own
+     though: a transition the browser drops can leave `finished` sitting
+     there unresolved, and a line that never comes back is worse than
+     one that comes back early, so the trip's own length caps it. */
+  function holdTheLines() {
+    var root = document.documentElement;
+    var done = false;
+    root.dataset.settling = "";
+
+    function settled() {
+      if (done) return;
+      done = true;
+      delete root.dataset.settling;
+    }
+
+    window.addEventListener("pagereveal", function (e) {
+      if (e.viewTransition) e.viewTransition.finished.then(settled, settled);
+      else settled();
+    });
+
+    // Just past the trip itself (--dur-lift, 1.15s at its longest).
+    window.setTimeout(settled, 1300);
+  }
+
+  /* A document frozen on its way out comes back from the back/forward
+     cache still wearing the hold, and nothing re-runs on a restore. */
+  function showTheLines() {
+    delete document.documentElement.dataset.settling;
   }
 
   function setupSketchDraw(entries) {
