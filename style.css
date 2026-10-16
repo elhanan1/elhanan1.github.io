@@ -157,9 +157,6 @@ html[data-lift="pair"][data-page="project"]::view-transition-old(lift-title),
 html[data-lift="pair"][data-page="project"]::view-transition-old(lift-meta),
 html[data-lift="pair"][data-page="project"]::view-transition-old(lift-blurb),
 html[data-lift="pair"][data-page="project"]::view-transition-old(lift-visual),
-html[data-lift="pair"][data-page="home"]::view-transition-new(lift-title),
-html[data-lift="pair"][data-page="home"]::view-transition-new(lift-meta),
-html[data-lift="pair"][data-page="home"]::view-transition-new(lift-blurb),
 html[data-lift="pair"][data-page="home"]::view-transition-new(lift-visual) {
   animation: none;
   opacity: 0;
@@ -169,37 +166,38 @@ html[data-lift="pair"][data-page="project"]::view-transition-new(lift-title),
 html[data-lift="pair"][data-page="project"]::view-transition-new(lift-meta),
 html[data-lift="pair"][data-page="project"]::view-transition-new(lift-blurb),
 html[data-lift="pair"][data-page="project"]::view-transition-new(lift-visual),
-html[data-lift="pair"][data-page="home"]::view-transition-old(lift-title),
-html[data-lift="pair"][data-page="home"]::view-transition-old(lift-meta),
-html[data-lift="pair"][data-page="home"]::view-transition-old(lift-blurb),
 html[data-lift="pair"][data-page="home"]::view-transition-old(lift-visual) {
   animation: none;
   opacity: 1;
 }
 
-/* The one that travels is a picture of the sentence, and the browser
-   lays a picture out at the full width of the box it is in with its
-   height left to its own proportions. So while the box is still on its
-   way to the shape it has at the other end, the picture is being
-   stretched to whatever width the box has reached — on a phone the
-   card's line is the wider of the two, and a sentence that ought to be
-   getting smaller was widened a sixth on the way there and then fell
-   the whole way in the last frame. That is the growing and shrinking.
+/* The three lines of text, on the way back out to the feed. Holding the
+   work's own copy for the whole trip meant the hand-over to the card's
+   line happened in the last frame, where there is no distance left to
+   hide it: the sentence travelled as the work's, then changed into the
+   card's all at once on arrival. However the box was sized, that swap
+   was always going to be the thing you saw.
 
-   Filling the box and scaling to fit takes the width out of it: the
-   picture only ever changes by as much as its two ends differ, in one
-   direction, over the whole trip. Anchored top left because the line is
-   set from the left at both ends. */
-::view-transition-old(lift-title),
-::view-transition-new(lift-title),
-::view-transition-old(lift-meta),
-::view-transition-new(lift-meta),
-::view-transition-old(lift-blurb),
-::view-transition-new(lift-blurb) {
-  height: 100%;
-  object-fit: contain;
-  object-position: left top;
+   So it happens at the start instead, inside the first quarter second,
+   while the line is still near where it came from and moving. What
+   travels the rest of the way is already the line that is landing, at
+   the size it will land at, and all it does from there is move. The
+   photo is not in this: it is the same picture at both ends, so it has
+   nothing to swap and goes on being carried across whole. */
+html[data-lift="pair"][data-page="home"]::view-transition-old(lift-title),
+html[data-lift="pair"][data-page="home"]::view-transition-old(lift-meta),
+html[data-lift="pair"][data-page="home"]::view-transition-old(lift-blurb) {
+  animation: lift-text-out var(--dur-fast) var(--ease) both;
 }
+
+html[data-lift="pair"][data-page="home"]::view-transition-new(lift-title),
+html[data-lift="pair"][data-page="home"]::view-transition-new(lift-meta),
+html[data-lift="pair"][data-page="home"]::view-transition-new(lift-blurb) {
+  animation: lift-text-in var(--dur-fast) var(--ease) both;
+}
+
+@keyframes lift-text-out { to { opacity: 0; } }
+@keyframes lift-text-in { from { opacity: 0; } }
 
 /* The photo arrives as dim as the card it is arriving on, rather than
    arriving bright and losing the light in one frame at the end. The
