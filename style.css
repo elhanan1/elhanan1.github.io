@@ -1,7 +1,7 @@
 /* ---------------------------------------------------------------------
    Design tokens. Swap fonts / colors here to restyle the whole site.
    ------------------------------------------------------------------- */
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500&family=Inter:wght@400;500&family=Spline+Sans+Mono:wght@300;400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Spline+Sans+Mono:wght@300..700&display=swap');
 
 :root {
   --bg: #ffffff;
@@ -16,9 +16,12 @@
      and on near-black on the dark one. */
   --plate: var(--bg);
 
-  --font-display: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-body: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-mono: 'Spline Sans Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  /* One face for the whole site — the one the menu was already set in.
+     Three families (a display, a body, a mono) meant the name, the
+     captions and the nav links each spoke differently; now the only
+     thing that changes from one to the next is size, weight and
+     tracking. Set it here and every page follows. */
+  --font: 'Spline Sans Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
   --ease: cubic-bezier(.22, 1, .36, 1);
   --dur-fast: .25s;
@@ -246,7 +249,7 @@ html, body {
 
 body {
   margin: 0;
-  font-family: var(--font-body);
+  font-family: var(--font);
   font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -337,7 +340,6 @@ ul { margin: 0; padding: 0; list-style: none; }
   display: flex;
   align-items: center;
   gap: 1.6em;
-  font-family: var(--font-display);
   font-weight: 400;
   font-size: .88rem;
   letter-spacing: .06em;
@@ -350,7 +352,6 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 
 .site-nav .menu-row a {
-  font-family: var(--font-mono);
   font-weight: 300;
   text-transform: uppercase;
   letter-spacing: -.02em;
@@ -460,12 +461,15 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 
 .hero .name {
-  font-family: var(--font-display);
-  font-weight: 300;
+  font-weight: 700;
   font-size: clamp(2.8rem, 10vw, 7rem);
   /* Set tight: the letters close up into one shape rather than standing
-     apart as a line of them. */
-  letter-spacing: -.035em;
+     apart as a line of them. A monospace carries every letter in a cell
+     of the same width, so an i sits in as much room as an m and the
+     word falls apart at default tracking — it takes a good deal of
+     negative spacing here to pull the letters back against each other,
+     far more than the proportional face it replaced needed. */
+  letter-spacing: -.085em;
   line-height: .98;
   margin: 0;
   text-transform: lowercase;
@@ -615,7 +619,6 @@ ul { margin: 0; padding: 0; list-style: none; }
    carried down to whatever width the little title happened to have,
    which is why it arrived far too small and then snapped. */
 .work-meta .work-title {
-  font-family: var(--font-display);
   font-weight: 300;
   font-size: 1rem;
   color: var(--fg);
@@ -685,7 +688,6 @@ ul { margin: 0; padding: 0; list-style: none; }
    project page when the work opens. */
 .work-card .work-caption {
   margin-top: .55rem;
-  font-family: var(--font-display);
   font-weight: 300;
   /* Close to the size the same sentence has at the top of the project
      page: on a phone both run the full width of the screen, so whatever
@@ -773,7 +775,6 @@ ul { margin: 0; padding: 0; list-style: none; }
    full width of the page would hand the card a box that has little to
    do with the words in it. */
 .project-header .p-title {
-  font-family: var(--font-display);
   font-weight: 300;
   font-size: clamp(2rem, 5.6vw, 3.4rem);
   letter-spacing: .02em;
@@ -797,7 +798,6 @@ ul { margin: 0; padding: 0; list-style: none; }
    you read — the same sentence that sits under the sketch on the home
    page, carried up by the page transition. */
 .project-header .p-blurb {
-  font-family: var(--font-display);
   font-weight: 300;
   font-size: clamp(1rem, 2.4vw, 1.25rem);
   line-height: 1.45;
@@ -807,7 +807,10 @@ ul { margin: 0; padding: 0; list-style: none; }
   max-width: 23em;
 }
 
-.project-header .p-meta span + span::before { content: " \2014 "; }
+/* Space, middle dot, space. Written as escapes on purpose: a CSS hex
+   escape swallows the space that ends it, so " \00B7 " loses its
+   trailing one and the category runs straight into the dot. */
+.project-header .p-meta span + span::before { content: "\0020\00B7\0020"; }
 
 .project-header .p-intro {
   font-size: 1.05rem;
@@ -848,7 +851,6 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 
 .project-section h2 {
-  font-family: var(--font-display);
   font-weight: 400;
   font-size: 1rem;
   letter-spacing: .1em;
@@ -943,41 +945,6 @@ ul { margin: 0; padding: 0; list-style: none; }
   view-transition-name: none;
   visibility: hidden;
 }
-
-/* A way back out of a work that comes to meet you when you turn
-   around: it drops in as soon as you start scrolling back up the page,
-   and gets out of the way again when you carry on down. */
-.back-float {
-  position: fixed;
-  top: 2.1rem;
-  left: 50%;
-  z-index: 90;
-  display: inline-flex;
-  align-items: center;
-  gap: .5em;
-  padding: .5em 1.1em;
-  border: 1px solid var(--border);
-  border-radius: 2em;
-  background: var(--bg);
-  font-size: .78rem;
-  letter-spacing: .04em;
-  color: var(--fg-soft);
-  white-space: nowrap;
-  opacity: 0;
-  transform: translate(-50%, -160%);
-  pointer-events: none;
-  transition: opacity var(--dur-fast) var(--ease),
-              transform var(--dur-fast) var(--ease),
-              color var(--dur-fast) var(--ease);
-}
-
-.back-float.is-shown {
-  opacity: 1;
-  transform: translate(-50%, 0);
-  pointer-events: auto;
-}
-
-.back-float:hover { color: var(--fg); }
 
 /* The strip of screen the back-drag is read from. It has to be its own
    element: the listener behind it has to be able to prevent the
@@ -1122,7 +1089,6 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 
 .project-nav .nav-title {
-  font-family: var(--font-display);
   font-size: 1.1rem;
   color: inherit;
   text-transform: lowercase;
@@ -1138,11 +1104,16 @@ ul { margin: 0; padding: 0; list-style: none; }
    ------------------------------------------------------------------- */
 .about-main {
   padding: 10rem var(--page-pad) 8rem;
-  max-width: 34em;
+  /* The measure, in characters rather than ems. A monospace fits barely
+     two thirds of the letters a proportional face does in the same em,
+     so the old 34em column dropped the bio to about thirty characters a
+     line and it read like a column of a newspaper. Counting in ch and
+     adding the page padding back (the box includes it) holds the line
+     at a readable length whatever the viewport does to the padding. */
+  max-width: calc(60ch + 2 * var(--page-pad));
 }
 
 .about-main h1 {
-  font-family: var(--font-display);
   font-weight: 300;
   font-size: clamp(1.8rem, 4vw, 2.4rem);
   letter-spacing: .02em;
@@ -1224,7 +1195,6 @@ ul { margin: 0; padding: 0; list-style: none; }
   gap: .6em;
   padding: .9em 1.6em;
   border: 1px solid var(--fg);
-  font-family: var(--font-display);
   font-size: .85rem;
   letter-spacing: .04em;
   text-transform: lowercase;

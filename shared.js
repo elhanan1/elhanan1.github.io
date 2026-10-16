@@ -767,7 +767,6 @@
     linkProjectNav("nav-prev", prevWork);
     linkProjectNav("nav-next", nextWork);
 
-    floatingWayBack("index.html#w-" + work.id);
     tapLinks(".site-nav a, .site-footer a, .back-link, .project-nav a");
     slideDeck(prevWork, nextWork);
     edgeSwipeBack("index.html#w-" + work.id);
@@ -798,39 +797,6 @@
 
         document.body.appendChild(arrow);
       });
-  }
-
-  /* Deep in a work, the way back is far above you. This brings it to
-     where you are the moment you start heading back up the page, and
-     takes it away again when you turn round and carry on down. */
-  function floatingWayBack(href) {
-    var button = document.createElement("a");
-    button.className = "back-float";
-    button.href = href;
-    button.textContent = "\u2190 Back to work";
-    document.body.appendChild(button);
-    tapToOpen(button);
-
-    var lastY = window.scrollY;
-    var ticking = false;
-
-    function update() {
-      var y = window.scrollY;
-      var rising = y < lastY - 4;
-      var falling = y > lastY + 4;
-      // Not while the top of the page — with its own Back link — is
-      // still in reach.
-      if (rising && y > window.innerHeight) button.classList.add("is-shown");
-      if (falling || y <= window.innerHeight) button.classList.remove("is-shown");
-      if (rising || falling) lastY = y;
-      ticking = false;
-    }
-
-    window.addEventListener("scroll", function () {
-      if (ticking) return;
-      ticking = true;
-      window.requestAnimationFrame(update);
-    }, { passive: true });
   }
 
   /* On a phone, dragging in from the left edge is how you go back, and
