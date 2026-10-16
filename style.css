@@ -173,6 +173,37 @@ html[data-lift="pair"][data-page="home"]::view-transition-old(lift-visual) {
   opacity: 1;
 }
 
+/* The photo arrives as dim as the card it is arriving on, rather than
+   arriving bright and losing the light in one frame at the end. The
+   snapshot that travels is the project page's, at full strength, while
+   the card's own photo rests at --preview-dim under a finger and at
+   nothing at all under a pointer that isn't hovering it — and the drop
+   between the two used to happen in the single frame where the
+   pseudo-elements go away and the real card is shown. shared.js reads
+   the card this trip is going back to and writes --lift-photo-end;
+   these spend the whole trip getting there, and there is nothing left
+   to drop. Declared after the two rules above, which hold the same
+   snapshots still with no animation of their own. */
+@keyframes lift-photo-settle {
+  from { opacity: 1; }
+  to { opacity: var(--lift-photo-end, var(--preview-dim)); }
+}
+
+@keyframes lift-photo-rise {
+  from { opacity: var(--preview-dim); }
+  to { opacity: 1; }
+}
+
+html[data-lift="pair"][data-page="home"]::view-transition-old(lift-visual) {
+  animation: lift-photo-settle var(--dur-lift) var(--ease) both;
+}
+
+/* The same on the way in, where the card's photo is the dim one and the
+   work's own page is where it comes up to full strength. */
+html[data-lift="pair"][data-page="project"]::view-transition-new(lift-visual) {
+  animation: lift-photo-rise var(--dur-lift) var(--ease) both;
+}
+
 /* The long intro has no counterpart on the card, so instead of fading
    in and out where it stands it slides: up from below the fold as the
    work opens, and straight back down off the bottom as you leave. */

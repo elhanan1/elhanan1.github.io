@@ -62,6 +62,7 @@ window.SITE_DATA = {
 },
     images: {
       medium: "assets/img/looker-chair-medium.webp",
+      w: 600, h: 800,
       full: "assets/img/looker-chair-full.jpg"
     },
     gallery: [
@@ -69,18 +70,21 @@ window.SITE_DATA = {
       type: "image",
       pos: [1, 1],
       medium: "assets/img/looker-chair-2-medium.webp",
+      w: 600, h: 800,
       full: "assets/img/looker-chair-2-full.jpg",
     },
     {
       type: "image",
       pos: [1, 2],
       medium: "assets/img/looker-chair-3-medium.webp",
+      w: 600, h: 800,
       full: "assets/img/looker-chair-3-full.jpg",
     },
     {
       type: "image",
       wide: true,
       medium: "assets/img/looker-chair-4-medium.webp",
+      w: 600, h: 222,
       full: "assets/img/looker-chair-4-full.jpg",
       wide: true
     }
@@ -122,6 +126,7 @@ window.SITE_DATA = {
       // Transparent background — the page puts the plate behind it.
       cutout: true,
       medium: "assets/img/bottle-fifo-medium.webp",
+      w: 600, h: 233,
       full: "assets/img/bottle-fifo-full.webp"
     },
     gallery: [
@@ -129,18 +134,21 @@ window.SITE_DATA = {
       type: "image",
       pos: [1, 1],
       medium: "assets/img/bottle-fifo-2-medium.webp",
+      w: 600, h: 800,
       full: "assets/img/bottle-fifo-2-full.jpg",
     },
     {
       type: "image",
       pos: [1, 2],
       medium: "assets/img/bottle-fifo-3-medium.webp",
+      w: 600, h: 450,
       full: "assets/img/bottle-fifo-3-full.jpg",
     },
     {
       type: "image",
       wide: true,
       medium: "assets/img/bottle-fifo-4-medium.webp",
+      w: 600, h: 417,
       full: "assets/img/bottle-fifo-4-full.jpg",
     }
   ]

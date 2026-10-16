@@ -13,6 +13,10 @@
 
   function start() {
     initNav();
+    // A page coming back from the back/forward cache carries whatever
+    // state it was frozen with; an arming that never fired is part of
+    // that, and would be spent on the wrong navigation.
+    window.addEventListener("pageshow", disarmSkip);
     var page = document.body.dataset.page;
     // On the root element, where the view-transition pseudo-elements
     // live: the CSS needs to know which of a pair's two snapshots is the
@@ -20,8 +24,15 @@
     document.documentElement.dataset.page = page;
     // Set by a sideways swipe just before it navigates, and consumed
     // here: this arrival slides in from the side instead of lifting.
+    /* Read on every page so a direction left over from a move that
+       never happened is cleared rather than kept, but acted on only
+       where a sideways move can land: the feed wearing data-slide sent
+       the whole page sliding out on its next navigation instead of
+       lifting a card. */
     var slide = readSlide();
-    if (slide) document.documentElement.dataset.slide = slide;
+    if (slide && page === "project") {
+      document.documentElement.dataset.slide = slide;
+    }
     if (page === "home") initHome();
     if (page === "project") initProject();
     if (page === "about") initAbout();
@@ -179,6 +190,7 @@
           preview.remove();
           if (lifts[work.id]) lifts[work.id].visual = visual;
         });
+        reserveShape(previewImg, work.images);
         previewImg.src = previewSrc;
         // The card is the full width of the screen on a phone, and up to
         // 640px of a desktop one.
@@ -276,6 +288,12 @@
        restore from the back/forward cache doesn't run this script again
        at all and has nothing but that event. Naming a card that is
        already named costs nothing. */
+    /* The anchor this page was asked for, read once and kept: the hash
+       is taken off the URL as soon as it has been acted on (see
+       bringIntoView), so a second look at location.hash would say the
+       feed had been asked for nothing in particular. */
+    var askedFor = window.location.hash;
+
     function restoreFromWork() {
       var id = workIdFromUrl(cameFrom());
       if (!id) return;
@@ -285,7 +303,7 @@
          own anchor, and the browser's back restores where you were. The
          logo asks for the site, so it lands at the top of the feed like
          any other visit. */
-      var asked = window.location.hash === "#w-" + id;
+      var asked = askedFor === "#w-" + id;
       var nav = window.navigation;
       var traversal = !!(nav && nav.activation
         && nav.activation.navigationType === "traverse");
@@ -296,7 +314,24 @@
       // to come back to, and the CSS can carry one snapshot across
       // rather than cross-fading two.
       document.documentElement.dataset.lift = "pair";
-      bringIntoView(lifts[id].entry);
+
+      /* How dim the photo should be by the time it lands. The single
+         snapshot that travels is the project page's, at full strength,
+         while the card's own photo rests at --preview-dim on a touch
+         screen and at nothing at all under a pointer that isn't
+         hovering it — so the photo used to arrive bright and drop to
+         its resting state in one frame, at the end. Reading it off the
+         card this trip is actually going back to is the only way to
+         know which of the two it is; the CSS fades to it along the way.
+         */
+      var photo = lifts[id].visual;
+      var preview = photo && photo.closest && photo.closest(".work-preview");
+      if (preview) {
+        document.documentElement.style.setProperty(
+          "--lift-photo-end", getComputedStyle(preview).opacity);
+      }
+
+      bringIntoView(lifts[id].entry, asked && !traversal);
     }
 
     restoreFromWork();
@@ -391,16 +426,20 @@
     return el;
   }
 
-  /* Whether this page was arrived at from the works feed. */
-  function cameFromFeed() {
-    var from = cameFrom();
-    if (!from) return false;
+  /* Whether a URL is the works feed. */
+  function isFeedUrl(url) {
+    if (!url) return false;
     try {
-      var path = new URL(from, window.location.href).pathname;
+      var path = new URL(url, window.location.href).pathname;
       return path === "/" || path.indexOf("index.html") !== -1;
     } catch (e) {
       return false;
     }
+  }
+
+  /* Whether this page was arrived at from the works feed. */
+  function cameFromFeed() {
+    return isFeedUrl(cameFrom());
   }
 
   /* Which work a project.html URL points at, or null for anything else. */
@@ -424,14 +463,37 @@
     return document.referrer || null;
   }
 
-  function bringIntoView(el) {
+  /* `ours` is a return that came in on the card's own anchor — its Back
+     link, or the drag back. There the browser has a scroll of its own
+     to do, to the top of that anchor, and it does it in its own time:
+     after the page has been handed over for the transition. So the trip
+     was captured with the feed still at the top and the card only
+     arrived once the transition was over and the pseudo-elements had
+     gone, which is the page appearing to jump into place with nothing
+     having travelled. On a tall window it was the only scroll that
+     happened at all, because a card near the top of the feed counts as
+     already in view and the check below left it alone.
+
+     Taking the hash off the URL the moment it has been read leaves the
+     scrolling here, where it happens before anything is captured. The
+     entry is rewritten rather than added to, so Back still goes back to
+     the work.
+
+     Everything else — a traversal, which restores the reader's own
+     position, or an arrival with no anchor at all — is only nudged if
+     the card isn't on screen, as before. */
+  function bringIntoView(el, ours) {
+    if (ours) {
+      try {
+        window.history.replaceState(window.history.state, "",
+          window.location.pathname + window.location.search);
+      } catch (e) {}
+      el.scrollIntoView({ block: "center" });
+      return;
+    }
     var rect = el.getBoundingClientRect();
     var margin = Math.min(80, window.innerHeight * 0.1);
     var inView = rect.top >= -margin && rect.bottom <= window.innerHeight + margin;
-    // A traversal restores the scroll position on its own, and the back
-    // link lands on the card's own anchor — in both cases the card is
-    // already where the reader left it, and moving the page would be the
-    // surprise. This is for everything else.
     if (!inView) el.scrollIntoView({ block: "center" });
   }
 
@@ -497,6 +559,19 @@
     if (!medium || !full) return;
     img.srcset = medium + " 600w, " + full + " 1600w";
     img.sizes = sizes;
+  }
+
+  /* The shape of a photo that hasn't arrived yet. Without it a card is
+     laid out at the sketch's proportions and then resized the moment the
+     photo loads, which moves everything below it — and a return to the
+     feed that has already scrolled to a card lands beside it instead of
+     on it. w and h are the photo's own pixel size, from data/works.js;
+     the image script prints them for each file it makes. */
+  function reserveShape(img, source) {
+    if (source && source.w && source.h) {
+      img.width = source.w;
+      img.height = source.h;
+    }
   }
 
   function tapToOpen(link) {
@@ -649,6 +724,7 @@
       // the transition in.
       heroImg.loading = "eager";
       heroImg.fetchPriority = "high";
+      reserveShape(heroImg, work.images);
       heroImg.src = work.images.full;
     }
 
@@ -697,6 +773,30 @@
       if (cameFromFeed()) document.documentElement.dataset.lift = "pair";
     }
 
+    /* Named for the way out as well. A move between works leaves them
+       unnamed until that arrival is over (above), and a Back to work
+       inside that window left for the feed with nothing to carry: the
+       card there is told to hold its own text and photo back for the
+       whole trip, so with no travelling pair to show in their place it
+       sat empty and then snapped in. pageswap runs before the snapshot
+       is taken, so naming here is in time; a move to another work is
+       left unnamed, as it was. */
+    window.addEventListener("pageswap", function (e) {
+      var to = e.activation && e.activation.entry && e.activation.entry.url;
+      if (isFeedUrl(to)) nameTheTravellers();
+    });
+
+    /* Back out of the browser's own back/forward cache, this document is
+       restored exactly as it was frozen — and it was frozen on its way
+       out, with every name taken off it (see goToWork) and a slide
+       direction possibly still on the root. Nothing re-runs by itself,
+       so both are put right by hand. */
+    window.addEventListener("pageshow", function (e) {
+      if (!e.persisted) return;
+      delete document.documentElement.dataset.slide;
+      nameTheTravellers();
+    });
+
     /* Back to this work's own card in the feed rather than the top of
        the page — both because that's where the reader was, and because
        the text has to have somewhere on screen to fly back to. */
@@ -740,6 +840,7 @@
           fig.appendChild(video);
         } else {
           var img = document.createElement("img");
+          reserveShape(img, item);
           img.src = (item.wide && item.full) || item.medium;
           img.alt = item.caption || work.title;
           img.loading = "lazy";
@@ -1020,6 +1121,7 @@
     // background: when the real page takes over it is already cached
     // and paints at once, instead of the photo blinking out and back.
     img.fetchPriority = "low";
+    reserveShape(img, work.images);
     img.src = (work.images && (work.images.full || work.images.medium)) || "";
     visual.appendChild(img);
     peek.appendChild(visual);
@@ -1045,18 +1147,31 @@
     window.location.href = "project.html?id=" + encodeURIComponent(work.id);
   }
 
+  /* Armed for exactly one navigation. It used to be armed for good: the
+     listener stayed on the document, and a document that is restored
+     from the back/forward cache comes back with it still on — so every
+     later move out of that page had its transition thrown away too,
+     which is why the animations stopped after a few trips back and
+     forth. `once` takes it off the moment it has done its job, and a
+     restore clears an arming that never fired. */
   function skipNextTransition() {
-    window.addEventListener("pageswap", function (e) {
-      if (!e.viewTransition) return;
-      // Skipping rejects the transition's own promises. Nothing is
-      // waiting on them, but an unhandled rejection still lands in the
-      // console as an error that looks like a fault.
-      ["ready", "finished", "updateCallbackDone"].forEach(function (name) {
-        var promise = e.viewTransition[name];
-        if (promise && promise.catch) promise.catch(function () {});
-      });
-      e.viewTransition.skipTransition();
+    window.addEventListener("pageswap", skipOnce, { once: true });
+  }
+
+  function disarmSkip(e) {
+    if (!e || e.persisted) window.removeEventListener("pageswap", skipOnce);
+  }
+
+  function skipOnce(e) {
+    if (!e.viewTransition) return;
+    // Skipping rejects the transition's own promises. Nothing is
+    // waiting on them, but an unhandled rejection still lands in the
+    // console as an error that looks like a fault.
+    ["ready", "finished", "updateCallbackDone"].forEach(function (name) {
+      var promise = e.viewTransition[name];
+      if (promise && promise.catch) promise.catch(function () {});
     });
+    e.viewTransition.skipTransition();
   }
 
   /* Runs once this page's arrival is over and the stage is clear. The
