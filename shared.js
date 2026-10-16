@@ -250,8 +250,14 @@
          under a mouse it comes in with the photo, and on a touch
          screen, where there is no hover to find anything with, it is
          simply always there. */
-      var cue = textEl("span", "work-cue", "\u2198");
+      var cue = document.createElement("span");
+      cue.className = "work-cue";
       cue.setAttribute("aria-hidden", "true");
+      // Drawn rather than set: a glyph is as long as the face makes it,
+      // and this one wants to be a long reach into the corner. Same
+      // stroke as the sketches above it.
+      cue.innerHTML = '<svg viewBox="0 0 32 32" aria-hidden="true">' +
+        '<path d="M6 6 L26 26 M26 13 L26 26 L13 26"/></svg>';
       visual.appendChild(cue);
 
       visual.appendChild(svg);
@@ -405,8 +411,6 @@
      drops first and draws the rest down after it. */
   function writeAsWave(el, text) {
     el.textContent = "";
-    var middle = (text.length - 1) / 2;
-    var at = 0;
 
     // Word by word, because a letter in a box of its own is something
     // the line can be broken after, and a name that wraps in the middle
@@ -419,15 +423,12 @@
         var span = document.createElement("span");
         span.className = "wave-letter";
         span.textContent = letter;
-        span.style.setProperty("--from-middle", Math.round(Math.abs(at - middle)));
         wordEl.appendChild(span);
-        at++;
       });
 
       el.appendChild(wordEl);
       if (w < words.length - 1) {
         el.appendChild(textEl("span", "wave-space", "\u00a0"));
-        at++;
       }
     });
   }
@@ -438,15 +439,48 @@
      wave would run in backwards — and scrolling back up lays them down
      again the same way. Nothing moves until the page does. */
   function waveOnScroll(nameEl) {
+    var words = [].slice.call(nameEl.querySelectorAll(".wave-word"));
     var letters = [].slice.call(nameEl.querySelectorAll(".wave-letter"));
     if (!letters.length || reduceMotion) return;
 
-    var furthest = 0;
-    var spread = letters.map(function (letter) {
-      var from = parseFloat(letter.style.getPropertyValue("--from-middle")) || 0;
-      furthest = Math.max(furthest, from);
-      return from;
+    /* How far each letter stands from a middle — which is what decides
+       the order they leave in, outermost first. There are two answers
+       and the layout picks between them: on one line the middle is the
+       middle of the whole name, so the wave runs in from both ends of
+       the line. Once it has broken into a word above a word that reading
+       is wrong — the first letter of the top word and the last of the
+       bottom one are diagonally opposite corners, not two ends of
+       anything — so each word is measured from its own middle and both
+       of its ends lift together. */
+    var fromNameMiddle = [];
+    var fromWordMiddle = [];
+    var nameMiddle = (letters.length - 1) / 2;
+    letters.forEach(function (letter, i) {
+      fromNameMiddle.push(Math.abs(i - nameMiddle));
     });
+    words.forEach(function (word) {
+      var own = word.querySelectorAll(".wave-letter");
+      var wordMiddle = (own.length - 1) / 2;
+      own.forEach(function (letter, i) {
+        fromWordMiddle.push(Math.abs(i - wordMiddle));
+      });
+    });
+
+    var spread = fromNameMiddle;
+    var furthest = 0;
+
+    function measure() {
+      var broken = words.length > 1 &&
+        words[words.length - 1].getBoundingClientRect().top >
+          words[0].getBoundingClientRect().top + 1;
+      spread = broken && fromWordMiddle.length === letters.length
+        ? fromWordMiddle
+        : fromNameMiddle;
+      furthest = spread.reduce(function (most, one) {
+        return Math.max(most, one);
+      }, 0);
+    }
+    measure();
 
     // How much of the whole gesture each letter waits through before it
     // starts, and how long it then takes: together they stay inside 1,
@@ -457,9 +491,15 @@
 
     function update() {
       var rect = nameEl.getBoundingClientRect();
-      // 0 while the name sits where it starts, 1 once it has travelled
-      // half a screen up from there.
-      var gone = Math.min(1, Math.max(0, -rect.top / Math.max(1, window.innerHeight * .5)));
+      var scrolled = window.scrollY || window.pageYOffset || 0;
+      /* The gesture is spent by the time the name reaches the top of
+         the screen, and it starts with the first pixel of scroll — it
+         used to begin only once the name had already gone past the top,
+         which is to say where nobody could see any of it. The distance
+         to the top of the screen is the name's own, so this follows the
+         hero whatever height it has. */
+      var travel = Math.max(window.innerHeight * .25, rect.top + scrolled);
+      var gone = Math.min(1, Math.max(0, scrolled / travel));
 
       letters.forEach(function (letter, i) {
         var waits = furthest ? (furthest - spread[i]) / furthest * LEAD : 0;
@@ -475,7 +515,10 @@
       ticking = true;
       window.requestAnimationFrame(update);
     }, { passive: true });
-    window.addEventListener("resize", update, { passive: true });
+    window.addEventListener("resize", function () {
+      measure();
+      update();
+    }, { passive: true });
     update();
   }
 

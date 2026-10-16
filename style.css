@@ -701,6 +701,21 @@ ul { margin: 0; padding: 0; list-style: none; }
    states: no fade, because a fade here is a delay, and the whole point
    is that they appear exactly as the photo stops. shared.js wears
    data-settling for the length of the trip. */
+.work-visual .work-cue svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.work-visual .work-cue path {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
 html[data-settling] .work-visual .sketch-svg,
 html[data-settling] .work-visual .work-cue {
   opacity: 0;
@@ -708,31 +723,22 @@ html[data-settling] .work-visual .work-cue {
 }
 
 /* The photo is a link and the card has no chrome to say so, so an
-   arrow rests in its bottom corner. */
+   arrow reaches into its bottom corner. */
 .work-visual .work-cue {
   position: absolute;
-  right: .9rem;
+  left: .9rem;
   bottom: .9rem;
   z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.6em;
-  height: 2.6em;
-  border-radius: 50%;
-  /* Not the page's own background: a photo is whatever colour it is,
-     and on a pale one a white disc disappeared and left the arrow
-     floating by itself. A dark wash with the photo blurred under it
-     carries its own contrast wherever it lands — it takes its colour
-     from what is behind it while staying dark enough for a white
-     arrow. Safari needs the prefix; without either the flat wash still
-     stands on its own. */
-  background: rgba(16, 15, 13, .42);
-  -webkit-backdrop-filter: blur(10px) brightness(.72);
-  backdrop-filter: blur(10px) brightness(.72);
-  color: #fff;
-  font-size: .9rem;
-  line-height: 1;
+  width: 2.4rem;
+  height: 2.4rem;
+  /* No disc. A photo is whatever colour it is, so the line carries its
+     own contrast instead: white, with a tight dark halo under it that
+     holds it up even against a pale wall. */
+  filter: drop-shadow(0 0 3px rgba(0, 0, 0, .55))
+          drop-shadow(0 1px 2px rgba(0, 0, 0, .45));
   /* The photo underneath is the thing being pointed at; the arrow is
      never the thing you hit. */
   pointer-events: none;
@@ -746,10 +752,11 @@ html[data-settling] .work-visual .work-cue {
   .work-visual .work-cue {
     opacity: 0;
     /* It travels the way it points, up out of the corner it is heading
-       into rather than in from the side. */
-    transform: translate(-.3rem, -.3rem);
-    transition: opacity var(--dur-fast) var(--ease),
-                transform var(--dur-fast) var(--ease);
+       into rather than in from the side — a long enough reach, over a
+       long enough beat, to read as the arrow going somewhere. */
+    transform: translate(-.9rem, -.9rem);
+    transition: opacity var(--dur-med) var(--ease),
+                transform var(--dur-med) var(--ease);
   }
 
   .work-link:hover .work-cue,
