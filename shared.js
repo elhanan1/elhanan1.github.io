@@ -326,9 +326,14 @@
     function liftCard(id) {
       Object.keys(lifts).forEach(function (key) {
         var card = lifts[key];
-        ["visual", "title", "meta", "blurb"].forEach(function (part) {
+        /* Not "meta": the year and the category are not carried from
+           the card any more. They arrive on a work's page out of the
+           photo instead — see project-meta — so the card's copy stays
+           in the page's own snapshot and goes with it. */
+        ["visual", "title", "blurb"].forEach(function (part) {
           card[part].style.viewTransitionName = key === id ? "lift-" + part : "";
         });
+        card.meta.style.viewTransitionName = "";
       });
       return !!lifts[id];
     }
@@ -1015,7 +1020,7 @@
        the card; see the CSS). */
     function nameTheTravellers() {
       nameForTransition("p-title", "lift-title");
-      nameForTransition("p-meta", "lift-meta");
+      nameForTransition("p-meta", "project-meta");
       nameForTransition("p-blurb", "lift-blurb");
       nameForTransition("p-intro", "project-intro");
       if (heroImg) heroImg.style.viewTransitionName = "lift-visual";

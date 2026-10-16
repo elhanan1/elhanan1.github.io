@@ -126,8 +126,7 @@
 ::view-transition-old(root) { animation-name: page-out; }
 ::view-transition-new(root) { animation-name: page-in; }
 
-/* The three lines of text that travel (lift-title / lift-meta /
-   lift-blurb; shared.js hands these names to whichever card is being
+/* The two lines of text that travel (lift-title / lift-blurb; shared.js hands these names to whichever card is being
    opened or returned to).
 
    A pair is two snapshots, and crossfading them is what made the text
@@ -154,7 +153,6 @@
    nowhere to go, and it just sat there over the page you were heading
    to until the clock ran out. */
 html[data-lift="pair"][data-page="project"]::view-transition-old(lift-title),
-html[data-lift="pair"][data-page="project"]::view-transition-old(lift-meta),
 html[data-lift="pair"][data-page="project"]::view-transition-old(lift-blurb),
 html[data-lift="pair"][data-page="project"]::view-transition-old(lift-visual),
 html[data-lift="pair"][data-page="home"]::view-transition-new(lift-visual) {
@@ -163,7 +161,6 @@ html[data-lift="pair"][data-page="home"]::view-transition-new(lift-visual) {
 }
 
 html[data-lift="pair"][data-page="project"]::view-transition-new(lift-title),
-html[data-lift="pair"][data-page="project"]::view-transition-new(lift-meta),
 html[data-lift="pair"][data-page="project"]::view-transition-new(lift-blurb),
 html[data-lift="pair"][data-page="project"]::view-transition-new(lift-visual),
 html[data-lift="pair"][data-page="home"]::view-transition-old(lift-visual) {
@@ -185,13 +182,11 @@ html[data-lift="pair"][data-page="home"]::view-transition-old(lift-visual) {
    photo is not in this: it is the same picture at both ends, so it has
    nothing to swap and goes on being carried across whole. */
 html[data-lift="pair"][data-page="home"]::view-transition-old(lift-title),
-html[data-lift="pair"][data-page="home"]::view-transition-old(lift-meta),
 html[data-lift="pair"][data-page="home"]::view-transition-old(lift-blurb) {
   animation: lift-text-out var(--dur-fast) var(--ease) both;
 }
 
 html[data-lift="pair"][data-page="home"]::view-transition-new(lift-title),
-html[data-lift="pair"][data-page="home"]::view-transition-new(lift-meta),
 html[data-lift="pair"][data-page="home"]::view-transition-new(lift-blurb) {
   animation: lift-text-in var(--dur-fast) var(--ease) both;
 }
@@ -228,6 +223,28 @@ html[data-lift="pair"][data-page="home"]::view-transition-old(lift-visual) {
    work's own page is where it comes up to full strength. */
 html[data-lift="pair"][data-page="project"]::view-transition-new(lift-visual) {
   animation: lift-photo-rise var(--dur-lift) var(--ease) both;
+}
+
+/* The year and the category come up out of the picture rather than
+   across from the card's own copy of them: a work's page puts them
+   under its title while the photo they belong to is below, so they rise
+   into place from down there and a little to the side. They are not a
+   pair any more — this is the one line on the page that arrives from
+   somewhere rather than from its twin. */
+::view-transition-new(project-meta) {
+  animation: meta-up var(--dur-lift) var(--ease) both;
+}
+
+::view-transition-old(project-meta) {
+  animation: meta-down var(--dur-med) var(--ease) both;
+}
+
+@keyframes meta-up {
+  from { transform: translate(8vw, 42vh); opacity: 0; }
+}
+
+@keyframes meta-down {
+  to { transform: translate(8vw, 42vh); opacity: 0; }
 }
 
 /* The long intro has no counterpart on the card, so instead of fading
