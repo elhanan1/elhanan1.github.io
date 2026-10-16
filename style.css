@@ -270,12 +270,12 @@ html[data-slide="prev"]::view-transition-new(root) {
 html[data-enter="push"]::view-transition-old(root),
 html[data-enter="push"]::view-transition-new(root) {
   mix-blend-mode: normal;
-  /* The snapshot stays the size of the screen it was taken on instead
-     of being stretched into a box of the other page's shape, which is
-     what left it hanging off to one side and clipped until it settled. */
-  height: 100%;
-  object-fit: cover;
-  object-position: top left;
+  /* A page's own background belongs to the canvas, not to the picture
+     taken of the page, so a root snapshot is transparent everywhere the
+     page was only its background. Painting the ground back behind each
+     one is what makes the card solid rather than a film with the other
+     page legible through it. */
+  background: var(--bg);
 }
 
 html[data-enter="push"]::view-transition-new(root) {

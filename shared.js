@@ -105,6 +105,17 @@
     var logo = nav.querySelector(".menu-logo");
     if (logo) onTap(logo, function () { writeEnter("push"); });
 
+    /* The names a work's page puts on when it loads stay on until
+       something takes them off, so any way out through the menu would
+       otherwise carry them into a transition with nothing to pair them
+       with. They come off on the tap, before a snapshot is taken; the
+       pageswap in initProject puts them back for the one menu link
+       that really is a lift — Work, which a work's page re-points at
+       its own card in the feed. */
+    nav.querySelectorAll("a").forEach(function (a) {
+      onTap(a, unnameTheTravellers);
+    });
+
     if (dot) {
       onTap(dot, function () {
         var open = nav.classList.toggle("expanded");
@@ -887,7 +898,16 @@
        left unnamed, as it was. */
     window.addEventListener("pageswap", function (e) {
       var to = e.activation && e.activation.entry && e.activation.entry.url;
-      if (isFeedUrl(to)) nameTheTravellers();
+      /* Only when the feed is being asked for this card. A named element
+         is lifted out of the page's own snapshot into a layer of its
+         own, painted above it — so on a move that is not a lift they
+         are not pieces travelling anywhere, just this page's words left
+         hovering over whatever is arriving and dissolving on their own
+         clock. That is what showed through the card coming down from
+         the logo, and why the about page, which names nothing, was
+         fine. The anchor is the same thing the feed checks before it
+         sets a lift up at the other end. */
+      if (isFeedUrl(to) && to.indexOf("#w-") !== -1) nameTheTravellers();
     });
 
     /* Back out of the browser's own back/forward cache, this document is
@@ -1243,11 +1263,7 @@
     // own transition would only play the same move a second time.
     if (alreadyMoved) skipNextTransition();
     // And nothing is named on the way out either, for the same reason.
-    ["p-title", "p-meta", "p-blurb", "p-intro"].forEach(function (id) {
-      nameForTransition(id, "");
-    });
-    var hero = document.querySelector(".project-hero-visual img");
-    if (hero) hero.style.viewTransitionName = "";
+    unnameTheTravellers();
     window.location.href = "project.html?id=" + encodeURIComponent(work.id);
   }
 
@@ -1346,6 +1362,18 @@
   function setText(id, value) {
     var el = document.getElementById(id);
     if (el) el.textContent = value;
+  }
+
+  /* Takes the travelling names off a work's pieces, so the page leaves
+     as one picture of itself rather than as a page plus five layers
+     above it. Safe anywhere: the feed and the about page have none of
+     these to begin with. */
+  function unnameTheTravellers() {
+    ["p-title", "p-meta", "p-blurb", "p-intro"].forEach(function (id) {
+      nameForTransition(id, "");
+    });
+    var hero = document.querySelector(".project-hero-visual img");
+    if (hero) hero.style.viewTransitionName = "";
   }
 
   function nameForTransition(id, name) {

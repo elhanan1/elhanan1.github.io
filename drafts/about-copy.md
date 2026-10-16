@@ -1,6 +1,6 @@
 # About — טיוטת טקסט
 
-שלוש מקבצים: About / Philosophy / How I see things.
+שלושה חלקים: About / Philosophy / How I see things.
 לכל חלק: נוסח אנגלי (מה שיילך לאתר) + נוסח עברי (לאישור תוכן).
 
 ---
@@ -9,25 +9,23 @@
 
 **EN**
 
-I'm Elhanan, an industrial design student at Bezalel. I came to it from two
-years of electrical engineering, which I left for design — but I kept the
-habit of wanting to know how a thing works on the inside before deciding
-what it should look like.
+I'm Elhanan, an industrial design student at Bezalel. Before that I studied
+electrical engineering for two years and left it for design. What stayed with
+me from it is the habit of wanting to know how something works on the inside
+before I decide how it should look.
 
-Most of my projects start from a friction I ran into myself: a bag I didn't
-want to leave on an airport floor, a fridge I had to empty every time I
-restocked it at the café I worked in. I work them out in quick, crude models,
-tried in the place they're meant for rather than on the desk.
+I care about small details to the point of obsession. I'll sit a long time on
+a seam, a radius or the weight of a movement. Those are the things that decide
+whether a product feels finished.
 
 **HE**
 
-אני אלחנן, סטודנט לעיצוב תעשייתי בבצלאל. הגעתי לכאן אחרי שנתיים של הנדסת חשמל
-שעזבתי לטובת עיצוב — אבל נשאר לי ההרגל לרצות להבין איך משהו עובד מבפנים לפני
-שאני מחליט איך הוא צריך להיראות.
+אני אלחנן, סטודנט לעיצוב תעשייתי בבצלאל. לפני זה למדתי שנתיים הנדסת חשמל
+ופרשתי לעיצוב. מה שנשאר לי משם הוא ההרגל לרצות להבין איך משהו עובד מבפנים
+לפני שאני מחליט איך הוא ייראה.
 
-רוב הפרויקטים שלי מתחילים מחיכוך שנתקלתי בו בעצמי: תיק שלא רציתי להשאיר על
-רצפת שדה תעופה, מקרר שהייתי צריך לרוקן בכל פעם שמילאתי אותו בקפה שעבדתי בו.
-אני פותר אותם במודלים גסים ומהירים, שנבדקים במקום שהם מיועדים לו ולא על השולחן.
+אני אובססיבי לפרטים קטנים. אני מוכן לשבת המון זמן על תפר, על רדיוס או על
+המשקל של תנועה. אלה הדברים שקובעים אם מוצר מרגיש גמור.
 
 ---
 
@@ -36,26 +34,33 @@ tried in the place they're meant for rather than on the desk.
 **EN**
 
 Good design tells you what to do with it. Before an object is beautiful it
-should be legible: where to hold it, which way it opens, what happens when
-you press. If something needs explaining, I read that as a fault in the
+should be clear: where to hold it, which way it opens, what happens when you
+press. When something needs explaining, I treat that as a problem in the
 design and not in the person using it.
 
-I'd rather do few things than many. A product doesn't earn my respect by the
-length of its feature list but by how well the few things it does are made —
-the fit of a seam, the weight of a movement, the detail nobody is meant to
-notice. Clean isn't a style here; it's what's left once nothing is competing
-for attention.
+I prefer few functions over many. What matters to me is how well those few
+are made — the fit, the tolerances, the parts you only notice when they're
+wrong. A product that does three things properly is worth more to me than one
+that does ten things carelessly.
+
+Besides the function, I want things to look clean. In something meant to be
+used I keep the amount of visual information low. Every extra line, button or
+colour is one more thing the user has to get past before reaching what they
+came for.
 
 **HE**
 
-עיצוב טוב אומר לך מה לעשות איתו. לפני שאובייקט הוא יפה הוא צריך להיות קריא:
-איפה לאחוז, לאיזה כיוון הוא נפתח, מה קורה כשלוחצים. אם צריך להסביר משהו, אני
-קורא את זה כתקלה בעיצוב ולא במשתמש.
+עיצוב טוב אומר לך מה לעשות איתו. לפני שאובייקט הוא יפה הוא צריך להיות ברור:
+איפה לאחוז, לאיזה כיוון הוא נפתח, מה קורה כשלוחצים. כשצריך להסביר משהו, אני
+רואה בזה בעיה בעיצוב ולא במשתמש.
 
-אני מעדיף לעשות מעט דברים ולא הרבה. מוצר לא מרוויח את ההערכה שלי לפי אורך רשימת
-הפונקציות אלא לפי כמה טוב עשויים המעט שהוא כן עושה — התאמת התפר, המשקל של תנועה,
-הפרט שאף אחד לא אמור לשים לב אליו. נקי זה לא סטייל כאן; זה מה שנשאר אחרי שכלום
-לא מתחרה על תשומת הלב.
+אני מעדיף מעט פונקציות על הרבה. מה שחשוב לי הוא כמה טוב עשוי המעט הזה —
+ההתאמות, הסבולות, הפרטים שמרגישים רק כשהם לא בסדר. מוצר שעושה שלושה דברים
+כמו שצריך שווה לי יותר ממוצר שעושה עשרה ברישול.
+
+חוץ מהפונקציונליות אני רוצה שדברים ייראו נקי. בדבר שנועד לשימוש אני משאיר
+כמה שפחות מידע ויזואלי. כל קו, כפתור או צבע מיותר הוא עוד דבר שהמשתמש צריך
+לעבור לפני שהוא מגיע למה שהוא בא בשבילו.
 
 ---
 
@@ -63,25 +68,26 @@ for attention.
 
 **EN**
 
-This follows me off the desk. I get genuinely annoyed when something simple
-has been made complicated, and genuinely happy in front of a product where
-someone clearly sat with every small detail — a tool, a phone, an app, a door
-handle. The ones I admire were made with the person using them actually in
-mind; the ones that weren't are hard for me to forgive.
+This is how I look at things day to day as well. Complicated solutions to
+simple problems annoy me. A product where someone clearly went through every
+small detail makes my day, whether it's a hand tool, a phone, an app or a door
+handle. I have a weakness for technology that was made properly, and very
+little patience for technology that was made without thinking about who would
+use it.
 
-At home I like plenty of colour. In things made to be used I'll choose quiet
-almost every time — not because I prefer less, but because the colour is mine
-to enjoy and the object's job is to stay out of the way.
+At home I like plenty of colour, on the walls and on the shelves. In things
+that people have to use I design the other way round, and I'm comfortable
+keeping the two apart.
 
 **HE**
 
-זה הולך איתי גם מחוץ לשולחן. אני באמת מתעצבן כשמסבכים משהו פשוט, ובאמת נהנה מול
-מוצר שרואים שמישהו ישב על כל פרט קטן — כלי, טלפון, אפליקציה, ידית דלת. אלה שאני
-מעריך נעשו באמת מתוך מחשבה על מי שישתמש בהם; אלה שלא — קשה לי לסלוח להם.
+ככה אני מסתכל על דברים גם ביומיום. פתרונות מסובכים לבעיות פשוטות מעצבנים
+אותי. מוצר שרואים בו שמישהו עבר על כל פרט קטן עושה לי את היום, בין אם זה כלי
+עבודה, טלפון, אפליקציה או ידית דלת. יש לי חולשה למוצרים טכנולוגיים שנעשו כמו
+שצריך, ואפס סבלנות למוצרים שנעשו בלי לחשוב על מי ישתמש בהם.
 
-בבית אני דווקא אוהב מלא צבעים. בדברים שנועדו לשימוש אני אבחר שקט כמעט תמיד — לא
-כי אני מעדיף פחות, אלא כי הצבע הוא שלי ליהנות ממנו והתפקיד של האובייקט הוא לא
-להפריע.
+בבית אני דווקא אוהב מלא צבעים, על הקירות ועל המדפים. בדברים שאנשים צריכים
+להשתמש בהם אני מעצב הפוך, ונוח לי להחזיק את שני הדברים בנפרד.
 
 ---
 
