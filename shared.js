@@ -708,7 +708,10 @@
       else settled();
     });
 
-    window.setTimeout(settled, 1600);
+    /* Just past the trip itself (--dur-lift, 1.15s at its longest), so
+       the transition saying it has finished is what normally lets the
+       lines in and this only catches the case where it never does. */
+    window.setTimeout(settled, 1300);
   }
 
   /* Leaving a work takes the lines out on the tap itself (see the feed

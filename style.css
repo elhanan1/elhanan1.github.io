@@ -709,7 +709,10 @@ html[data-settling] .work-visual .sketch-svg {
 }
 
 .work-visual .sketch-svg {
-  transition: opacity var(--dur-med) var(--ease);
+  /* Quick: the hold is released the moment the photo is down, so half a
+     second of fading after that is just the line arriving late to its
+     own card. */
+  transition: opacity var(--dur-fast) var(--ease);
 }
 
 .work-visual .sketch-svg path {
