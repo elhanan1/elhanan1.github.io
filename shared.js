@@ -257,7 +257,7 @@
       // and this one wants to be a long reach into the corner. Same
       // stroke as the sketches above it.
       cue.innerHTML = '<svg viewBox="0 0 32 32" aria-hidden="true">' +
-        '<path d="M6 6 L26 26 M26 13 L26 26 L13 26"/></svg>';
+        '<path d="M26 6 L6 26 M6 13 L6 26 L19 26"/></svg>';
       visual.appendChild(cue);
 
       visual.appendChild(svg);

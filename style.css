@@ -751,10 +751,10 @@ html[data-settling] .work-visual .work-cue {
 @media (hover: hover) and (pointer: fine) {
   .work-visual .work-cue {
     opacity: 0;
-    /* It travels the way it points, up out of the corner it is heading
-       into rather than in from the side — a long enough reach, over a
+    /* It travels the way it points: in from up and to the right, down
+       into the corner it is reaching for — a long enough reach, over a
        long enough beat, to read as the arrow going somewhere. */
-    transform: translate(-.9rem, -.9rem);
+    transform: translate(.9rem, -.9rem);
     transition: opacity var(--dur-med) var(--ease),
                 transform var(--dur-med) var(--ease);
   }
