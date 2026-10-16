@@ -106,7 +106,10 @@
     if (!feed || !DATA) return;
 
     var nameEl = document.querySelector(".hero .name");
-    if (nameEl) writeAsWave(nameEl, DATA.person.name);
+    if (nameEl) {
+      writeAsWave(nameEl, DATA.person.name);
+      waveOnScroll(nameEl);
+    }
     var tagEl = document.querySelector(".hero .tagline");
     if (tagEl) tagEl.textContent = DATA.person.tagline;
 
@@ -328,6 +331,53 @@
         at++;
       }
     });
+  }
+
+  /* The wave, driven by the scroll rather than played once on arrival:
+     as the name goes up off the screen its letters lift away in turn,
+     the outermost leaving first and the middle last — the order the
+     wave would run in backwards — and scrolling back up lays them down
+     again the same way. Nothing moves until the page does. */
+  function waveOnScroll(nameEl) {
+    var letters = [].slice.call(nameEl.querySelectorAll(".wave-letter"));
+    if (!letters.length || reduceMotion) return;
+
+    var furthest = 0;
+    var spread = letters.map(function (letter) {
+      var from = parseFloat(letter.style.getPropertyValue("--from-middle")) || 0;
+      furthest = Math.max(furthest, from);
+      return from;
+    });
+
+    // How much of the whole gesture each letter waits through before it
+    // starts, and how long it then takes: together they stay inside 1,
+    // so the last letter is away by the time the name is gone.
+    var LEAD = .5;
+    var TAKES = .5;
+    var ticking = false;
+
+    function update() {
+      var rect = nameEl.getBoundingClientRect();
+      // 0 while the name sits where it starts, 1 once it has travelled
+      // half a screen up from there.
+      var gone = Math.min(1, Math.max(0, -rect.top / Math.max(1, window.innerHeight * .5)));
+
+      letters.forEach(function (letter, i) {
+        var waits = furthest ? (furthest - spread[i]) / furthest * LEAD : 0;
+        var p = Math.min(1, Math.max(0, (gone - waits) / TAKES));
+        letter.style.transform = "translateY(" + (p * -.55).toFixed(3) + "em)";
+        letter.style.opacity = (1 - p).toFixed(3);
+      });
+      ticking = false;
+    }
+
+    window.addEventListener("scroll", function () {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(update);
+    }, { passive: true });
+    window.addEventListener("resize", update, { passive: true });
+    update();
   }
 
   function textEl(tag, className, text) {

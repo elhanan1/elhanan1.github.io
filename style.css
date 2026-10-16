@@ -1,7 +1,7 @@
 /* ---------------------------------------------------------------------
    Design tokens. Swap fonts / colors here to restyle the whole site.
    ------------------------------------------------------------------- */
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500&family=Inter:wght@400;500&family=Sofia+Sans+Condensed:wght@600;700&family=Spline+Sans+Mono:wght@300;400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500&family=Inter:wght@400;500&family=Spline+Sans+Mono:wght@300;400&display=swap');
 
 :root {
   --bg: #ffffff;
@@ -18,9 +18,6 @@
 
   --font-display: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-body: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
-  /* The name itself: narrow, heavy and set tight, so it reads as one
-     mass rather than a line of letters. */
-  --font-hero: 'Sofia Sans Condensed', 'Space Grotesk', sans-serif;
   --font-mono: 'Spline Sans Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
   --ease: cubic-bezier(.22, 1, .36, 1);
@@ -463,22 +460,25 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 
 .hero .name {
-  font-family: var(--font-hero);
-  font-weight: 700;
-  font-size: clamp(3.2rem, 13vw, 9rem);
-  letter-spacing: -.07em;
-  line-height: .85;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(2.8rem, 10vw, 7rem);
+  /* Set tight: the letters close up into one shape rather than standing
+     apart as a line of them. */
+  letter-spacing: -.035em;
+  line-height: .98;
   margin: 0;
-  text-transform: uppercase;
+  text-transform: lowercase;
 }
 
-/* The name arrives as a wave: the middle drops first and draws the rest
-   down after it, each letter waiting on how far it stands from the
-   centre (shared.js sets that distance per letter). */
+/* The wave is scrolled rather than played: as the name leaves the top
+   of the screen its letters lift away, the outermost first and the
+   middle last, and scrolling back up brings them down again in the
+   order they left. shared.js drives it per letter, from how far each
+   one stands from the centre. */
 .hero .name .wave-letter {
   display: inline-block;
-  animation: wave-drop var(--dur-med) var(--ease) both;
-  animation-delay: calc(var(--from-middle, 0) * var(--dur-fast) * .18);
+  will-change: transform;
 }
 
 /* Each word is a box of its own so the line can only break between
@@ -489,14 +489,7 @@ ul { margin: 0; padding: 0; list-style: none; }
    close almost completely. */
 .hero .name .wave-space {
   display: inline-block;
-  width: .3em;
-}
-
-@keyframes wave-drop {
-  from {
-    opacity: 0;
-    transform: translateY(-.42em);
-  }
+  width: .26em;
 }
 
 .hero .tagline {
