@@ -33,6 +33,19 @@
     if (slide && page === "project") {
       document.documentElement.dataset.slide = slide;
     }
+    /* The logo asks for the site itself, and says so the same way: read
+       on every page so a mark left by a tap that never travelled is
+       cleared rather than kept, and acted on only where that tap can
+       land, which is the feed. */
+    var entering = readEnter();
+    if (entering && page === "home") {
+      document.documentElement.dataset.enter = entering;
+      // Taken off once it has been spent, or the next move out of the
+      // feed would read it as its own and send the page back up.
+      afterArrival(function () {
+        delete document.documentElement.dataset.enter;
+      });
+    }
     if (page === "home") initHome();
     if (page === "project") initProject();
     if (page === "about") initAbout();
@@ -87,6 +100,11 @@
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
 
+    /* Registered before tapLinks reaches the same anchor, so the mark
+       is written on the tap that navigates rather than after it. */
+    var logo = nav.querySelector(".menu-logo");
+    if (logo) onTap(logo, function () { writeEnter("push"); });
+
     if (dot) {
       onTap(dot, function () {
         var open = nav.classList.toggle("expanded");
@@ -118,7 +136,9 @@
 
     var nameEl = document.querySelector(".hero .name");
     if (nameEl) {
-      writeAsWave(nameEl, DATA.person.name);
+      // The full stop is the hero's own, not part of the name the
+      // page titles are built from.
+      writeAsWave(nameEl, DATA.person.name + ".");
       waveOnScroll(nameEl);
     }
     var tagEl = document.querySelector(".hero .tagline");
@@ -488,7 +508,13 @@
         window.history.replaceState(window.history.state, "",
           window.location.pathname + window.location.search);
       } catch (e) {}
-      el.scrollIntoView({ block: "center" });
+      /* Not the middle of the screen but the point the sketch is
+         finished at: the work you came back to is the whole drawing,
+         rather than a line caught partway with the rest of it waiting
+         on a scroll you haven't made yet. */
+      var visual = el.querySelector(".work-visual");
+      if (visual) window.scrollTo(0, drawnScrollTop(visual));
+      else el.scrollIntoView({ block: "center" });
       return;
     }
     var rect = el.getBoundingClientRect();
@@ -603,6 +629,30 @@
     return scale ? len * scale : len;
   }
 
+  /* Where a sketch's own box has to sit for its line to be finished:
+     the end of the stretch the draw is spread across, which is its top
+     edge at the top of the viewport while the work fits in one, the
+     work centred once it is taller than that, and never higher than the
+     page can actually scroll (the last work can't reach either of the
+     first two). Shared with the draw loop below so the two can't drift:
+     a return to the feed aims at exactly the position the loop calls
+     fully drawn. */
+  function drawnTop(rect, vh, maxScroll, scrolled) {
+    var reachableTop = rect.top + scrolled - maxScroll;
+    return Math.max(reachableTop, Math.min(0, (vh - rect.height) / 2));
+  }
+
+  /* The scroll position that leaves a work's sketch drawn to the end. */
+  function drawnScrollTop(visual) {
+    var vh = window.innerHeight;
+    var scrolled = window.scrollY || window.pageYOffset || 0;
+    var maxScroll = Math.max(
+      0, document.documentElement.scrollHeight - vh);
+    var rect = visual.getBoundingClientRect();
+    var end = drawnTop(rect, vh, maxScroll, scrolled);
+    return Math.max(0, Math.min(maxScroll, scrolled + rect.top - end));
+  }
+
   function setupSketchDraw(entries) {
     // Re-measured whenever the layout can have changed (resize), since
     // card widths are responsive and the scale above moves with them.
@@ -666,8 +716,7 @@
 
       entries.forEach(function (entry) {
         var rect = entry.el.getBoundingClientRect();
-        var reachableTop = rect.top + scrolled - maxScroll;
-        var end = Math.max(reachableTop, Math.min(0, (vh - rect.height) / 2));
+        var end = drawnTop(rect, vh, maxScroll, scrolled);
         var start = Math.max(vh - rect.height, end + vh * 0.15);
         var progress = (start - rect.top) / (start - end);
         progress = Math.max(0, Math.min(1, progress));
@@ -1204,6 +1253,23 @@
     try {
       var value = sessionStorage.getItem("slide");
       if (value) sessionStorage.removeItem("slide");
+      return value;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /* The same hand-off as the slide above, for the one navigation that
+     isn't a work: whichever page the logo was tapped on, the feed is
+     what arrives. */
+  function writeEnter(kind) {
+    try { sessionStorage.setItem("enter", kind); } catch (e) {}
+  }
+
+  function readEnter() {
+    try {
+      var value = sessionStorage.getItem("enter");
+      if (value) sessionStorage.removeItem("enter");
       return value;
     } catch (e) {
       return null;

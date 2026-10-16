@@ -11,6 +11,8 @@
   --border: rgba(28, 26, 23, 0.12);
   --surface: rgba(28, 26, 23, 0.045);
   --surface-strong: rgba(28, 26, 23, 0.08);
+  /* The one colour on the site: the full stop after the name. */
+  --accent: #d2561c;
   /* Backdrop for a cut-out photo, which has no background of its own.
      It follows the page, so the object sits on white on the light theme
      and on near-black on the dark one. */
@@ -48,6 +50,8 @@
     --border: rgba(236, 231, 220, 0.14);
     --surface: rgba(236, 231, 220, 0.05);
     --surface-strong: rgba(236, 231, 220, 0.09);
+  /* Lifted off the dark ground, where the light orange goes muddy. */
+  --accent: #ff8042;
     color-scheme: dark;
   }
 }
@@ -250,6 +254,24 @@ html[data-slide="prev"]::view-transition-old(root) {
 html[data-slide="prev"]::view-transition-new(root) {
   animation: slide-in-left var(--dur-swipe) var(--ease) both;
 }
+
+/* The logo doesn't open a work, it asks for the site — so instead of
+   the page fading over, the feed is laid down over whatever you were
+   reading: it comes the full height of the screen from above, with a
+   shadow under its leading edge, and the page it covers sinks a little
+   and dims rather than leaving. shared.js marks the tap on the way out
+   (data-enter) and takes the mark off once the arrival is over. */
+html[data-enter="push"]::view-transition-new(root) {
+  animation: push-in-top var(--dur-med) var(--ease) both;
+  box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, .3);
+}
+
+html[data-enter="push"]::view-transition-old(root) {
+  animation: push-under var(--dur-med) var(--ease) both;
+}
+
+@keyframes push-in-top { from { transform: translateY(-100%); } }
+@keyframes push-under { to { transform: translateY(8vh); opacity: .55; } }
 
 @keyframes slide-out-left { to { transform: translateX(-100%); } }
 @keyframes slide-in-right { from { transform: translateX(100%); } }
@@ -511,6 +533,13 @@ ul { margin: 0; padding: 0; list-style: none; }
    middle last, and scrolling back up brings them down again in the
    order they left. shared.js drives it per letter, from how far each
    one stands from the centre. */
+/* The full stop shared.js puts on the end of the name (it is the last
+   letter of the last word, so it lifts with the wave like any other
+   rather than hanging there once the name has gone). */
+.hero .name .wave-word:last-of-type .wave-letter:last-child {
+  color: var(--accent);
+}
+
 .hero .name .wave-letter {
   display: inline-block;
   will-change: transform;
