@@ -235,16 +235,18 @@ html[data-lift="pair"][data-page="project"]::view-transition-new(lift-visual) {
   animation: meta-up var(--dur-lift) var(--ease) both;
 }
 
+/* And out the other corner on the way back, rather than sinking down
+   the way it came: up and across, off the top right. */
 ::view-transition-old(project-meta) {
-  animation: meta-down var(--dur-med) var(--ease) both;
+  animation: meta-away var(--dur-med) var(--ease) both;
 }
 
 @keyframes meta-up {
   from { transform: translate(8vw, 42vh); opacity: 0; }
 }
 
-@keyframes meta-down {
-  to { transform: translate(8vw, 42vh); opacity: 0; }
+@keyframes meta-away {
+  to { transform: translate(8vw, -42vh); opacity: 0; }
 }
 
 /* The long intro has no counterpart on the card, so instead of fading
