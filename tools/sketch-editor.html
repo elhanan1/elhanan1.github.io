@@ -89,40 +89,58 @@
     --card-w: min(360px, 46vw);
   }
 
-  /* The same box a work gets on the home page: the card's full width at
-     1 / 1.08, with the square 400x400 sketch centred inside it (that's
-     what `preserveAspectRatio: xMidYMid meet` does there) and the photo
-     `contain`-ed in the whole box. Reference photos are framed here
-     exactly as the home page frames them, so nothing gets cropped here
-     that isn't cropped there — and nothing looks right here that won't
-     look right there. */
+  /* The same box a work gets on the home page, built the same way.
+     .work-visual is a one-cell grid holding the photo and the sketch,
+     both centred in it, and it stands as tall as whichever of the two is
+     taller: the sketch's own 1 / 1.08 box is the floor, and a photo
+     taller than that makes the box taller.
+
+     This used to be a fixed 1 / 1.08 box with the photo `contain`-ed
+     into it, which is the bug behind every sketch coming out small. The
+     works are upright photos — the chair is 307 x 409, i.e. 1 / 1.33 —
+     and `contain` fits one of those by its height, so it stood at 81% of
+     the card's width here while the feed runs it to the full width. You
+     traced a chair a fifth smaller than the one the line would be laid
+     over, and the line arrived a fifth too small. */
   #canvasWrap {
     position: relative;
     width: var(--card-w);
     max-width: 90vw;
-    aspect-ratio: 1 / 1.08;
-    border: 1px solid var(--border);
+    display: grid;
+    min-height: calc(var(--card-w) * 1.08);
+    overflow: hidden;
+    /* Outlined rather than bordered: a border is inside the box and
+       would leave the card two pixels narrower than the card. */
+    outline: 1px solid var(--border);
     background: var(--bg);
     touch-action: none;
     cursor: crosshair;
   }
-  /* Copied from .work-preview / .work-preview img in style.css. */
+
+  /* One cell, both of them in it, centred — .work-visual > * in
+     style.css. They paint in document order, so the line is over the
+     photo. */
+  #canvasWrap > *,
+  .preview-box > * {
+    grid-area: 1 / 1;
+    align-self: center;
+  }
+
+  /* Copied from .work-preview / .work-preview img in style.css: the
+     photo runs the card's full width and takes its height from its own
+     proportions, so the element's edges are the photo's edges. */
   .ref-layer {
-    position: absolute;
-    inset: 0;
     pointer-events: none;
   }
   .ref-layer img {
     display: block;
     width: 100%;
-    height: 100%;
-    object-fit: contain;
+    height: auto;
+    aspect-ratio: auto 1 / 1.08;
   }
   svg#stage {
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
+    position: relative;
+    z-index: 1;
     width: 100%;
     /* height from the viewBox, which is square, rather than from
        aspect-ratio alone: Safari resolves aspect-ratio on a replaced
@@ -226,16 +244,21 @@
   .preview-box {
     position: relative;
     width: var(--card-w);
-    aspect-ratio: 1 / 1.08;
-    border: 1px solid var(--border);
+    display: grid;
+    min-height: calc(var(--card-w) * 1.08);
+    overflow: hidden;
+    outline: 1px solid var(--border);
     background: var(--bg);
   }
   .preview-box .ref-layer { opacity: .5; }
+  /* The feed's own sketch element: a 1 / 1.08 box with the square
+     viewBox centred in it by preserveAspectRatio. */
   .preview-box svg {
     position: relative;
     z-index: 1;
     width: 100%;
-    height: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1.08;
   }
   .preview-box path {
     fill: none;
@@ -333,8 +356,9 @@
       The box is the home page's card box (1&nbsp;:&nbsp;1.08) and the photo is fitted
       into it the same way &mdash; whole, never cropped. The dashed square is the sketch's
       own 400&times;400 area: draw inside it, since anything in the strips above or below
-      it gets clipped on the home page. The box is the card's real width, and the line is
-      the weight the feed draws it at, so what is here is what lands there. Aim for
+      it gets clipped on the home page. The box is the card's real width, the photo runs
+      that full width exactly as the feed runs it, and the line is the weight the feed
+      draws it at, so what is here is what lands there. Aim for
       roughly the same overall height as the existing sketches (they fill most of the
       square). Keep the shape as ONE continuous
       route &mdash; don't lift the pen; if you need an interior detail (like a handle or a
