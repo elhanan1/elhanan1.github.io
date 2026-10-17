@@ -80,9 +80,22 @@
     // back before it has.
     var shutting = null;
 
+    var handing = null;
+
+    /* Shutting the disc. The dot underneath is already the size the
+       disc is shrinking to, so it holds still for the length of the
+       trip instead of playing its own arrival over the top of it. */
     function collapse() {
+      var wasOpen = nav.classList.contains("expanded");
       nav.classList.remove("expanded");
       openedAt = null;
+      if (!wasOpen) return;
+      nav.classList.add("handing-back");
+      window.clearTimeout(handing);
+      handing = window.setTimeout(function () {
+        handing = null;
+        nav.classList.remove("handing-back");
+      }, ms("--dur-med"));
     }
 
     // Durations from the stylesheet rather than numbers kept in step
@@ -217,9 +230,14 @@
         nav.style.setProperty("--menu-oy", (dy - cy) + "px");
       }
 
+      var d = Math.ceil(Math.max(holds, clears) * 2);
       nav.style.setProperty("--menu-cx", cx + "px");
       nav.style.setProperty("--menu-cy", cy + "px");
-      nav.style.setProperty("--menu-d", Math.ceil(Math.max(holds, clears) * 2) + "px");
+      nav.style.setProperty("--menu-d", d + "px");
+      // What fraction of itself the disc has to be to sit exactly on
+      // the dot, so that closing it is the one circle becoming the
+      // other rather than one vanishing and the other arriving.
+      if (dot) nav.style.setProperty("--menu-min", (dot.offsetWidth / d).toFixed(4));
     }
 
     sizeMenuGround();

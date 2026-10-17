@@ -450,7 +450,13 @@ ul { margin: 0; padding: 0; list-style: none; }
   /* Centred on the middle of the menu's own text, not on the dot: with
      the words off to one side of it the curve around them read as
      lopsided. The disc still runs well past the corner it sits in, so
-     what is on screen is a quarter of it. */
+     what is on screen is a quarter of it.
+
+     Away from the top of the page it does not shrink to nothing but to
+     exactly the dot's size, sitting exactly where the dot sits — so
+     closing the menu is the big circle becoming the small one, and
+     opening it is the small one becoming the big one. Only when the
+     row stands open on its own does it go to nothing. */
   transform: translate(-50%, -50%) scale(0);
   /* Closing, it shrinks towards the dot it is about to become rather
      than towards its own middle. The offset is the dot's centre
@@ -513,6 +519,10 @@ ul { margin: 0; padding: 0; list-style: none; }
   position: absolute;
   top: 50%;
   right: 0;
+  /* Above the row. The row was given a stacking context of its own when
+     the disc went in behind it, which left the dot — positioned, but
+     with no z-index — painting underneath the words. */
+  z-index: 2;
   width: 22px;
   height: 22px;
   padding: 0;
@@ -571,6 +581,19 @@ ul { margin: 0; padding: 0; list-style: none; }
 .site-nav.collapsed.expanded .dot {
   opacity: 0;
   animation: dot-pop-out var(--dur-med) var(--ease) both;
+}
+
+/* The disc is on its way back down to the dot's size. The dot is
+   already the right size underneath it, so it holds still rather than
+   playing its own arrival over the top of the disc's. */
+.site-nav.handing-back .dot {
+  opacity: 1;
+  animation: none;
+  transform: translate(0, -50%) scale(1);
+}
+
+.site-nav.collapsed .menu-ground {
+  transform: translate(-50%, -50%) scale(var(--menu-min, 0));
 }
 
 .site-nav.collapsed.expanded .menu-ground {
