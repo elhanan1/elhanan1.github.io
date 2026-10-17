@@ -76,87 +76,26 @@
     // away can close it again. Null whenever the menu isn't open.
     var openedAt = null;
 
-    // Held while the disc is shutting, so that nothing puts the row
-    // back before it has.
-    var shutting = null;
-
-    var handing = null;
-
-    /* Shutting the disc. The dot underneath is already the size the
-       disc is shrinking to, so it holds still for the length of the
-       trip instead of playing its own arrival over the top of it. */
     function collapse() {
-      var wasOpen = nav.classList.contains("expanded");
       nav.classList.remove("expanded");
       openedAt = null;
-      if (!wasOpen) return;
-      nav.classList.add("handing-back");
-      window.clearTimeout(handing);
-      handing = window.setTimeout(function () {
-        handing = null;
-        nav.classList.remove("handing-back");
-      }, ms("--dur-med"));
-    }
-
-    // Durations from the stylesheet rather than numbers kept in step
-    // with it by hand.
-    function ms(name) {
-      var d = getComputedStyle(document.documentElement)
-        .getPropertyValue(name);
-      var n = parseFloat(d) || 0;
-      return /ms/.test(d) ? n : n * 1000;
-    }
-
-    /* The disc's own time, and then a beat on the end of it. The beat
-       is the point: the disc shrinks all the way down to the dot, the
-       dot sits there as a dot, and only then does the row come out of
-       it sideways — the same way it does from a dot that was never
-       opened. Without the pause the row set off in the same frame the
-       dot arrived, and the dot was never really seen. */
-    function discMs() {
-      return ms("--dur-med") + ms("--dur-fast");
     }
 
     function onScroll() {
-      if (window.scrollY > threshold) {
-        window.clearTimeout(shutting);
-        shutting = null;
-        nav.classList.add("collapsed");
-        // Scrolling with the menu open closes it — on a touch screen it
-        // otherwise sits over the work you're scrolling to, with no way
-        // back but tapping exactly beside it. The few pixels of slack
-        // are for the scroll a tap itself often nudges out of the page,
-        // which would otherwise shut the menu the instant it opened.
-        if (openedAt !== null && Math.abs(window.scrollY - openedAt) > 8) {
-          collapse();
-        }
-        return;
-      }
-
-      /* Back at the top, where the row stands open on its own. If the
-         disc is up it has to shut first: taking both away together had
-         it closing over the row as the row arrived. The row waits the
-         length of the disc's own transition, and a scroll back down in
-         the meantime cancels the wait rather than queueing a second. */
-      if (nav.classList.contains("expanded")) {
+      var collapsed = window.scrollY > threshold;
+      nav.classList.toggle("collapsed", collapsed);
+      if (!collapsed) {
         collapse();
-        window.clearTimeout(shutting);
-        shutting = window.setTimeout(function () {
-          shutting = null;
-          nav.classList.remove("collapsed");
-        }, discMs());
         return;
       }
-
-      /* Already shutting. The check has to be here rather than inside
-         the branch above: that branch takes "expanded" off on the first
-         scroll event, and scrolling sends plenty, so the next one came
-         straight through and put the row back while the disc was still
-         on its way down. */
-      if (shutting !== null) return;
-
-      nav.classList.remove("collapsed");
-      collapse();
+      // Scrolling with the menu open closes it — on a touch screen it
+      // otherwise sits over the work you're scrolling to, with no way
+      // back but tapping exactly beside it. The few pixels of slack are
+      // for the scroll a tap itself often nudges out of the page, which
+      // would otherwise shut the menu the instant it opened.
+      if (openedAt !== null && Math.abs(window.scrollY - openedAt) > 8) {
+        collapse();
+      }
     }
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
@@ -181,71 +120,8 @@
       });
     });
 
-    /* How wide the disc behind the menu has to be: far enough from the
-       dot's centre to clear the furthest corner of the menu's own box,
-       plus a margin. Measured from layout rather than from the rendered
-       boxes, because while the menu is collapsed it is scaled down and
-       its rendered box is the small one. Read again on resize, since
-       the padding either side of the nav is in vw. */
-    var ground = nav.querySelector(".menu-ground");
-    var controls = nav.querySelector(".nav-controls");
-    var row = nav.querySelector(".menu-row");
-
-    function sizeMenuGround() {
-      if (!ground || !controls || !row) return;
-      // The middle of the menu's own text, in the box the disc is
-      // positioned in. Layout values, not rendered ones: a collapsed
-      // menu is scaled down and its rendered box is the small one.
-      var cx = row.offsetLeft + row.offsetWidth / 2;
-      var cy = row.offsetTop + row.offsetHeight / 2;
-
-      // Enough to hold the text with room around it...
-      var holds = Math.sqrt(
-        Math.pow(row.offsetWidth / 2, 2) + Math.pow(row.offsetHeight / 2, 2)
-      ) + 34;
-
-      /* ...and enough to run past the corner of the screen, so what is
-         on show is an edge curving across it rather than a circle
-         floating in it. Measured to the far corner from where the
-         middle of the text actually sits on screen. */
-      /* Taken from the box the menu sits in plus the layout offsets
-         above, not from the menu's own rendered rect: collapsed, the
-         menu is scaled down and that rect is the small one, which had
-         the disc coming out a fraction of the size it needed and never
-         reaching the corner at all on a wide screen. The box around it
-         is not transformed, so it can be measured. */
-      var box = controls.getBoundingClientRect();
-      var sx = box.left + cx;
-      var sy = box.top + cy;
-      var clears = Math.sqrt(
-        Math.pow(window.innerWidth - sx, 2) + Math.pow(sy, 2)
-      ) + 8;
-
-      /* Where the dot sits relative to the middle of the text, so the
-         disc can shrink back towards it on the way closed. */
-      if (dot) {
-        var dx = controls.offsetWidth - dot.offsetWidth / 2;
-        var dy = controls.offsetHeight / 2;
-        nav.style.setProperty("--menu-ox", (dx - cx) + "px");
-        nav.style.setProperty("--menu-oy", (dy - cy) + "px");
-      }
-
-      var d = Math.ceil(Math.max(holds, clears) * 2);
-      nav.style.setProperty("--menu-cx", cx + "px");
-      nav.style.setProperty("--menu-cy", cy + "px");
-      nav.style.setProperty("--menu-d", d + "px");
-      // What fraction of itself the disc has to be to sit exactly on
-      // the dot, so that closing it is the one circle becoming the
-      // other rather than one vanishing and the other arriving.
-      if (dot) nav.style.setProperty("--menu-min", (dot.offsetWidth / d).toFixed(4));
-    }
-
-    sizeMenuGround();
-    window.addEventListener("resize", sizeMenuGround, { passive: true });
-
     if (dot) {
       onTap(dot, function () {
-        sizeMenuGround();
         var open = nav.classList.toggle("expanded");
         openedAt = open ? window.scrollY : null;
       });

@@ -434,47 +434,7 @@ ul { margin: 0; padding: 0; list-style: none; }
   position: relative;
 }
 
-/* The disc the menu stands on once the dot has been tapped. It is
-   centred on the dot, so it reads as that dot opening up, and it is
-   sized in script from the menu's own box — add a third link and it
-   grows to hold it. Its radius easily clears the corner it sits in, so
-   what is on screen is a quarter of it. */
-.site-nav .menu-ground {
-  position: absolute;
-  left: var(--menu-cx, 50%);
-  top: var(--menu-cy, 50%);
-  width: var(--menu-d, 24rem);
-  height: var(--menu-d, 24rem);
-  border-radius: 50%;
-  background: var(--fg);
-  /* Centred on the middle of the menu's own text, not on the dot: with
-     the words off to one side of it the curve around them read as
-     lopsided. The disc still runs well past the corner it sits in, so
-     what is on screen is a quarter of it.
-
-     Away from the top of the page it does not shrink to nothing but to
-     exactly the dot's size, sitting exactly where the dot sits — so
-     closing the menu is the big circle becoming the small one, and
-     opening it is the small one becoming the big one. Only when the
-     row stands open on its own does it go to nothing. */
-  transform: translate(-50%, -50%) scale(0);
-  /* Closing, it shrinks towards the dot it is about to become rather
-     than towards its own middle. The offset is the dot's centre
-     measured from the disc's, so it lands where the dot will be.
-     Changing this between the two states costs nothing to watch: at
-     full size the origin makes no difference, and at nothing there is
-     nothing to see. */
-  transform-origin: calc(50% + var(--menu-ox, 0px)) calc(50% + var(--menu-oy, 0px));
-  /* A plain ease out — it shrinks away without pausing short of
-     anything. The overshoot belongs to the opening alone, below. */
-  transition: transform var(--dur-med) var(--ease);
-  pointer-events: none;
-  z-index: 0;
-}
-
 .site-nav .menu-row {
-  position: relative;
-  z-index: 1;
   display: flex;
   align-items: center;
   gap: 1.6em;
@@ -519,10 +479,6 @@ ul { margin: 0; padding: 0; list-style: none; }
   position: absolute;
   top: 50%;
   right: 0;
-  /* Above the row. The row was given a stacking context of its own when
-     the disc went in behind it, which left the dot — positioned, but
-     with no z-index — painting underneath the words. */
-  z-index: 2;
   width: 22px;
   height: 22px;
   padding: 0;
@@ -545,10 +501,6 @@ ul { margin: 0; padding: 0; list-style: none; }
   border-radius: 50%;
 }
 
-/* The dot comes back with a beat in it: out past its own size and then
-   settling onto it. I had this the other way round for a while, growing
-   to just under and then finishing the climb, which is what made it
-   look like it stopped halfway and set off again. */
 @keyframes dot-pop-in {
   0% { transform: translate(0, -50%) scale(0); }
   55% { transform: translate(0, -50%) scale(1.6); }
@@ -581,33 +533,6 @@ ul { margin: 0; padding: 0; list-style: none; }
 .site-nav.collapsed.expanded .dot {
   opacity: 0;
   animation: dot-pop-out var(--dur-med) var(--ease) both;
-}
-
-/* The disc is on its way back down to the dot's size. The dot is
-   already the right size underneath it, so it holds still rather than
-   playing its own arrival over the top of the disc's. */
-.site-nav.handing-back .dot {
-  opacity: 1;
-  animation: none;
-  transform: translate(0, -50%) scale(1);
-}
-
-.site-nav.collapsed .menu-ground {
-  transform: translate(-50%, -50%) scale(var(--menu-min, 0));
-}
-
-.site-nav.collapsed.expanded .menu-ground {
-  transform: translate(-50%, -50%) scale(1);
-  /* Opening, it grows from the middle of the text it is going to hold. */
-  transform-origin: 50% 50%;
-  /* Past its size and then back to it, on the way open only. */
-  transition: transform var(--dur-med) cubic-bezier(.34, 1.56, .64, 1);
-}
-
-/* Reading against the disc rather than against the page. */
-.site-nav.collapsed.expanded .menu-row a,
-.site-nav.collapsed.expanded .menu-row {
-  color: var(--bg);
 }
 
 @media (hover: hover) and (pointer: fine) {
