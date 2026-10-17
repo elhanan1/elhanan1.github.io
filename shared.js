@@ -133,7 +133,11 @@
       }
     });
 
+    /* The feed is the works page: "home" and "work" are two names for
+       the same place, one the body's and one the link's, so the mark
+       has to be told they match. */
     var current = document.body.dataset.page;
+    if (current === "home") current = "work";
     nav.querySelectorAll("a[data-nav]").forEach(function (a) {
       // A work's own page is not the works page: marking Work as the
       // current one drew it the same underline hovering does, so every
@@ -180,6 +184,7 @@
     var indentPattern = [0.04, 0.88, 0.30, 0.96, 0.54, 0.74, 0.14, 0.62, 0.40, 0.84];
     var entries = [];
     var lifts = {};
+    var approaching = [];
 
     DATA.works.forEach(function (work, i) {
       var size = work.size || sizes[i % sizes.length];
@@ -311,9 +316,11 @@
       feed.appendChild(article);
 
       entries.push({ el: visual, path: path, progress: 0, drawn: false });
+      approaching.push({ el: article, work: work });
     });
 
     setupSketchDraw(entries);
+    warmOnApproach(approaching);
 
     /* Hands the four travelling names to one work's card and takes them
        off every other one. The names are fixed rather than built from
@@ -675,6 +682,96 @@
     img.sizes = sizes;
   }
 
+  /* A work's photo in two steps, for the one image a page is judged on
+     before it has even finished arriving: the hero the lift lands.
+
+     Step one is the small file — a few tens of kilobytes, and the same
+     one the feed warms while the card is on screen, so on the way in
+     from the feed it is already in the browser and paints with this
+     page's first frame. Step two is the full one, put on only once it
+     has arrived and decoded: two copies of the same picture, both in
+     memory by then, so the swap itself has nothing to see.
+
+     What this is for: the hero used to be the full file and nothing
+     else, which on a first visit was a fetch that started as the page
+     did and landed well after it. The lift had an empty frame to carry
+     and the photo appeared a moment later — and the same work was
+     smooth the second time round, because by then it was cached. */
+  function paintThenSharpen(img, images) {
+    if (!images) return;
+    var light = images.medium || images.full;
+    if (light) {
+      /* Decoded before the frame it belongs to is shown, rather than
+         whenever the browser gets round to it: a cached photo is a few
+         tens of kilobytes to unpack, and the frame it misses is the one
+         the lift starts from. */
+      img.decoding = "sync";
+      img.src = light;
+    }
+    if (!images.full || images.full === light) return;
+
+    var sharp = new Image();
+    sharp.fetchPriority = "high";
+    sharp.addEventListener("load", function () {
+      function wear() { img.src = images.full; }
+      // Decoded first: the swap is then a frame the browser already
+      // holds, rather than one it has to stop and make.
+      if (sharp.decode) sharp.decode().then(wear, wear);
+      else wear();
+    });
+    sharp.src = images.full;
+  }
+
+  /* Everything opening a work needs, fetched while its card is on
+     screen rather than when it is tapped: the page itself, and the
+     small copy of the photo that page paints first (see
+     paintThenSharpen). The words need nothing — data/works.js carries
+     every work's text and is already here, as are the stylesheet and
+     this script, so a warmed work has nothing left to wait for when it
+     is opened. */
+  var warmed = {};
+
+  function warmWork(work) {
+    if (!work || warmed[work.id]) return;
+    warmed[work.id] = true;
+
+    var page = document.createElement("link");
+    page.rel = "prefetch";
+    page.as = "document";
+    page.href = "project.html?id=" + encodeURIComponent(work.id);
+    document.head.appendChild(page);
+
+    var light = work.images && (work.images.medium || work.images.full);
+    if (!light) return;
+    var photo = new Image();
+    // Behind the feed's own photos, which are what is actually on
+    // screen. Nothing waits on this one.
+    photo.fetchPriority = "low";
+    photo.src = light;
+  }
+
+  /* Warmed a little before the card is reached rather than as it is
+     passed, so a work scrolled to and tapped straight away has had its
+     head start too. Each card is warmed once and then let go of. */
+  function warmOnApproach(cards) {
+    if (!("IntersectionObserver" in window)) {
+      cards.forEach(function (card) { warmWork(card.work); });
+      return;
+    }
+
+    var watch = new IntersectionObserver(function (seen) {
+      seen.forEach(function (card) {
+        if (!card.isIntersecting) return;
+        watch.unobserve(card.target);
+        cards.forEach(function (one) {
+          if (one.el === card.target) warmWork(one.work);
+        });
+      });
+    }, { rootMargin: "50% 0px" });
+
+    cards.forEach(function (card) { watch.observe(card.el); });
+  }
+
   /* The shape of a photo that hasn't arrived yet. Without it a card is
      laid out at the sketch's proportions and then resized the moment the
      photo loads, which moves everything below it — and a return to the
@@ -997,7 +1094,7 @@
       heroImg.loading = "eager";
       heroImg.fetchPriority = "high";
       reserveShape(heroImg, work.images);
-      heroImg.src = work.images.full;
+      paintThenSharpen(heroImg, work.images);
     }
 
     setText("p-title", work.title);
@@ -1398,12 +1495,13 @@
       + (work.images && work.images.cutout ? " is-cutout" : "");
     var img = document.createElement("img");
     img.alt = "";
-    // The same file the real page's hero uses, fetched quietly in the
-    // background: when the real page takes over it is already cached
-    // and paints at once, instead of the photo blinking out and back.
+    // The same file the real page's hero paints first, fetched quietly
+    // in the background: when the real page takes over it is already
+    // cached and paints at once, instead of the photo blinking out and
+    // back.
     img.fetchPriority = "low";
     reserveShape(img, work.images);
-    img.src = (work.images && (work.images.full || work.images.medium)) || "";
+    img.src = (work.images && (work.images.medium || work.images.full)) || "";
     visual.appendChild(img);
     peek.appendChild(visual);
 

@@ -166,4 +166,14 @@ something else.
 - **Mobile**: there's no hover, so each work's description sits below its
   sketch instead of appearing in a hover tooltip.
 - The **Work · About · Contact** menu collapses into a small dot after a
-  short scroll, and expands again on hover (desktop) or tap (mobile).
+  short scroll, and expands again on hover (desktop) or tap (mobile). The
+  menu item for the page you are on is underlined — **Work** on the feed,
+  **About** on the about page (a work's own page marks neither).
+- **Opening a work** is meant to feel like one continuous move: the card's
+  photo and words travel to the project page rather than being replaced by
+  it. So each work is warmed while its card is coming up the screen — its
+  page is prefetched, and the 600px `-medium.webp` copy of its cover photo
+  is fetched ahead. The project page paints that small copy first and
+  swaps in the 1600px `-full` one once it has arrived, so the photo is
+  there from the first frame instead of landing part-way through the
+  animation on a first visit.
