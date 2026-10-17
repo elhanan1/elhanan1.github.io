@@ -78,6 +78,19 @@
   .mode-switch .mode-btn + .mode-btn { border-left: 1px solid var(--fg); }
   .mode-switch .mode-btn.active { background: var(--fg); color: var(--bg); }
 
+  /* The three widths a card can have on the home page, copied from
+     .work-entry[data-size] in style.css. Everything here that rehearses
+     a card is drawn at one of them rather than at a size of its own: the
+     canvas was 560px wide and a small card is 360px, so every sketch
+     drawn here arrived on the feed a third smaller than it was drawn.
+     (Below 720px the card is the whole screen instead; at that point
+     there is no desktop to rehearse.) */
+  body {
+    --card-w: min(360px, 46vw);
+  }
+  body[data-card="medium"] { --card-w: min(480px, 58vw); }
+  body[data-card="large"] { --card-w: min(640px, 72vw); }
+
   /* The same box a work gets on the home page: the card's full width at
      1 / 1.08, with the square 400x400 sketch centred inside it (that's
      what `preserveAspectRatio: xMidYMid meet` does there) and the photo
@@ -87,7 +100,7 @@
      look right there. */
   #canvasWrap {
     position: relative;
-    width: 560px;
+    width: var(--card-w);
     max-width: 90vw;
     aspect-ratio: 1 / 1.08;
     border: 1px solid var(--border);
@@ -125,10 +138,32 @@
        sketch's — a line there would be clipped on the home page. */
     outline: 1px dashed var(--border);
   }
+  /* Every line in here keeps its weight in screen pixels rather than in
+     the sketch's units, so changing the card size changes the size of
+     the drawing and nothing else. */
+  .grid-line,
+  .center-guide,
+  .stub-line,
+  .object-path,
+  .handle { vector-effect: non-scaling-stroke; }
+
   .grid-line { stroke: rgba(28,26,23,0.07); stroke-width: 1; }
   .center-guide { stroke: rgba(28,26,23,0.14); stroke-width: 1; stroke-dasharray: 4 4; }
   .stub-line { stroke: var(--fg-soft); stroke-width: 1.4; stroke-dasharray: 3 4; fill: none; }
-  .object-path { stroke: var(--fg); stroke-width: 2; fill: none; stroke-linecap: round; }
+
+  /* The line itself, copied from .work-visual .sketch-svg path in
+     style.css down to the non-scaling stroke above: 1.6 screen pixels
+     at any card size, which is what the feed draws. It was 2 units here,
+     i.e. 2.8 pixels on the old wide canvas — a heavier line than the one
+     the work ends up with. */
+  .object-path {
+    stroke: var(--fg);
+    stroke-width: 1.6;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
   .handle {
     fill: #fff;
     stroke: var(--accent);
@@ -185,11 +220,14 @@
   }
   .stat-row b { color: var(--fg); font-weight: 600; }
 
-  /* A small-card-sized rehearsal of the home page: same box, same photo
-     framing, same 50% dim the card uses on hover. */
+  /* A rehearsal of the home page at the size the card actually is: same
+     box, same photo framing, same 50% dim the card uses on hover. It was
+     220px, which made it a third smaller again than the canvas beside
+     it, so neither of the two things on this page was the size of the
+     thing being made. */
   .preview-box {
     position: relative;
-    width: 220px;
+    width: var(--card-w);
     aspect-ratio: 1 / 1.08;
     border: 1px solid var(--border);
     background: var(--bg);
@@ -201,7 +239,14 @@
     width: 100%;
     height: 100%;
   }
-  .preview-box path { fill: none; stroke: var(--fg); stroke-width: 1.6; stroke-linecap: round; }
+  .preview-box path {
+    fill: none;
+    stroke: var(--fg);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
 
   #refStatus {
     font-size: .78rem;
@@ -229,7 +274,9 @@
     it. When you're happy, copy the generated <code>sketch: {...}</code> block into a
     work in <code>data/works.js</code>. Pick a work from the Reference menu and its
     main home-page image loads straight from <code>data/works.js</code>, framed in the
-    same box the home page gives it.
+    same box the home page gives it &mdash; and the canvas takes that work's own card
+    size, so the sketch is drawn at the size it will be seen at. The <b>Card</b> menu
+    sets it by hand for a work that isn't in <code>works.js</code> yet.
   </p>
 </header>
 
@@ -240,6 +287,13 @@
         <button id="modeClickBtn" class="mode-btn active">Click points</button>
         <button id="modeDrawBtn" class="mode-btn">Draw freehand</button>
       </div>
+      <label>Card
+        <select id="sizeSelect">
+          <option value="small">small — 360px</option>
+          <option value="medium">medium — 480px</option>
+          <option value="large">large — 640px</option>
+        </select>
+      </label>
       <button id="undoBtn">Undo point</button>
       <button id="clearBtn">Clear all</button>
       <label>Smoothing
@@ -289,15 +343,17 @@
       The box is the home page's card box (1&nbsp;:&nbsp;1.08) and the photo is fitted
       into it the same way &mdash; whole, never cropped. The dashed square is the sketch's
       own 400&times;400 area: draw inside it, since anything in the strips above or below
-      it gets clipped on the home page. Aim for roughly the same overall height as the
-      existing sketches (they fill most of the square). Keep the shape as ONE continuous
+      it gets clipped on the home page. The box is the card's real width, and the line is
+      the weight the feed draws it at, so what is here is what lands there. Aim for
+      roughly the same overall height as the existing sketches (they fill most of the
+      square). Keep the shape as ONE continuous
       route &mdash; don't lift the pen; if you need an interior detail (like a handle or a
       slat), route the click path out to it and back rather than starting a new shape.
     </p>
   </div>
 
   <div class="output-col">
-    <h2>Live preview &mdash; small card, hovered</h2>
+    <h2>Live preview &mdash; the card, hovered</h2>
     <div class="preview-box">
       <div class="ref-layer">
         <img id="previewRef" alt="" style="display:none" />
@@ -342,6 +398,7 @@
   var refFile = document.getElementById("refFile");
   var refOpacity = document.getElementById("refOpacity");
   var workSelect = document.getElementById("workSelect");
+  var sizeSelect = document.getElementById("sizeSelect");
   var refStatus = document.getElementById("refStatus");
   var modeClickBtn = document.getElementById("modeClickBtn");
   var modeDrawBtn = document.getElementById("modeDrawBtn");
@@ -429,9 +486,41 @@
     return d;
   }
 
+  /* Which of the three cards the canvas is standing in for. The sketch
+     itself is written in the same 400 units whichever it is, so this
+     changes nothing about the drawing or the code it exports — only the
+     size the drawing is made at, which is the thing that was wrong. */
+  function setCardSize(size) {
+    document.body.dataset.card =
+      size === "large" || size === "medium" ? size : "small";
+    if (sizeSelect) sizeSelect.value = document.body.dataset.card;
+    render();
+  }
+
+  if (sizeSelect) {
+    sizeSelect.addEventListener("change", function () {
+      setCardSize(sizeSelect.value);
+    });
+  }
+
+  /* One of the sketch's 400 units, in screen pixels — or rather its
+     reciprocal, which is what the furniture below is multiplied by. The
+     handles and their numbers are drawn in the sketch's own space, so on
+     a small card they would come out a third smaller than they were on
+     the old wide canvas, and a handle is something you have to be able
+     to put a finger on. Sized back up out of the scale the stage is
+     actually drawn at, they stay the same size on screen at every card
+     size. The lines do this in the stylesheet instead, with
+     non-scaling-stroke. */
+  function unitsPerPixel() {
+    var rect = svg.getBoundingClientRect();
+    return rect.width ? 400 / rect.width : 1;
+  }
+
   // ---- core render --------------------------------------------------
   function render() {
     var radius = parseFloat(radiusInput.value) || 0;
+    var u = unitsPerPixel();
 
     // handles
     handlesG.innerHTML = "";
@@ -439,7 +528,7 @@
     points.forEach(function (p, i) {
       var c = document.createElementNS(svg.namespaceURI, "circle");
       c.setAttribute("class", "handle");
-      c.setAttribute("r", 6);
+      c.setAttribute("r", 7 * u);
       c.setAttribute("cx", p.x);
       c.setAttribute("cy", p.y);
       c.dataset.index = i;
@@ -454,8 +543,10 @@
       if (showLabels) {
         var t = document.createElementNS(svg.namespaceURI, "text");
         t.setAttribute("class", "handle-index");
-        t.setAttribute("x", p.x + 8);
-        t.setAttribute("y", p.y - 8);
+        t.setAttribute("x", p.x + 9 * u);
+        t.setAttribute("y", p.y - 9 * u);
+        // Inline, so it beats the stylesheet's own size for this class.
+        t.style.fontSize = 12 * u + "px";
         t.textContent = i + 1;
         handlesG.appendChild(t);
       }
@@ -700,12 +791,18 @@
       o.value = "../" + src;
       o.textContent = work.title;
       o.dataset.index = i;
+      // Its own card size travels with it: picking a work to trace is
+      // asking for that work's card, not for a canvas of some other
+      // size with its photo in it.
+      o.dataset.size = work.size || "small";
       workSelect.appendChild(o);
     });
 
     workSelect.addEventListener("change", function () {
       refFile.value = "";
       setRefSrc(workSelect.value || null);
+      var picked = workSelect.options[workSelect.selectedIndex];
+      if (picked && picked.dataset.size) setCardSize(picked.dataset.size);
     });
 
     // Open on the first work rather than an empty canvas — the usual
@@ -713,6 +810,7 @@
     if (workSelect.options.length > 1) {
       workSelect.selectedIndex = 1;
       setRefSrc(workSelect.value);
+      setCardSize(workSelect.options[1].dataset.size);
     }
   })();
 
@@ -728,6 +826,12 @@
     });
   });
 
+  /* min(360px, 46vw) and the two above it follow the window, the same
+     way the card follows the page: when the width changes under them the
+     handles have to be worked out again. */
+  window.addEventListener("resize", render);
+
+  setCardSize(sizeSelect ? sizeSelect.value : "small");
   render();
 })();
 </script>
