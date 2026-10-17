@@ -113,6 +113,11 @@
     top: 50%;
     transform: translateY(-50%);
     width: 100%;
+    /* height from the viewBox, which is square, rather than from
+       aspect-ratio alone: Safari resolves aspect-ratio on a replaced
+       element differently and the square came out the wrong shape on an
+       iPad, which moved the drawing off the photo under it. */
+    height: auto;
     aspect-ratio: 1 / 1;
     display: block;
     /* Marks off the square you can actually draw in: the letterboxed
@@ -504,10 +509,29 @@
   }
 
   // ---- interaction ----------------------------------------------------
+  /* Screen pixels to the 0..400 the path is written in. Asking the SVG
+     for its own matrix rather than working it out from the element's
+     box: the box is only square if the browser sized it that way, and
+     an iPad does not. There the height came out something other than
+     the width, the old maths divided y by it, and every point landed
+     short — a sketch that exported smaller than the photo it was traced
+     over. getScreenCTM is whatever the browser actually did, including
+     preserveAspectRatio and any page zoom, so the numbers are the same
+     on any screen. */
   function clientToViewBox(evt) {
-    var rect = svg.getBoundingClientRect();
-    var x = ((evt.clientX - rect.left) / rect.width) * 400;
-    var y = ((evt.clientY - rect.top) / rect.height) * 400;
+    var x;
+    var y;
+    var ctm = svg.getScreenCTM && svg.getScreenCTM();
+    if (ctm) {
+      var inv = ctm.inverse();
+      x = evt.clientX * inv.a + evt.clientY * inv.c + inv.e;
+      y = evt.clientX * inv.b + evt.clientY * inv.d + inv.f;
+    } else {
+      var rect = svg.getBoundingClientRect();
+      var scale = Math.min(rect.width, rect.height) / 400;
+      x = (evt.clientX - rect.left - (rect.width - 400 * scale) / 2) / scale;
+      y = (evt.clientY - rect.top - (rect.height - 400 * scale) / 2) / scale;
+    }
     return { x: Math.max(0, Math.min(400, x)), y: Math.max(0, Math.min(400, y)) };
   }
 
