@@ -75,17 +75,49 @@
     // Where the page stood when the menu was tapped open, so scrolling
     // away can close it again. Null whenever the menu isn't open.
     var openedAt = null;
+    /* Set while the menu is standing in the state the page before it
+       was left in: the arrival isn't over, and the move to the state
+       this page actually calls for is waiting for it. A scroll that
+       lands in there moves nothing, which is what the rest of the page
+       does under a transition as well. */
+    var holding = false;
+    var discBeat = null;
+    var finePointer =
+      window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+    /* The disc on its way down. It shrinks to nothing at the dot's
+       place, and the dot is held back by a beat so that it arrives
+       after the disc has gone rather than inside it — the stylesheet
+       keeps the length of the beat, this only says when it applies.
+       Taken off the moment the dot has finished arriving, so a dot that
+       comes back from a plain scroll is never late. */
+    function holdTheDot() {
+      nav.classList.add("disc-closing");
+      window.clearTimeout(discBeat);
+      /* A safety net and nothing more: the dot's own animation takes
+         this off as it ends, and there are ways to close the menu that
+         leave the dot no arrival to play at all. */
+      discBeat = window.setTimeout(function () {
+        nav.classList.remove("disc-closing");
+      }, 1200);
+    }
 
     function collapse() {
+      if (nav.classList.contains("expanded")) holdTheDot();
       nav.classList.remove("expanded");
       openedAt = null;
     }
 
     function onScroll() {
+      if (holding) return;
       var collapsed = window.scrollY > threshold;
       nav.classList.toggle("collapsed", collapsed);
       if (!collapsed) {
         collapse();
+        /* Nothing is being handed to the dot at the top of the page:
+           there is no dot there. Left on, it would make the next dot to
+           come back from a scroll late for no reason. */
+        nav.classList.remove("disc-closing");
         return;
       }
       // Scrolling with the menu open closes it — on a touch screen it
@@ -98,7 +130,88 @@
       }
     }
     window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
+
+    /* The arrival, and the three things that were wrong with it.
+
+       The menu is the one thing on screen that doesn't belong to the
+       page you are leaving, so it is named for the view transition and
+       stays where it is — and that is exactly why a menu in a different
+       state on the two sides was drawn as a cross-fade between two
+       pictures of the nav, over the length of the whole trip. The dot
+       dissolving while the row appeared somewhere else was that, not an
+       animation of ours. And on top of it the dot's own arrival ran
+       again on every load, so a page you came back to animated a menu
+       that hadn't changed.
+
+       So: the page is born in the state the page before it was left in,
+       with every transition and animation off. The two pictures match
+       and there is nothing to cross-fade. If that is also the state
+       this page calls for — the usual case — nothing happens at all,
+       which is the point: the menu was never the thing you navigated.
+       If it isn't, the real move plays once the arrival is over, the
+       same open or close that a tap gives. */
+    var leftAs = readNavState();
+    var standing = window.scrollY > threshold ? "dot" : "row";
+    nav.classList.add("instant");
+    nav.classList.toggle("collapsed", (leftAs || standing) !== "row");
+    nav.classList.toggle("expanded", leftAs === "open");
+    holding = leftAs !== null && leftAs !== standing;
+    /* Where there are no cross-document transitions there is no arrival
+       to wait for and nothing that would ever release it: the move
+       plays on the next frame instead. */
+    if (holding && "onpagereveal" in window) afterArrival(release);
+    else nextFrame(release);
+
+    function release() {
+      nav.classList.remove("instant");
+      /* A frame with the hold still on, so that the rule switching the
+         animations off is gone before the classes that do the moving
+         change. Both in one recalculation is asking the browser to find
+         a state to move from in the same breath as the move. */
+      nextFrame(function () {
+        holding = false;
+        // A menu that was open when the page was left is closed here,
+        // the same way tapping beside it closes one: it isn't open on a
+        // page you have only just arrived at.
+        collapse();
+        onScroll();
+      });
+    }
+
+    /* Two frames — or a beat, if the page was opened in a tab nobody
+       is looking at yet. A background tab is given no frames at all, and
+       the menu would sit there with its animations switched off until
+       the tab was looked at, which is the one state this must never be
+       left in. */
+    function nextFrame(run) {
+      var spent = false;
+      function once() {
+        if (spent) return;
+        spent = true;
+        run();
+      }
+      window.requestAnimationFrame(function () {
+        window.requestAnimationFrame(once);
+      });
+      window.setTimeout(once, 400);
+    }
+
+    window.addEventListener("pagehide", function () {
+      writeNavState(navState());
+    });
+
+    /* What the menu looks like as the page leaves, which is all the next
+       page needs: the row, the row standing on its disc, or the dot. A
+       pointer resting on the nav holds the row open without a class of
+       its own, so it is asked directly — but only where a pointer is
+       really a pointer, since a touch screen can leave :hover on long
+       after the tap. */
+    function navState() {
+      if (!nav.classList.contains("collapsed")) return "row";
+      if (nav.classList.contains("expanded")) return "open";
+      if (finePointer && nav.matches(":hover")) return "row";
+      return "dot";
+    }
 
     /* One handler for every way out through the menu, doing both jobs.
        The logo had kept a second one of its own for the mark, which is
@@ -124,6 +237,27 @@
       onTap(dot, function () {
         var open = nav.classList.toggle("expanded");
         openedAt = open ? window.scrollY : null;
+        if (!open) holdTheDot();
+      });
+
+      // The disc's hand-off is over the moment the dot is all the way
+      // in, whatever closed the menu.
+      dot.addEventListener("animationend", function (e) {
+        if (e.animationName === "dot-pop-in") {
+          nav.classList.remove("disc-closing");
+        }
+      });
+    }
+
+    /* The pointer leaving is the other way the menu closes, and the one
+       the stylesheet does by itself: the disc needs the same hand-off
+       to the dot that a tap gets. */
+    if (finePointer) {
+      nav.addEventListener("mouseleave", function () {
+        if (nav.classList.contains("collapsed") &&
+            !nav.classList.contains("expanded")) {
+          holdTheDot();
+        }
       });
     }
 
@@ -1629,6 +1763,24 @@
       var value = sessionStorage.getItem("slide");
       if (value) sessionStorage.removeItem("slide");
       return value;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /* The state the menu was in as a page left, read by the page that
+     arrives: the same hand-off as the slide above. Kept rather than
+     spent on reading, since it is written again every time a page
+     leaves, and a tab that has never left a page has no menu to match.
+     "row" is the menu open, "open" is the menu open on its disc, "dot"
+     is the menu closed. */
+  function writeNavState(state) {
+    try { sessionStorage.setItem("nav", state); } catch (e) {}
+  }
+
+  function readNavState() {
+    try {
+      return sessionStorage.getItem("nav");
     } catch (e) {
       return null;
     }

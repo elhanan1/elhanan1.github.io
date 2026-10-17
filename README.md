@@ -165,10 +165,27 @@ something else.
   instant.
 - **Mobile**: there's no hover, so each work's description sits below its
   sketch instead of appearing in a hover tooltip.
-- The **Work · About · Contact** menu collapses into a small dot after a
+- The **Work · About** menu collapses into a small dot after a
   short scroll, and expands again on hover (desktop) or tap (mobile). The
   menu item for the page you are on is underlined — **Work** on the feed,
   **About** on the about page (a work's own page marks neither).
+- **The menu has two moves, and only two.** Opening: the dot beats once
+  past its own size and is gone inside a quarter second, and the row comes
+  out of where it was. Closing: the row goes back into the same place and
+  the dot arrives with a beat in it. Every way in and out uses them — a
+  tap, the pointer, a scroll, and a page you navigate to.
+- **Below 720px the open menu stands on a dark disc**, because that is
+  where a work's photo and its lines of text run the full width of the
+  screen and pass under the words. It is centred on the menu's own text,
+  it runs off the corner of the screen, and it opens out of the dot and
+  shuts back down into it. Above that width the card never reaches the
+  menu's corner and there is no disc.
+- **Arriving at a page doesn't animate the menu.** It is born in the state
+  the page before it was left in — which also means the view transition
+  has two matching pictures of the nav and nothing to cross-fade. If the
+  new page does call for a different state (you were scrolled down and
+  land at the top of a work, say), the real open or close plays once the
+  arrival is over. The state travels in `sessionStorage` under `nav`.
 - **Opening a work** is meant to feel like one continuous move: the card's
   photo and words travel to the project page rather than being replaced by
   it. So each work is warmed while its card is coming up the screen — its
