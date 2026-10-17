@@ -237,16 +237,18 @@ html[data-lift="pair"][data-page="project"]::view-transition-new(lift-visual) {
   animation: intro-up var(--dur-lift) var(--ease) both;
 }
 
+/* Nothing on the way out. It used to slide down off the bottom, which
+   meant the long paragraph was still on screen, travelling, after the
+   feed had been asked for — it read as the text turning up on the feed
+   and then being taken away. It climbs in when a work opens and it is
+   simply gone when one closes. */
 ::view-transition-old(project-intro) {
-  animation: intro-down var(--dur-med) var(--ease) both;
+  animation: none;
+  opacity: 0;
 }
 
 @keyframes intro-up {
   from { transform: translateY(70vh); }
-}
-
-@keyframes intro-down {
-  to { transform: translateY(70vh); }
 }
 
 /* A sideways flick on a project moves between works, so the page claims
@@ -450,7 +452,14 @@ ul { margin: 0; padding: 0; list-style: none; }
      lopsided. The disc still runs well past the corner it sits in, so
      what is on screen is a quarter of it. */
   transform: translate(-50%, -50%) scale(0);
-  /* Closing is a plain ease — it shrinks away without pausing short of
+  /* Closing, it shrinks towards the dot it is about to become rather
+     than towards its own middle. The offset is the dot's centre
+     measured from the disc's, so it lands where the dot will be.
+     Changing this between the two states costs nothing to watch: at
+     full size the origin makes no difference, and at nothing there is
+     nothing to see. */
+  transform-origin: calc(50% + var(--menu-ox, 0px)) calc(50% + var(--menu-oy, 0px));
+  /* A plain ease out — it shrinks away without pausing short of
      anything. The overshoot belongs to the opening alone, below. */
   transition: transform var(--dur-med) var(--ease);
   pointer-events: none;
@@ -564,6 +573,8 @@ ul { margin: 0; padding: 0; list-style: none; }
 
 .site-nav.collapsed.expanded .menu-ground {
   transform: translate(-50%, -50%) scale(1);
+  /* Opening, it grows from the middle of the text it is going to hold. */
+  transform-origin: 50% 50%;
   /* Past its size and then back to it, on the way open only. */
   transition: transform var(--dur-med) cubic-bezier(.34, 1.56, .64, 1);
 }

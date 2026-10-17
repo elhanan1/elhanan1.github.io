@@ -185,12 +185,27 @@
          on show is an edge curving across it rather than a circle
          floating in it. Measured to the far corner from where the
          middle of the text actually sits on screen. */
-      var seen = row.getBoundingClientRect();
-      var sx = seen.left + seen.width / 2;
-      var sy = seen.top + seen.height / 2;
+      /* Taken from the box the menu sits in plus the layout offsets
+         above, not from the menu's own rendered rect: collapsed, the
+         menu is scaled down and that rect is the small one, which had
+         the disc coming out a fraction of the size it needed and never
+         reaching the corner at all on a wide screen. The box around it
+         is not transformed, so it can be measured. */
+      var box = controls.getBoundingClientRect();
+      var sx = box.left + cx;
+      var sy = box.top + cy;
       var clears = Math.sqrt(
         Math.pow(window.innerWidth - sx, 2) + Math.pow(sy, 2)
       ) + 8;
+
+      /* Where the dot sits relative to the middle of the text, so the
+         disc can shrink back towards it on the way closed. */
+      if (dot) {
+        var dx = controls.offsetWidth - dot.offsetWidth / 2;
+        var dy = controls.offsetHeight / 2;
+        nav.style.setProperty("--menu-ox", (dx - cx) + "px");
+        nav.style.setProperty("--menu-oy", (dy - cy) + "px");
+      }
 
       nav.style.setProperty("--menu-cx", cx + "px");
       nav.style.setProperty("--menu-cy", cy + "px");
@@ -411,18 +426,11 @@
        the browser's default crossfade, which blew the card's small grey
        title up to the size of the project page's heading and faded that
        ghost across the whole trip. */
-    /* Read once for this arrival, not once per call: restoreFromWork
-       runs at the end of the script and again on pagereveal, and the
-       list clears itself on the first read, so a second read came back
-       empty-handed and named everything. */
-    var sending = readTravelling();
-
     function liftCard(id) {
       Object.keys(lifts).forEach(function (key) {
         var card = lifts[key];
         ["visual", "title", "meta", "blurb"].forEach(function (part) {
-          var travels = key === id && (!sending || sending.indexOf(part) !== -1);
-          card[part].style.viewTransitionName = travels ? "lift-" + part : "";
+          card[part].style.viewTransitionName = key === id ? "lift-" + part : "";
         });
       });
       return !!lifts[id];
@@ -1206,41 +1214,6 @@
       if (heroImg) heroImg.style.viewTransitionName = "lift-visual";
     }
 
-    /* Only what the reader can actually see travels. A snapshot of a
-       piece that has scrolled off is a band of whatever was still
-       inside the viewport, so leaving a work from halfway down it sent
-       the description to the feed as a strip — it appeared there for a
-       moment, stuck against the edge of the screen, and animated away
-       from somewhere it had never been.
-
-       Both ends have to agree, since a name with no twin is its own
-       layer floating over the page, so the list is handed to the feed
-       and the card names the same pieces and no others. */
-    function onScreen(el) {
-      if (!el) return false;
-      var r = el.getBoundingClientRect();
-      if (!r.width || !r.height) return false;
-      // Whole, not merely touching: half a line travels as half a line.
-      return r.top >= 0 && r.bottom <= window.innerHeight;
-    }
-
-    function nameOnlyWhatIsOnScreen() {
-      var parts = [];
-      [["title", "p-title"], ["meta", "p-meta"], ["blurb", "p-blurb"]]
-        .forEach(function (pair) {
-          var on = onScreen(document.getElementById(pair[1]));
-          nameForTransition(pair[1], on ? "lift-" + pair[0] : "");
-          if (on) parts.push(pair[0]);
-        });
-      if (heroImg) {
-        var on = onScreen(heroImg);
-        heroImg.style.viewTransitionName = on ? "lift-visual" : "";
-        if (on) parts.push("visual");
-      }
-      nameForTransition("p-intro", "project-intro");
-      writeTravelling(parts);
-    }
-
     /* Nothing is named while a sideways move is arriving: a flick
        between works carries the whole page in one piece, and a title
        morphing into the next work's title — or the intro climbing up
@@ -1284,7 +1257,7 @@
          the logo, and why the about page, which names nothing, was
          fine. The anchor is the same thing the feed checks before it
          sets a lift up at the other end. */
-      if (isFeedUrl(to) && to.indexOf("#w-") !== -1) nameOnlyWhatIsOnScreen();
+      if (isFeedUrl(to) && to.indexOf("#w-") !== -1) nameTheTravellers();
     });
 
     /* Back out of the browser's own back/forward cache, this document is
@@ -1760,23 +1733,6 @@
   /* The same hand-off as the slide above, for the one navigation that
      isn't a work: whichever page the logo was tapped on, the feed is
      what arrives. */
-  /* Which pieces a work's page is actually sending, so the feed can
-     name the same ones. Read once and cleared, like the other marks. */
-  function writeTravelling(parts) {
-    try { sessionStorage.setItem("travelling", parts.join(",")); } catch (e) {}
-  }
-
-  function readTravelling() {
-    try {
-      var value = sessionStorage.getItem("travelling");
-      if (value === null) return null;
-      sessionStorage.removeItem("travelling");
-      return value ? value.split(",") : [];
-    } catch (e) {
-      return null;
-    }
-  }
-
   function writeEnter(kind) {
     try { sessionStorage.setItem("enter", kind); } catch (e) {}
   }
