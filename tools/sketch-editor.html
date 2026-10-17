@@ -78,18 +78,16 @@
   .mode-switch .mode-btn + .mode-btn { border-left: 1px solid var(--fg); }
   .mode-switch .mode-btn.active { background: var(--fg); color: var(--bg); }
 
-  /* The three widths a card can have on the home page, copied from
-     .work-entry[data-size] in style.css. Everything here that rehearses
-     a card is drawn at one of them rather than at a size of its own: the
-     canvas was 560px wide and a small card is 360px, so every sketch
-     drawn here arrived on the feed a third smaller than it was drawn.
+  /* A small card's width, copied from .work-entry[data-size="small"] in
+     style.css, and the one size anything here is drawn at: every work in
+     works.js is a small card. The canvas was 560px wide and the preview
+     beside it 220px, so a sketch was made a third larger than it would
+     ever be seen and then arrived on the feed smaller than it was drawn.
      (Below 720px the card is the whole screen instead; at that point
      there is no desktop to rehearse.) */
   body {
     --card-w: min(360px, 46vw);
   }
-  body[data-card="medium"] { --card-w: min(480px, 58vw); }
-  body[data-card="large"] { --card-w: min(640px, 72vw); }
 
   /* The same box a work gets on the home page: the card's full width at
      1 / 1.08, with the square 400x400 sketch centred inside it (that's
@@ -274,9 +272,8 @@
     it. When you're happy, copy the generated <code>sketch: {...}</code> block into a
     work in <code>data/works.js</code>. Pick a work from the Reference menu and its
     main home-page image loads straight from <code>data/works.js</code>, framed in the
-    same box the home page gives it &mdash; and the canvas takes that work's own card
-    size, so the sketch is drawn at the size it will be seen at. The <b>Card</b> menu
-    sets it by hand for a work that isn't in <code>works.js</code> yet.
+    same box the home page gives it &mdash; a small card, at the size the sketch will be
+    seen at.
   </p>
 </header>
 
@@ -287,13 +284,6 @@
         <button id="modeClickBtn" class="mode-btn active">Click points</button>
         <button id="modeDrawBtn" class="mode-btn">Draw freehand</button>
       </div>
-      <label>Card
-        <select id="sizeSelect">
-          <option value="small">small — 360px</option>
-          <option value="medium">medium — 480px</option>
-          <option value="large">large — 640px</option>
-        </select>
-      </label>
       <button id="undoBtn">Undo point</button>
       <button id="clearBtn">Clear all</button>
       <label>Smoothing
@@ -398,7 +388,6 @@
   var refFile = document.getElementById("refFile");
   var refOpacity = document.getElementById("refOpacity");
   var workSelect = document.getElementById("workSelect");
-  var sizeSelect = document.getElementById("sizeSelect");
   var refStatus = document.getElementById("refStatus");
   var modeClickBtn = document.getElementById("modeClickBtn");
   var modeDrawBtn = document.getElementById("modeDrawBtn");
@@ -484,23 +473,6 @@
     }
     d += " L" + fmt(verts[verts.length - 1]);
     return d;
-  }
-
-  /* Which of the three cards the canvas is standing in for. The sketch
-     itself is written in the same 400 units whichever it is, so this
-     changes nothing about the drawing or the code it exports — only the
-     size the drawing is made at, which is the thing that was wrong. */
-  function setCardSize(size) {
-    document.body.dataset.card =
-      size === "large" || size === "medium" ? size : "small";
-    if (sizeSelect) sizeSelect.value = document.body.dataset.card;
-    render();
-  }
-
-  if (sizeSelect) {
-    sizeSelect.addEventListener("change", function () {
-      setCardSize(sizeSelect.value);
-    });
   }
 
   /* One of the sketch's 400 units, in screen pixels — or rather its
@@ -791,18 +763,12 @@
       o.value = "../" + src;
       o.textContent = work.title;
       o.dataset.index = i;
-      // Its own card size travels with it: picking a work to trace is
-      // asking for that work's card, not for a canvas of some other
-      // size with its photo in it.
-      o.dataset.size = work.size || "small";
       workSelect.appendChild(o);
     });
 
     workSelect.addEventListener("change", function () {
       refFile.value = "";
       setRefSrc(workSelect.value || null);
-      var picked = workSelect.options[workSelect.selectedIndex];
-      if (picked && picked.dataset.size) setCardSize(picked.dataset.size);
     });
 
     // Open on the first work rather than an empty canvas — the usual
@@ -810,7 +776,6 @@
     if (workSelect.options.length > 1) {
       workSelect.selectedIndex = 1;
       setRefSrc(workSelect.value);
-      setCardSize(workSelect.options[1].dataset.size);
     }
   })();
 
@@ -826,12 +791,11 @@
     });
   });
 
-  /* min(360px, 46vw) and the two above it follow the window, the same
-     way the card follows the page: when the width changes under them the
-     handles have to be worked out again. */
+  /* min(360px, 46vw) follows the window, the same way the card follows
+     the page: when the width changes under it the handles have to be
+     worked out again. */
   window.addEventListener("resize", render);
 
-  setCardSize(sizeSelect ? sizeSelect.value : "small");
   render();
 })();
 </script>
