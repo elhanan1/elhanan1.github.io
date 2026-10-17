@@ -535,12 +535,13 @@ ul { margin: 0; padding: 0; list-style: none; }
   border-radius: 50%;
 }
 
-/* The dot comes back with a beat in it: out to just under its size,
-   then the last of the way. Never past it — overshooting the other way
-   read as stopping short of the size it was heading for. */
+/* The dot comes back with a beat in it: out past its own size and then
+   settling onto it. I had this the other way round for a while, growing
+   to just under and then finishing the climb, which is what made it
+   look like it stopped halfway and set off again. */
 @keyframes dot-pop-in {
   0% { transform: translate(0, -50%) scale(0); }
-  55% { transform: translate(0, -50%) scale(.78); }
+  55% { transform: translate(0, -50%) scale(1.6); }
   100% { transform: translate(0, -50%) scale(1); }
 }
 

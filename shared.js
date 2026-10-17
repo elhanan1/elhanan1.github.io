@@ -85,13 +85,23 @@
       openedAt = null;
     }
 
-    // How long the disc takes, from the stylesheet rather than a number
-    // kept in step with it by hand.
-    function discMs() {
+    // Durations from the stylesheet rather than numbers kept in step
+    // with it by hand.
+    function ms(name) {
       var d = getComputedStyle(document.documentElement)
-        .getPropertyValue("--dur-med");
+        .getPropertyValue(name);
       var n = parseFloat(d) || 0;
       return /ms/.test(d) ? n : n * 1000;
+    }
+
+    /* The disc's own time, and then a beat on the end of it. The beat
+       is the point: the disc shrinks all the way down to the dot, the
+       dot sits there as a dot, and only then does the row come out of
+       it sideways — the same way it does from a dot that was never
+       opened. Without the pause the row set off in the same frame the
+       dot arrived, and the dot was never really seen. */
+    function discMs() {
+      return ms("--dur-med") + ms("--dur-fast");
     }
 
     function onScroll() {
