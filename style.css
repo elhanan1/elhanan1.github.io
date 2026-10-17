@@ -439,18 +439,20 @@ ul { margin: 0; padding: 0; list-style: none; }
    what is on screen is a quarter of it. */
 .site-nav .menu-ground {
   position: absolute;
-  top: 50%;
-  right: calc(var(--dot-size, 22px) / 2);
+  left: var(--menu-cx, 50%);
+  top: var(--menu-cy, 50%);
   width: var(--menu-d, 24rem);
   height: var(--menu-d, 24rem);
   border-radius: 50%;
   background: var(--fg);
-  transform: translate(50%, -50%) scale(0);
-  /* Past its size and then back to it, which is the gesture the dot
-     itself makes. An easing rather than keyframes, so that closing runs
-     the same curve backwards and nothing plays on a page that merely
-     loads scrolled. */
-  transition: transform var(--dur-med) cubic-bezier(.34, 1.56, .64, 1);
+  /* Centred on the middle of the menu's own text, not on the dot: with
+     the words off to one side of it the curve around them read as
+     lopsided. The disc still runs well past the corner it sits in, so
+     what is on screen is a quarter of it. */
+  transform: translate(-50%, -50%) scale(0);
+  /* Closing is a plain ease — it shrinks away without pausing short of
+     anything. The overshoot belongs to the opening alone, below. */
+  transition: transform var(--dur-med) var(--ease);
   pointer-events: none;
   z-index: 0;
 }
@@ -524,9 +526,11 @@ ul { margin: 0; padding: 0; list-style: none; }
   border-radius: 50%;
 }
 
+/* The dot comes back smaller and grows to its size. It used to pass
+   well beyond it and settle back, which read as stopping short of the
+   size it was heading for. */
 @keyframes dot-pop-in {
   0% { transform: translate(0, -50%) scale(0); }
-  55% { transform: translate(0, -50%) scale(1.6); }
   100% { transform: translate(0, -50%) scale(1); }
 }
 
@@ -559,7 +563,9 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 
 .site-nav.collapsed.expanded .menu-ground {
-  transform: translate(50%, -50%) scale(1);
+  transform: translate(-50%, -50%) scale(1);
+  /* Past its size and then back to it, on the way open only. */
+  transition: transform var(--dur-med) cubic-bezier(.34, 1.56, .64, 1);
 }
 
 /* Reading against the disc rather than against the page. */

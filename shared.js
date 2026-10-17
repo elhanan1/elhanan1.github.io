@@ -76,26 +76,64 @@
     // away can close it again. Null whenever the menu isn't open.
     var openedAt = null;
 
+    // Held while the disc is shutting, so that nothing puts the row
+    // back before it has.
+    var shutting = null;
+
     function collapse() {
       nav.classList.remove("expanded");
       openedAt = null;
     }
 
+    // How long the disc takes, from the stylesheet rather than a number
+    // kept in step with it by hand.
+    function discMs() {
+      var d = getComputedStyle(document.documentElement)
+        .getPropertyValue("--dur-med");
+      var n = parseFloat(d) || 0;
+      return /ms/.test(d) ? n : n * 1000;
+    }
+
     function onScroll() {
-      var collapsed = window.scrollY > threshold;
-      nav.classList.toggle("collapsed", collapsed);
-      if (!collapsed) {
-        collapse();
+      if (window.scrollY > threshold) {
+        window.clearTimeout(shutting);
+        shutting = null;
+        nav.classList.add("collapsed");
+        // Scrolling with the menu open closes it — on a touch screen it
+        // otherwise sits over the work you're scrolling to, with no way
+        // back but tapping exactly beside it. The few pixels of slack
+        // are for the scroll a tap itself often nudges out of the page,
+        // which would otherwise shut the menu the instant it opened.
+        if (openedAt !== null && Math.abs(window.scrollY - openedAt) > 8) {
+          collapse();
+        }
         return;
       }
-      // Scrolling with the menu open closes it — on a touch screen it
-      // otherwise sits over the work you're scrolling to, with no way
-      // back but tapping exactly beside it. The few pixels of slack are
-      // for the scroll a tap itself often nudges out of the page, which
-      // would otherwise shut the menu the instant it opened.
-      if (openedAt !== null && Math.abs(window.scrollY - openedAt) > 8) {
+
+      /* Back at the top, where the row stands open on its own. If the
+         disc is up it has to shut first: taking both away together had
+         it closing over the row as the row arrived. The row waits the
+         length of the disc's own transition, and a scroll back down in
+         the meantime cancels the wait rather than queueing a second. */
+      if (nav.classList.contains("expanded")) {
         collapse();
+        window.clearTimeout(shutting);
+        shutting = window.setTimeout(function () {
+          shutting = null;
+          nav.classList.remove("collapsed");
+        }, discMs());
+        return;
       }
+
+      /* Already shutting. The check has to be here rather than inside
+         the branch above: that branch takes "expanded" off on the first
+         scroll event, and scrolling sends plenty, so the next one came
+         straight through and put the row back while the disc was still
+         on its way down. */
+      if (shutting !== null) return;
+
+      nav.classList.remove("collapsed");
+      collapse();
     }
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
@@ -131,21 +169,32 @@
     var row = nav.querySelector(".menu-row");
 
     function sizeMenuGround() {
-      if (!ground || !controls || !row || !dot) return;
-      var cx = controls.offsetWidth - dot.offsetWidth / 2;
-      var cy = controls.offsetHeight / 2;
-      var left = row.offsetLeft;
-      var right = left + row.offsetWidth;
-      var top = row.offsetTop;
-      var bottom = top + row.offsetHeight;
-      var reach = Math.max(
-        Math.sqrt(Math.pow(left - cx, 2) + Math.pow(top - cy, 2)),
-        Math.sqrt(Math.pow(left - cx, 2) + Math.pow(bottom - cy, 2)),
-        Math.sqrt(Math.pow(right - cx, 2) + Math.pow(top - cy, 2)),
-        Math.sqrt(Math.pow(right - cx, 2) + Math.pow(bottom - cy, 2))
-      );
-      nav.style.setProperty("--dot-size", dot.offsetWidth + "px");
-      nav.style.setProperty("--menu-d", Math.ceil((reach + 34) * 2) + "px");
+      if (!ground || !controls || !row) return;
+      // The middle of the menu's own text, in the box the disc is
+      // positioned in. Layout values, not rendered ones: a collapsed
+      // menu is scaled down and its rendered box is the small one.
+      var cx = row.offsetLeft + row.offsetWidth / 2;
+      var cy = row.offsetTop + row.offsetHeight / 2;
+
+      // Enough to hold the text with room around it...
+      var holds = Math.sqrt(
+        Math.pow(row.offsetWidth / 2, 2) + Math.pow(row.offsetHeight / 2, 2)
+      ) + 34;
+
+      /* ...and enough to run past the corner of the screen, so what is
+         on show is an edge curving across it rather than a circle
+         floating in it. Measured to the far corner from where the
+         middle of the text actually sits on screen. */
+      var seen = row.getBoundingClientRect();
+      var sx = seen.left + seen.width / 2;
+      var sy = seen.top + seen.height / 2;
+      var clears = Math.sqrt(
+        Math.pow(window.innerWidth - sx, 2) + Math.pow(sy, 2)
+      ) + 8;
+
+      nav.style.setProperty("--menu-cx", cx + "px");
+      nav.style.setProperty("--menu-cy", cy + "px");
+      nav.style.setProperty("--menu-d", Math.ceil(Math.max(holds, clears) * 2) + "px");
     }
 
     sizeMenuGround();
@@ -362,11 +411,18 @@
        the browser's default crossfade, which blew the card's small grey
        title up to the size of the project page's heading and faded that
        ghost across the whole trip. */
+    /* Read once for this arrival, not once per call: restoreFromWork
+       runs at the end of the script and again on pagereveal, and the
+       list clears itself on the first read, so a second read came back
+       empty-handed and named everything. */
+    var sending = readTravelling();
+
     function liftCard(id) {
       Object.keys(lifts).forEach(function (key) {
         var card = lifts[key];
         ["visual", "title", "meta", "blurb"].forEach(function (part) {
-          card[part].style.viewTransitionName = key === id ? "lift-" + part : "";
+          var travels = key === id && (!sending || sending.indexOf(part) !== -1);
+          card[part].style.viewTransitionName = travels ? "lift-" + part : "";
         });
       });
       return !!lifts[id];
@@ -1150,6 +1206,41 @@
       if (heroImg) heroImg.style.viewTransitionName = "lift-visual";
     }
 
+    /* Only what the reader can actually see travels. A snapshot of a
+       piece that has scrolled off is a band of whatever was still
+       inside the viewport, so leaving a work from halfway down it sent
+       the description to the feed as a strip — it appeared there for a
+       moment, stuck against the edge of the screen, and animated away
+       from somewhere it had never been.
+
+       Both ends have to agree, since a name with no twin is its own
+       layer floating over the page, so the list is handed to the feed
+       and the card names the same pieces and no others. */
+    function onScreen(el) {
+      if (!el) return false;
+      var r = el.getBoundingClientRect();
+      if (!r.width || !r.height) return false;
+      // Whole, not merely touching: half a line travels as half a line.
+      return r.top >= 0 && r.bottom <= window.innerHeight;
+    }
+
+    function nameOnlyWhatIsOnScreen() {
+      var parts = [];
+      [["title", "p-title"], ["meta", "p-meta"], ["blurb", "p-blurb"]]
+        .forEach(function (pair) {
+          var on = onScreen(document.getElementById(pair[1]));
+          nameForTransition(pair[1], on ? "lift-" + pair[0] : "");
+          if (on) parts.push(pair[0]);
+        });
+      if (heroImg) {
+        var on = onScreen(heroImg);
+        heroImg.style.viewTransitionName = on ? "lift-visual" : "";
+        if (on) parts.push("visual");
+      }
+      nameForTransition("p-intro", "project-intro");
+      writeTravelling(parts);
+    }
+
     /* Nothing is named while a sideways move is arriving: a flick
        between works carries the whole page in one piece, and a title
        morphing into the next work's title — or the intro climbing up
@@ -1193,7 +1284,7 @@
          the logo, and why the about page, which names nothing, was
          fine. The anchor is the same thing the feed checks before it
          sets a lift up at the other end. */
-      if (isFeedUrl(to) && to.indexOf("#w-") !== -1) nameTheTravellers();
+      if (isFeedUrl(to) && to.indexOf("#w-") !== -1) nameOnlyWhatIsOnScreen();
     });
 
     /* Back out of the browser's own back/forward cache, this document is
@@ -1328,15 +1419,26 @@
 
     var lastY = window.scrollY;
     var ticking = false;
+    var real = document.querySelector(".project-header .back-link");
+
+    /* How far down the page the page's own Back link stops being
+       reachable. Measured against that link rather than against a
+       screenful: a screenful meant the button only turned up once you
+       were down among the photos, and scrolling up anywhere above that
+       got you nothing. This is the whole of the rule — the floating one
+       stands in for the real one exactly while the real one is gone. */
+    function spent() {
+      if (!real) return 0;
+      return real.getBoundingClientRect().bottom + window.scrollY;
+    }
 
     function update() {
       var y = window.scrollY;
       var rising = y < lastY - 4;
       var falling = y > lastY + 4;
-      // Not while the top of the page, with its own Back link, is still
-      // in reach.
-      if (rising && y > window.innerHeight) button.classList.add("is-shown");
-      if (falling || y <= window.innerHeight) button.classList.remove("is-shown");
+      var past = y > spent();
+      if (rising && past) button.classList.add("is-shown");
+      if (falling || !past) button.classList.remove("is-shown");
       if (rising || falling) lastY = y;
       ticking = false;
     }
@@ -1658,6 +1760,23 @@
   /* The same hand-off as the slide above, for the one navigation that
      isn't a work: whichever page the logo was tapped on, the feed is
      what arrives. */
+  /* Which pieces a work's page is actually sending, so the feed can
+     name the same ones. Read once and cleared, like the other marks. */
+  function writeTravelling(parts) {
+    try { sessionStorage.setItem("travelling", parts.join(",")); } catch (e) {}
+  }
+
+  function readTravelling() {
+    try {
+      var value = sessionStorage.getItem("travelling");
+      if (value === null) return null;
+      sessionStorage.removeItem("travelling");
+      return value ? value.split(",") : [];
+    } catch (e) {
+      return null;
+    }
+  }
+
   function writeEnter(kind) {
     try { sessionStorage.setItem("enter", kind); } catch (e) {}
   }
