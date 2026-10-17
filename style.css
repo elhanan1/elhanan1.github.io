@@ -432,7 +432,32 @@ ul { margin: 0; padding: 0; list-style: none; }
   position: relative;
 }
 
+/* The disc the menu stands on once the dot has been tapped. It is
+   centred on the dot, so it reads as that dot opening up, and it is
+   sized in script from the menu's own box — add a third link and it
+   grows to hold it. Its radius easily clears the corner it sits in, so
+   what is on screen is a quarter of it. */
+.site-nav .menu-ground {
+  position: absolute;
+  top: 50%;
+  right: calc(var(--dot-size, 22px) / 2);
+  width: var(--menu-d, 24rem);
+  height: var(--menu-d, 24rem);
+  border-radius: 50%;
+  background: var(--fg);
+  transform: translate(50%, -50%) scale(0);
+  /* Past its size and then back to it, which is the gesture the dot
+     itself makes. An easing rather than keyframes, so that closing runs
+     the same curve backwards and nothing plays on a page that merely
+     loads scrolled. */
+  transition: transform var(--dur-med) cubic-bezier(.34, 1.56, .64, 1);
+  pointer-events: none;
+  z-index: 0;
+}
+
 .site-nav .menu-row {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: 1.6em;
@@ -531,6 +556,16 @@ ul { margin: 0; padding: 0; list-style: none; }
 .site-nav.collapsed.expanded .dot {
   opacity: 0;
   animation: dot-pop-out var(--dur-med) var(--ease) both;
+}
+
+.site-nav.collapsed.expanded .menu-ground {
+  transform: translate(50%, -50%) scale(1);
+}
+
+/* Reading against the disc rather than against the page. */
+.site-nav.collapsed.expanded .menu-row a,
+.site-nav.collapsed.expanded .menu-row {
+  color: var(--bg);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -1121,6 +1156,41 @@ html[data-settling] .work-visual .work-cue {
   view-transition-name: none;
   visibility: hidden;
 }
+
+/* A way back out of a work that comes to meet you when you turn around.
+   It sits below the row of the logo and the menu, centred, so it never
+   lands on either of them. */
+.back-float {
+  position: fixed;
+  top: 5.6rem;
+  left: 50%;
+  z-index: 90;
+  display: inline-flex;
+  align-items: center;
+  gap: .5em;
+  padding: .5em 1.1em;
+  border: 1px solid var(--border);
+  border-radius: 2em;
+  background: var(--bg);
+  font-size: .78rem;
+  letter-spacing: .04em;
+  color: var(--fg-soft);
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, -140%);
+  pointer-events: none;
+  transition: opacity var(--dur-fast) var(--ease),
+              transform var(--dur-fast) var(--ease),
+              color var(--dur-fast) var(--ease);
+}
+
+.back-float.is-shown {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  pointer-events: auto;
+}
+
+.back-float:hover { color: var(--fg); }
 
 /* The strip of screen the back-drag is read from. It has to be its own
    element: the listener behind it has to be able to prevent the

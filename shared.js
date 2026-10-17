@@ -120,8 +120,40 @@
       });
     });
 
+    /* How wide the disc behind the menu has to be: far enough from the
+       dot's centre to clear the furthest corner of the menu's own box,
+       plus a margin. Measured from layout rather than from the rendered
+       boxes, because while the menu is collapsed it is scaled down and
+       its rendered box is the small one. Read again on resize, since
+       the padding either side of the nav is in vw. */
+    var ground = nav.querySelector(".menu-ground");
+    var controls = nav.querySelector(".nav-controls");
+    var row = nav.querySelector(".menu-row");
+
+    function sizeMenuGround() {
+      if (!ground || !controls || !row || !dot) return;
+      var cx = controls.offsetWidth - dot.offsetWidth / 2;
+      var cy = controls.offsetHeight / 2;
+      var left = row.offsetLeft;
+      var right = left + row.offsetWidth;
+      var top = row.offsetTop;
+      var bottom = top + row.offsetHeight;
+      var reach = Math.max(
+        Math.sqrt(Math.pow(left - cx, 2) + Math.pow(top - cy, 2)),
+        Math.sqrt(Math.pow(left - cx, 2) + Math.pow(bottom - cy, 2)),
+        Math.sqrt(Math.pow(right - cx, 2) + Math.pow(top - cy, 2)),
+        Math.sqrt(Math.pow(right - cx, 2) + Math.pow(bottom - cy, 2))
+      );
+      nav.style.setProperty("--dot-size", dot.offsetWidth + "px");
+      nav.style.setProperty("--menu-d", Math.ceil((reach + 34) * 2) + "px");
+    }
+
+    sizeMenuGround();
+    window.addEventListener("resize", sizeMenuGround, { passive: true });
+
     if (dot) {
       onTap(dot, function () {
+        sizeMenuGround();
         var open = nav.classList.toggle("expanded");
         openedAt = open ? window.scrollY : null;
       });
@@ -1246,6 +1278,7 @@
     linkProjectNav("nav-prev", prevWork);
     linkProjectNav("nav-next", nextWork);
 
+    floatingWayBack("index.html#w-" + work.id);
     tapLinks(".site-nav a, .site-footer a, .back-link, .project-nav a");
     slideDeck(prevWork, nextWork);
     edgeSwipeBack("index.html#w-" + work.id);
@@ -1276,6 +1309,43 @@
 
         document.body.appendChild(arrow);
       });
+  }
+
+  /* Deep in a work the way back is far above you, so it comes to meet
+     you the moment you start heading back up, and goes again when you
+     turn round and carry on down. It sits under the logo and the menu
+     rather than beside them: the row above belongs to the site, this
+     belongs to the work you are in. */
+  function floatingWayBack(href) {
+    var button = document.createElement("a");
+    button.className = "back-float";
+    button.href = href;
+    button.textContent = "\u2190 Back to work";
+    document.body.appendChild(button);
+    // A lift like the Back link above it — it asks for the card's own
+    // anchor — so the travelling names stay on.
+    tapToOpen(button);
+
+    var lastY = window.scrollY;
+    var ticking = false;
+
+    function update() {
+      var y = window.scrollY;
+      var rising = y < lastY - 4;
+      var falling = y > lastY + 4;
+      // Not while the top of the page, with its own Back link, is still
+      // in reach.
+      if (rising && y > window.innerHeight) button.classList.add("is-shown");
+      if (falling || y <= window.innerHeight) button.classList.remove("is-shown");
+      if (rising || falling) lastY = y;
+      ticking = false;
+    }
+
+    window.addEventListener("scroll", function () {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(update);
+    }, { passive: true });
   }
 
   /* On a phone, dragging in from the left edge is how you go back, and
