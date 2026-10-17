@@ -82,6 +82,7 @@
        does under a transition as well. */
     var holding = false;
     var discBeat = null;
+    var moveBeat = null;
     var finePointer =
       window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 
@@ -102,24 +103,59 @@
       }, 1200);
     }
 
+    /* Which way the menu is moving, worn by the nav for as long as the
+       move takes. The stylesheet hangs the dot's beat on these rather
+       than on the states themselves, so that a menu which is simply in a
+       state — a page arriving in the one it was left in — has nothing
+       to play. Taken off at the end, which changes nothing: the state
+       underneath already holds the place the move ends on.
+
+       The class is taken off and put back with a reflow between, so that
+       a move interrupting another one starts rather than carries on from
+       wherever the first had got to. */
+    function moveNav(way) {
+      nav.classList.remove("opening", "shutting");
+      void nav.offsetWidth;
+      nav.classList.add(way);
+      window.clearTimeout(moveBeat);
+      moveBeat = window.setTimeout(function () {
+        nav.classList.remove("opening", "shutting");
+      }, 1200);
+    }
+
     function collapse() {
-      if (nav.classList.contains("expanded")) holdTheDot();
-      nav.classList.remove("expanded");
+      var wasOpen = nav.classList.contains("expanded");
       openedAt = null;
+      if (!wasOpen) return;
+      holdTheDot();
+      moveNav("shutting");
+      nav.classList.remove("expanded");
     }
 
     function onScroll() {
       if (holding) return;
       var collapsed = window.scrollY > threshold;
-      nav.classList.toggle("collapsed", collapsed);
+      var was = nav.classList.contains("collapsed");
+      var wasOpen = nav.classList.contains("expanded");
       if (!collapsed) {
+        // Closing the menu first, so that the move this ends on is the
+        // one you are actually watching: the row coming out, not the
+        // disc going down behind it.
         collapse();
+        nav.classList.remove("collapsed");
         /* Nothing is being handed to the dot at the top of the page:
            there is no dot there. Left on, it would make the next dot to
            come back from a scroll late for no reason. */
         nav.classList.remove("disc-closing");
+        /* Only where there was a dot to go. Scrolling up out of an open
+           menu, the dot is already away — calling that an opening would
+           play it out of a size it never had, which is a dot flashing
+           on at the top of the page for a quarter second. */
+        if (was && !wasOpen) moveNav("opening");
         return;
       }
+      if (!was) moveNav("shutting");
+      nav.classList.add("collapsed");
       // Scrolling with the menu open closes it — on a touch screen it
       // otherwise sits over the work you're scrolling to, with no way
       // back but tapping exactly beside it. The few pixels of slack are
@@ -131,49 +167,46 @@
     }
     window.addEventListener("scroll", onScroll, { passive: true });
 
-    /* The arrival, and the three things that were wrong with it.
+    /* The arrival. The menu is the one thing on screen that doesn't
+       belong to the page you are leaving, so it is named for the view
+       transition and stays where it is while the page goes; the
+       stylesheet drops the old picture of it outright, and what is on
+       screen for the length of the trip is this menu, live.
 
-       The menu is the one thing on screen that doesn't belong to the
-       page you are leaving, so it is named for the view transition and
-       stays where it is — and that is exactly why a menu in a different
-       state on the two sides was drawn as a cross-fade between two
-       pictures of the nav, over the length of the whole trip. The dot
-       dissolving while the row appeared somewhere else was that, not an
-       animation of ours. And on top of it the dot's own arrival ran
-       again on every load, so a page you came back to animated a menu
-       that hadn't changed.
-
-       So: the page is born in the state the page before it was left in,
-       with every transition and animation off. The two pictures match
-       and there is nothing to cross-fade. If that is also the state
-       this page calls for — the usual case — nothing happens at all,
-       which is the point: the menu was never the thing you navigated.
-       If it isn't, the real move plays once the arrival is over, the
-       same open or close that a tap gives. */
+       So it is born in the state the page before it was left in, and
+       moves from there to the state this page calls for — at once,
+       while the page is still coming in, because that is when you are
+       looking at it. When the two are the same, which is the usual
+       case, there is nothing to move and nothing happens: the menu was
+       never the thing you navigated. */
     var leftAs = readNavState();
     var standing = window.scrollY > threshold ? "dot" : "row";
     nav.classList.add("instant");
     nav.classList.toggle("collapsed", (leftAs || standing) !== "row");
     nav.classList.toggle("expanded", leftAs === "open");
-    holding = leftAs !== null && leftAs !== standing;
-    /* Where there are no cross-document transitions there is no arrival
-       to wait for and nothing that would ever release it: the move
-       plays on the next frame instead. */
-    if (holding && "onpagereveal" in window) afterArrival(release);
-    else nextFrame(release);
+    /* Held for the two frames below and no longer. It is not the
+       transition being waited for — it is the page's own scroll coming
+       back, which lands in here as a scroll like any other and would
+       otherwise put the menu in its new state before there was anything
+       to move it from. */
+    holding = true;
+    nextFrame(release);
 
     function release() {
       nav.classList.remove("instant");
-      /* A frame with the hold still on, so that the rule switching the
-         animations off is gone before the classes that do the moving
+      /* A frame with the hold still on, so the rule that takes the
+         transitions off is gone before the classes that do the moving
          change. Both in one recalculation is asking the browser to find
          a state to move from in the same breath as the move. */
       nextFrame(function () {
         holding = false;
-        // A menu that was open when the page was left is closed here,
-        // the same way tapping beside it closes one: it isn't open on a
-        // page you have only just arrived at.
-        collapse();
+        /* A menu that was open when the page was left is closed here,
+           the same way tapping beside it closes one: it isn't open on a
+           page you have only just arrived at. Only where the page has
+           come back scrolled, though — at the top of one, closing it is
+           the scroll's own job below, which knows that a menu coming out
+           of open has no dot to play away. */
+        if (window.scrollY > threshold) collapse();
         onScroll();
       });
     }
@@ -237,6 +270,7 @@
       onTap(dot, function () {
         var open = nav.classList.toggle("expanded");
         openedAt = open ? window.scrollY : null;
+        moveNav(open ? "opening" : "shutting");
         if (!open) holdTheDot();
       });
 
@@ -249,13 +283,21 @@
       });
     }
 
-    /* The pointer leaving is the other way the menu closes, and the one
-       the stylesheet does by itself: the disc needs the same hand-off
-       to the dot that a tap gets. */
+    /* The pointer is the other way the menu opens and closes, and the
+       one the stylesheet does by itself off :hover — so these two say
+       out loud what is happening, which is what the dot's beat and the
+       disc's hand-off are hung on. */
     if (finePointer) {
+      nav.addEventListener("mouseenter", function () {
+        if (nav.classList.contains("collapsed") &&
+            !nav.classList.contains("expanded")) {
+          moveNav("opening");
+        }
+      });
       nav.addEventListener("mouseleave", function () {
         if (nav.classList.contains("collapsed") &&
             !nav.classList.contains("expanded")) {
+          moveNav("shutting");
           holdTheDot();
         }
       });

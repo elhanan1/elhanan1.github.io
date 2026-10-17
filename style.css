@@ -426,6 +426,23 @@ ul { margin: 0; padding: 0; list-style: none; }
   align-items: center;
 }
 
+/* The two pages' menus are the same piece of furniture, so there is
+   nothing to cross-fade between them: the picture of the one you are
+   leaving is dropped outright, and the live menu of the page you are
+   arriving at is there at full strength from the first frame, free to
+   play its own open or close while the page comes in. Left to the
+   browser the old picture lay over the new one for the length of the
+   trip — a second and a half of a dot dissolving while a row appeared
+   underneath it, which is what made every arrival look like it was
+   animating the menu, and what no animation of ours could be seen
+   through. */
+::view-transition-old(site-nav) { display: none; }
+
+::view-transition-new(site-nav) {
+  animation: none;
+  opacity: 1;
+}
+
 .site-nav .nav-controls {
   position: relative;
 }
@@ -572,11 +589,8 @@ ul { margin: 0; padding: 0; list-style: none; }
   100% { transform: translate(0, -50%) scale(0); }
 }
 
-/* Each state below says where it rests as well as how it gets there:
-   the keyframes only decorate the trip, and every one of them ends
-   exactly on the state that declared it. That is what lets the whole
-   lot be switched off on arrival (`.instant`, below) and still leave
-   the menu standing in the right place. */
+/* The states. Each one only says where the menu rests in it — nothing
+   here animates. */
 .site-nav.collapsed .menu-row {
   opacity: 0;
   pointer-events: none;
@@ -586,7 +600,6 @@ ul { margin: 0; padding: 0; list-style: none; }
 .site-nav.collapsed .dot {
   opacity: 1;
   transform: translate(0, -50%) scale(1);
-  animation: dot-pop-in var(--dur-med) var(--ease) both;
 }
 
 .site-nav.collapsed.expanded .menu-row {
@@ -598,23 +611,41 @@ ul { margin: 0; padding: 0; list-style: none; }
 .site-nav.collapsed.expanded .dot {
   opacity: 0;
   transform: translate(0, -50%) scale(0);
-  animation: dot-pop-out var(--dur-fast) var(--ease) both;
 }
 
-/* A page arrives in whatever state the page before it was left in, and
-   when that is the state it belongs in there is nothing to watch: the
-   menu was never the thing you navigated. On for the first frame of
-   every page, and for as long as an arrival that does change the menu
-   stands in the old state waiting for the transition to be over.
+/* And the two moves, which the nav wears for as long as they take. The
+   row and the disc travel on the transitions declared with them, which
+   only ever run when something has actually changed; the dot's beat is
+   a keyframe animation, and a keyframe animation has no such sense. It
+   starts whenever the rule that carries it begins to apply — and the
+   state rules above begin to apply the moment a page is allowed to
+   animate at all. That is why every arrival had the dot beating on its
+   own, over a menu that hadn't changed. A move is something that
+   happens, so something has to say that it is happening: the script
+   puts one of these on, and the states above hold the place it ends on,
+   so taking it off again changes nothing. */
+.site-nav.shutting.collapsed .dot {
+  animation: dot-pop-in var(--dur-med) var(--ease);
+}
 
-   !important rather than a selector long enough to beat the states
-   above: every one of them has to lose to this, and it is on for a
-   frame. */
+/* Both of the ways the dot has somewhere to go: the row opening over it
+   where it stands, and the top of the page, where there is no dot. */
+.site-nav.opening:not(.collapsed) .dot,
+.site-nav.opening.collapsed.expanded .dot {
+  animation: dot-pop-out var(--dur-fast) var(--ease);
+}
+
+/* The first frame of every page, and the few after it while the menu is
+   standing in the state the page before it was left in. It takes the
+   transitions off, so that being born in a state is not the same thing
+   as moving into one — and nothing else, since a transition that is
+   never asked to run is the one thing that leaves no mark when the rule
+   goes away. */
 .site-nav.instant .menu-row,
+.site-nav.instant .menu-row a,
 .site-nav.instant .menu-disc,
 .site-nav.instant .dot {
   transition: none !important;
-  animation: none !important;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -626,7 +657,11 @@ ul { margin: 0; padding: 0; list-style: none; }
   .site-nav.collapsed:hover .dot {
     opacity: 0;
     transform: translate(0, -50%) scale(0);
-    animation: dot-pop-out var(--dur-fast) var(--ease) both;
+  }
+  /* The pointer arriving and leaving are moves like any other; the
+     script says so on mouseenter and mouseleave. */
+  .site-nav.opening.collapsed:hover .dot {
+    animation: dot-pop-out var(--dur-fast) var(--ease);
   }
 }
 
@@ -642,7 +677,10 @@ ul { margin: 0; padding: 0; list-style: none; }
 
   .site-nav.collapsed.expanded .menu-disc {
     transform: translate(-50%, -50%) scale(1);
-    animation: disc-open var(--dur-med) var(--ease) both;
+  }
+
+  .site-nav.opening.collapsed.expanded .menu-disc {
+    animation: disc-open var(--dur-med) var(--ease);
   }
 
   /* Read against the disc rather than against the page. Coming back the
@@ -659,13 +697,16 @@ ul { margin: 0; padding: 0; list-style: none; }
   /* The dot holds still for the length of the disc's trip down and then
      plays its own arrival, instead of the two landing in one frame. The
      nav wears this only while a disc is actually shutting. */
-  .site-nav.disc-closing .dot { animation-delay: var(--dur-fast); }
+  .site-nav.disc-closing.shutting .dot { animation-delay: var(--dur-fast); }
 }
 
 @media (max-width: 720px) and (hover: hover) and (pointer: fine) {
   .site-nav.collapsed:hover .menu-disc {
     transform: translate(-50%, -50%) scale(1);
-    animation: disc-open var(--dur-med) var(--ease) both;
+  }
+
+  .site-nav.opening.collapsed:hover .menu-disc {
+    animation: disc-open var(--dur-med) var(--ease);
   }
 
   .site-nav.collapsed:hover .menu-row a {

@@ -181,11 +181,12 @@ something else.
   shuts back down into it. Above that width the card never reaches the
   menu's corner and there is no disc.
 - **Arriving at a page doesn't animate the menu.** It is born in the state
-  the page before it was left in — which also means the view transition
-  has two matching pictures of the nav and nothing to cross-fade. If the
-  new page does call for a different state (you were scrolled down and
-  land at the top of a work, say), the real open or close plays once the
-  arrival is over. The state travels in `sessionStorage` under `nav`.
+  the page before it was left in, and when that is the state the new page
+  calls for — the usual case — nothing moves at all. When it isn't (you
+  were scrolled down and land at the top of a work, say), the real open or
+  close plays straight away, while the page is still coming in. The state
+  travels in `sessionStorage` under `nav`, and the nav's old picture is
+  dropped from the view transition so the live menu is what you watch.
 - **Opening a work** is meant to feel like one continuous move: the card's
   photo and words travel to the project page rather than being replaced by
   it. So each work is warmed while its card is coming up the screen — its
