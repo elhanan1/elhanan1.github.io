@@ -414,14 +414,26 @@
       var visual = document.createElement("div");
       visual.className = "work-visual";
 
+      /* A work doesn't have to have been drawn yet. Course work turns
+         up as photographs long before there is a line for it, and a
+         card with nothing to draw shows its photograph instead — at
+         full strength, since the photo is normally a hint behind the
+         line and here it is the whole of the card. The line takes over
+         the moment one is written. */
       var svgNS = "http://www.w3.org/2000/svg";
-      var svg = document.createElementNS(svgNS, "svg");
-      svg.setAttribute("class", "sketch-svg");
-      svg.setAttribute("viewBox", work.sketch.viewBox);
-      svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
-      var path = document.createElementNS(svgNS, "path");
-      path.setAttribute("d", work.sketch.path);
-      svg.appendChild(path);
+      var svg = null;
+      var path = null;
+      if (work.sketch) {
+        svg = document.createElementNS(svgNS, "svg");
+        svg.setAttribute("class", "sketch-svg");
+        svg.setAttribute("viewBox", work.sketch.viewBox);
+        svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+        path = document.createElementNS(svgNS, "path");
+        path.setAttribute("d", work.sketch.path);
+        svg.appendChild(path);
+      } else {
+        visual.classList.add("photo-only");
+      }
 
       var previewSrc = (work.images && (work.images.preview || work.images.medium)) || "";
       var previewImg = null;
@@ -473,7 +485,7 @@
       visual.appendChild(cue);
       if (previewImg) tintCue(previewImg, cue);
 
-      visual.appendChild(svg);
+      if (svg) visual.appendChild(svg);
 
       var meta = document.createElement("div");
       meta.className = "work-meta";
@@ -522,7 +534,7 @@
       article.appendChild(card);
       feed.appendChild(article);
 
-      entries.push({ el: visual, path: path, progress: 0, drawn: false });
+      if (path) entries.push({ el: visual, path: path, progress: 0, drawn: false });
       approaching.push({ el: article, work: work });
     });
 

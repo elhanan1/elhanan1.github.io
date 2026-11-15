@@ -1071,6 +1071,14 @@ html[data-settling] .work-visual .work-cue {
   .work-card .work-caption { margin-top: .9rem; }
 }
 
+/* A work with no line drawn for it yet. The photo is normally a hint
+   behind the drawing — it rests dim under a finger and at nothing at
+   all under a pointer that isn't on it — but here it is the whole of
+   the card, so it stands at full strength and there is nothing left for
+   a hover to reveal. After both of the rules that dim it, which is what
+   makes it win: they are as specific as this one. */
+.work-visual.photo-only .work-preview { opacity: 1; }
+
 /* On a phone the card is the whole screen: the feed's own side padding
    goes, and the photo, the title and the description all run from one
    edge to the other. The description drops its measure here as well —

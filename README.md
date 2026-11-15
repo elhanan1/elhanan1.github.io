@@ -100,7 +100,13 @@ and however tall it naturally is. Two ways to control where things land:
 
 ### Replacing a sketch
 
-Each work has a `sketch` object:
+A work can have no sketch at all: leave `sketch` out and its card stands
+on its photograph instead, at full strength rather than the hint of a
+photo that normally sits behind a drawing. That is what course work
+looks like before it has been drawn — write the `sketch` in whenever
+there is one and the line takes over.
+
+Otherwise, each work has a `sketch` object:
 
 ```js
 sketch: {

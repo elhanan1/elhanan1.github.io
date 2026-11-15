@@ -250,7 +250,91 @@ window.SITE_DATA = {
             title: "Studio: Structure. Function. Form.",
             short: "Structure. Function. Form.",
             blurb: "",
-            works: []
+            works: [
+              {
+                id: "box",
+                title: "Box",
+                year: 2026,
+                category: "Studio exercise",
+                size: "medium",
+                blurb: "One box, with a different pattern cut into each of "
+                  + "its faces.",
+                intro: "The first exercise is a single volume: one box, and "
+                  + "what happens to it when its faces are worked on. Each "
+                  + "side carries a pattern of its own \u2014 parallel "
+                  + "diagonals on one, a woven zigzag on another \u2014 cut "
+                  + "into the board rather than drawn onto it, so the face "
+                  + "keeps one colour and the pattern shows only where an "
+                  + "edge stands up off it.",
+                process: "The lines are scored and the strip beside each one "
+                  + "lifted, which leaves the surface its own colour and "
+                  + "gives it a shadow. The inside of the box is cut the "
+                  + "same way as the outside, so the pattern carries on "
+                  + "across the fold rather than stopping at the corner.",
+                materials: ["Cardboard"],
+                images: {
+                  medium: "assets/img/box-medium.webp",
+                  w: 600, h: 800,
+                  full: "assets/img/box-full.jpg"
+                },
+                gallery: [
+                  {
+                    type: "image",
+                    medium: "assets/img/box-2-medium.webp",
+                    w: 600, h: 800,
+                    full: "assets/img/box-2-full.jpg"
+                  }
+                ]
+              },
+              {
+                id: "many-boxes",
+                title: "Many boxes",
+                year: 2026,
+                category: "Studio exercise",
+                size: "large",
+                blurb: "Several boxes in one body, set around a curve the "
+                  + "whole thing rocks on.",
+                intro: "The second exercise takes the single box and "
+                  + "multiplies it. The volumes share their walls, and where "
+                  + "those walls meet they cross into the X frames that hold "
+                  + "the piece open; the openings between them are the boxes "
+                  + "themselves. The outer edges are curved, so it stands on "
+                  + "an arc and rocks rather than sitting flat.",
+                process: "Cut from the same board as the first exercise, "
+                  + "white on the outside and left as it is within, so each "
+                  + "opening reads darker than the frame around it. A bamboo "
+                  + "skewer runs through the top edge, where the upper "
+                  + "panels meet.",
+                materials: ["Cardboard", "Bamboo skewer"],
+                images: {
+                  medium: "assets/img/many-boxes-medium.webp",
+                  w: 600, h: 800,
+                  full: "assets/img/many-boxes-full.jpg"
+                },
+                gallery: [
+                  {
+                    type: "image",
+                    pos: [1, 1],
+                    medium: "assets/img/many-boxes-2-medium.webp",
+                    w: 600, h: 800,
+                    full: "assets/img/many-boxes-2-full.jpg"
+                  },
+                  {
+                    type: "image",
+                    pos: [1, 2],
+                    medium: "assets/img/many-boxes-3-medium.webp",
+                    w: 600, h: 800,
+                    full: "assets/img/many-boxes-3-full.jpg"
+                  },
+                  {
+                    type: "image",
+                    medium: "assets/img/many-boxes-4-medium.webp",
+                    w: 600, h: 800,
+                    full: "assets/img/many-boxes-4-full.jpg"
+                  }
+                ]
+              }
+            ]
           },
           {
             id: "studio-a",
