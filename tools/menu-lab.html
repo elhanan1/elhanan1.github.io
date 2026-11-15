@@ -28,8 +28,12 @@
   --ease: cubic-bezier(.22, 1, .36, 1);
 
   --k: 1;
-  --dur-fast: calc(.25s * var(--k));
-  --dur-med: calc(.6s * var(--k));
+  /* The menu's own clock, as the site has it: the site's .25s/.6s with
+     the menu's 1.35 on them. Keep these in step with --dur-menu-fast
+     and --dur-menu-med in style.css, or the bench stops telling the
+     truth. */
+  --dur-fast: calc(.25s * 1.35 * var(--k));
+  --dur-med: calc(.6s * 1.35 * var(--k));
 
   /* The dot, and how wide the disc stands past the menu's text. Both
      are the site's. */
@@ -687,7 +691,7 @@ figcaption .d {
   /* Long enough for the move already running to finish before the one
      being asked for starts, at whatever speed the dial is on. */
   function beat() {
-    return 1100 * speed;
+    return 1500 * speed;
   }
 
   var speed = 1;
@@ -715,7 +719,7 @@ figcaption .d {
     looping = window.setInterval(function () {
       all(shut ? close : open);
       shut = !shut;
-    }, 1400 * speed);
+    }, 1800 * speed);
   });
 
   window.addEventListener("resize", measure);

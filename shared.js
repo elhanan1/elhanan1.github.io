@@ -115,9 +115,12 @@
       /* A safety net and nothing more: the dot's own animation takes
          this off as it ends, and there are ways to close the menu that
          leave the dot no arrival to play at all. */
+      /* Longer than the whole move it is covering — the disc's trip
+         down and the dot's arrival after it, on the menu's own clock
+         — since taking the class off is what ends the move. */
       discBeat = window.setTimeout(function () {
         nav.classList.remove("disc-closing");
-      }, 1200);
+      }, 1800);
     }
 
     /* Which way the menu is moving, worn by the nav for as long as the
@@ -137,7 +140,7 @@
       window.clearTimeout(moveBeat);
       moveBeat = window.setTimeout(function () {
         nav.classList.remove("opening", "shutting");
-      }, 1200);
+      }, 1800);
     }
 
     function collapse() {

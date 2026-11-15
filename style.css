@@ -415,6 +415,16 @@ ul { margin: 0; padding: 0; list-style: none; }
      watching them slide away with it was wrong. Named on every page, so
      the two always pair and it simply stays where it is. */
   view-transition-name: site-nav;
+  /* The menu's own clock. Its two moves want a little longer than the
+     site's small ones: there is the disc going down and the dot coming
+     back, one after the other, and at the site's quarter second they
+     were over before the second one had been noticed. Counted in the
+     site's durations rather than written out, so that a reader who
+     asks for less motion still gets the near-nothing the tokens turn
+     into — and so there is one number here to turn when this wants to
+     be slower or quicker again. */
+  --dur-menu-fast: calc(var(--dur-fast) * 1.35);
+  --dur-menu-med: calc(var(--dur-med) * 1.35);
   position: fixed;
   top: 2.2rem;
   left: var(--page-pad);
@@ -484,7 +494,7 @@ ul { margin: 0; padding: 0; list-style: none; }
      rather than inside it — the script holds the dot's beat back by
      exactly this long. Opening is the keyframes below, which need an
      overshoot a transition can't give. */
-  transition: transform var(--dur-fast) var(--ease);
+  transition: transform var(--dur-menu-fast) var(--ease);
 }
 
 @keyframes disc-open {
@@ -511,7 +521,7 @@ ul { margin: 0; padding: 0; list-style: none; }
   opacity: 1;
   transform: scale(1) translateX(0);
   transform-origin: right center;
-  transition: opacity var(--dur-med) var(--ease), transform var(--dur-med) var(--ease);
+  transition: opacity var(--dur-menu-med) var(--ease), transform var(--dur-menu-med) var(--ease);
 }
 
 .site-nav .menu-row a {
@@ -555,7 +565,7 @@ ul { margin: 0; padding: 0; list-style: none; }
   background: var(--fg);
   transform: translate(0, -50%) scale(0);
   opacity: 0;
-  transition: opacity var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+  transition: opacity var(--dur-menu-fast) var(--ease), transform var(--dur-menu-fast) var(--ease);
   cursor: pointer;
 }
 
@@ -625,14 +635,14 @@ ul { margin: 0; padding: 0; list-style: none; }
    puts one of these on, and the states above hold the place it ends on,
    so taking it off again changes nothing. */
 .site-nav.shutting.collapsed .dot {
-  animation: dot-pop-in var(--dur-med) var(--ease);
+  animation: dot-pop-in var(--dur-menu-med) var(--ease);
 }
 
 /* Both of the ways the dot has somewhere to go: the row opening over it
    where it stands, and the top of the page, where there is no dot. */
 .site-nav.opening:not(.collapsed) .dot,
 .site-nav.opening.collapsed.expanded .dot {
-  animation: dot-pop-out var(--dur-fast) var(--ease);
+  animation: dot-pop-out var(--dur-menu-fast) var(--ease);
 }
 
 /* The first frame of every page, and the few after it while the menu is
@@ -661,7 +671,7 @@ ul { margin: 0; padding: 0; list-style: none; }
   /* The pointer arriving and leaving are moves like any other; the
      script says so on mouseenter and mouseleave. */
   .site-nav.opening.collapsed:hover .dot {
-    animation: dot-pop-out var(--dur-fast) var(--ease);
+    animation: dot-pop-out var(--dur-menu-fast) var(--ease);
   }
 }
 
@@ -680,14 +690,14 @@ ul { margin: 0; padding: 0; list-style: none; }
   }
 
   .site-nav.opening.collapsed.expanded .menu-disc {
-    animation: disc-open var(--dur-med) var(--ease);
+    animation: disc-open var(--dur-menu-med) var(--ease);
   }
 
   /* Read against the disc rather than against the page. Coming back the
      other way the ink waits out the disc's own trip down, so the words
      are never light on a light page — by the time it lands they are all
      but gone anyway. */
-  .site-nav .menu-row a { transition: color 0s var(--dur-fast); }
+  .site-nav .menu-row a { transition: color 0s var(--dur-menu-fast); }
 
   .site-nav.collapsed.expanded .menu-row a {
     color: var(--bg);
@@ -708,7 +718,7 @@ ul { margin: 0; padding: 0; list-style: none; }
      looked like it shut, opened and shut again. Filling backwards is
      the whole of the difference. */
   .site-nav.disc-closing.shutting .dot {
-    animation-delay: var(--dur-fast);
+    animation-delay: var(--dur-menu-fast);
     animation-fill-mode: backwards;
   }
 }
@@ -719,7 +729,7 @@ ul { margin: 0; padding: 0; list-style: none; }
   }
 
   .site-nav.opening.collapsed:hover .menu-disc {
-    animation: disc-open var(--dur-med) var(--ease);
+    animation: disc-open var(--dur-menu-med) var(--ease);
   }
 
   .site-nav.collapsed:hover .menu-row a {
