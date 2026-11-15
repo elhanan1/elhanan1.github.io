@@ -250,6 +250,14 @@ something else.
   close plays straight away, while the page is still coming in. The state
   travels in `sessionStorage` under `nav`, and the nav's old picture is
   dropped from the view transition so the live menu is what you watch.
+- **Opening a course** is the same move with one piece instead of four:
+  the row's name on the studies index and the course page's heading are
+  the same words at two sizes, and they share a travelling name
+  (`lift-course`), so what crosses is a line of text growing into a
+  heading. It goes the other way too, back down into the row it came
+  out of. The name is only on when the index is on the other side of
+  the trip — arriving from a work, the card's own pieces are the ones
+  travelling and the heading has no twin.
 - **Opening a work** is meant to feel like one continuous move: the card's
   photo and words travel to the project page rather than being replaced by
   it. So each work is warmed while its card is coming up the screen — its

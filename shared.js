@@ -875,6 +875,29 @@
     };
   }
 
+  /* Which course a course.html URL points at, or null for anything
+     else, and whether a URL is the studies index. */
+  function courseIdFromUrl(url) {
+    if (!url) return null;
+    try {
+      var parsed = new URL(url, window.location.href);
+      if (parsed.pathname.indexOf("course.html") === -1) return null;
+      return parsed.searchParams.get("id");
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function isStudiesUrl(url) {
+    if (!url) return false;
+    try {
+      return new URL(url, window.location.href)
+        .pathname.indexOf("studies.html") !== -1;
+    } catch (e) {
+      return false;
+    }
+  }
+
   /* Which work a project.html URL points at, or null for anything else. */
   function workIdFromUrl(url) {
     if (!url) return null;
@@ -2087,6 +2110,11 @@
     var root = document.getElementById("study-years");
     if (!root) return;
 
+    // Each course's name on this page, by course id: the near end of the
+    // trip into that course (see below).
+    var names = {};
+    var rows = {};
+
     studyYears().forEach(function (year) {
       var section = document.createElement("section");
       section.className = "study-year";
@@ -2103,7 +2131,10 @@
 
         var main = document.createElement("span");
         main.className = "course-main";
-        main.appendChild(textEl("span", "course-name", course.title));
+        var nameEl = textEl("span", "course-name", course.title);
+        names[course.id] = nameEl;
+        rows[course.id] = link;
+        main.appendChild(nameEl);
         /* How much is in there, which is the one thing the index can say
            about a course that its name doesn't. A course with nothing in
            it yet says nothing rather than "0 works". */
@@ -2123,6 +2154,41 @@
     });
 
     tapLinks(".course-links a");
+
+    /* Opening a course is the same move as opening a work: the thing
+       you touched goes with you. The row's name and the course page's
+       heading are the same words at two sizes, and they share one
+       travelling name, so what crosses is a line of text growing into
+       a heading rather than a page swapping for another.
+
+       Named only for the navigation that actually goes there — a name
+       with nothing to pair it is a layer lifted out of the page and
+       left hovering over whatever arrives, which is what the work's
+       pages had to learn too. */
+    function liftRow(id) {
+      Object.keys(names).forEach(function (key) {
+        names[key].style.viewTransitionName = key === id ? "lift-course" : "";
+      });
+      return !!names[id];
+    }
+
+    window.addEventListener("pageswap", function (e) {
+      var going = e.activation && e.activation.entry && e.activation.entry.url;
+      liftRow(courseIdFromUrl(going));
+    });
+
+    /* And the way back: the heading comes down into the row it came
+       out of, so the row has to be named again and has to be on screen,
+       since the trip ends wherever it actually is. */
+    function restoreFromCourse() {
+      var id = courseIdFromUrl(cameFrom());
+      if (!id || !liftRow(id)) return;
+      document.documentElement.dataset.courseLift = "index";
+      bringIntoView(rows[id], false);
+    }
+
+    restoreFromCourse();
+    window.addEventListener("pagereveal", restoreFromCourse);
   }
 
   /* -------------------------------------------------------------------
@@ -2150,6 +2216,26 @@
     document.title = course.title + " — " + DATA.person.name;
     setText("c-year", found.year.title);
     setText("c-title", course.title);
+
+    /* The far end of the trip from the index: the heading wears the
+       travelling name from the first frame, so that it pairs with the
+       row it is growing out of.
+
+       Only when the index is on the other side, though, in either
+       direction. A name with nothing to pair it is still a layer of its
+       own, lifted out of the page and painted above it on its own
+       clock — so arriving here from a work, where the card's own four
+       pieces are the ones travelling, this heading would be a fifth
+       thing fading in over them. */
+    if (isStudiesUrl(cameFrom())) {
+      nameForTransition("c-title", "lift-course");
+      document.documentElement.dataset.courseLift = "page";
+    }
+
+    window.addEventListener("pageswap", function (e) {
+      var to = e.activation && e.activation.entry && e.activation.entry.url;
+      nameForTransition("c-title", isStudiesUrl(to) ? "lift-course" : "");
+    });
     var blurb = document.getElementById("c-blurb");
     if (blurb) {
       if (course.blurb) blurb.textContent = course.blurb;

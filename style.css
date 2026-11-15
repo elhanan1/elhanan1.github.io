@@ -195,6 +195,38 @@ html[data-lift="pair"][data-page="home"]::view-transition-new(lift-blurb) {
 @keyframes lift-text-out { to { opacity: 0; } }
 @keyframes lift-text-in { from { opacity: 0; } }
 
+/* A course opening out of the studies index, and closing back into it.
+   The row's name and the course page's heading are the same words at
+   two sizes and share one travelling name, so this is the work lift
+   again with one piece instead of four: the course page's heading is
+   the larger and sharper of the two snapshots, so that is the one shown
+   for the whole trip, scaled down into the row at the index end and at
+   full size at the other.
+
+   Which of the two it is depends on which way you are going, and the
+   page arriving says so: data-course-lift is "page" when the course is
+   what you are opening and "index" when it is what you are going back
+   to. Coming back, the hand-over to the row's own line happens at the
+   start rather than in the last frame, for the reason the three lines
+   above have it that way. */
+html[data-course-lift="page"]::view-transition-old(lift-course) {
+  animation: none;
+  opacity: 0;
+}
+
+html[data-course-lift="page"]::view-transition-new(lift-course) {
+  animation: none;
+  opacity: 1;
+}
+
+html[data-course-lift="index"]::view-transition-old(lift-course) {
+  animation: lift-text-out var(--dur-fast) var(--ease) both;
+}
+
+html[data-course-lift="index"]::view-transition-new(lift-course) {
+  animation: lift-text-in var(--dur-fast) var(--ease) both;
+}
+
 /* The photo arrives as dim as the card it is arriving on, rather than
    arriving bright and losing the light in one frame at the end. The
    snapshot that travels is the project page's, at full strength, while
@@ -1576,6 +1608,10 @@ html[data-settling] .work-visual .work-cue {
 .course-links .course-name {
   font-size: 1.02rem;
   letter-spacing: .01em;
+  /* As the course's own heading is set, and as every title on this site
+     is set: the same words travel between the two when a course opens,
+     and they can't change case on the way. */
+  text-transform: lowercase;
   color: var(--fg-soft);
   transition: color var(--dur-fast) var(--ease);
 }
