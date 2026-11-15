@@ -1,7 +1,8 @@
 /**
  * Shared behaviour for every page: the collapsing nav, and whichever
  * page-specific module matches document.body.dataset.page ("home",
- * "project", "about"). Reads all content from window.SITE_DATA
+ * "project", "studies", "course", "about"). Reads all content from
+ * window.SITE_DATA
  * (data/works.js), which must be loaded before this file.
  */
 (function () {
@@ -9,6 +10,16 @@
 
   var DATA = window.SITE_DATA;
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* The course a run of works is being shown inside, when there is one:
+     set by a course's page, and by a work opened from one. Every link
+     to a work carries it (see workHref), so the arrows in the margins,
+     the swipe from one work to the next and the way back all stay
+     inside the course instead of dropping you into the main feed.
+     `backToLabel` is what a Back link on a work says — "work" out of
+     the main feed, the course's own name out of a course. */
+  var inCourse = null;
+  var backToLabel = "work";
 
 
   function start() {
@@ -18,10 +29,14 @@
     // that, and would be spent on the wrong navigation.
     window.addEventListener("pageshow", disarmSkip);
     var page = document.body.dataset.page;
-    // On the root element, where the view-transition pseudo-elements
-    // live: the CSS needs to know which of a pair's two snapshots is the
-    // project page's (the bigger, sharper one) to keep on screen.
-    document.documentElement.dataset.page = page;
+    /* On the root element, where the view-transition pseudo-elements
+       live: the CSS needs to know which of a pair's two snapshots is the
+       project page's (the bigger, sharper one) to keep on screen. What
+       it names is the part a page plays in that pair — a feed of cards,
+       or a work's own page — rather than which page it is, so a
+       course, which is the same feed over a different run of works,
+       answers to the same name as the home page here. */
+    document.documentElement.dataset.page = page === "course" ? "home" : page;
     // Set by a sideways swipe just before it navigates, and consumed
     // here: this arrival slides in from the side instead of lifting.
     /* Read on every page so a direction left over from a move that
@@ -48,6 +63,8 @@
     }
     if (page === "home") initHome();
     if (page === "project") initProject();
+    if (page === "studies") initStudies();
+    if (page === "course") initCourse();
     if (page === "about") initAbout();
   }
 
@@ -314,6 +331,10 @@
        has to be told they match. */
     var current = document.body.dataset.page;
     if (current === "home") current = "work";
+    /* A course is one page of the studies section, so it is Studies
+       that is underlined while you are inside one — the section you
+       are in, the same way the feed underlines Work. */
+    if (current === "course") current = "studies";
     nav.querySelectorAll("a[data-nav]").forEach(function (a) {
       // A work's own page is not the works page: marking Work as the
       // current one drew it the same underline hovering does, so every
@@ -342,6 +363,16 @@
     var tagEl = document.querySelector(".hero .tagline");
     if (tagEl) tagEl.textContent = DATA.person.tagline;
 
+    buildFeed(feed, DATA.works);
+  }
+
+  /* -------------------------------------------------------------------
+     The feed of cards, over whichever run of works it is given: the
+     home page's works, or one course's. Everything a card does — the
+     sketch drawn on scroll, the photo behind it, the lift into the
+     work's own page and back — is the same either way.
+     ----------------------------------------------------------------- */
+  function buildFeed(feed, works) {
     /* Only the load that has a photo on its way in: arriving from a
        work. A visit that starts at the feed has nothing to wait for. */
     if (workIdFromUrl(cameFrom())) holdTheLines();
@@ -362,7 +393,7 @@
     var lifts = {};
     var approaching = [];
 
-    DATA.works.forEach(function (work, i) {
+    works.forEach(function (work, i) {
       var size = work.size || sizes[i % sizes.length];
 
       var article = document.createElement("article");
@@ -377,7 +408,7 @@
 
       var link = document.createElement("a");
       link.className = "work-link";
-      link.href = "project.html?id=" + encodeURIComponent(work.id);
+      link.href = workHref(work);
       link.setAttribute("aria-label", work.title + ", " + work.year);
 
       var visual = document.createElement("div");
@@ -713,12 +744,15 @@
     return el;
   }
 
-  /* Whether a URL is the works feed. */
+  /* Whether a URL is a feed of cards — the home page's, or a
+     course's, which is the same feed over a different run of works and
+     the same other end of a work's lift. */
   function isFeedUrl(url) {
     if (!url) return false;
     try {
       var path = new URL(url, window.location.href).pathname;
-      return path === "/" || path.indexOf("index.html") !== -1;
+      return path === "/" || path.indexOf("index.html") !== -1
+        || path.indexOf("course.html") !== -1;
     } catch (e) {
       return false;
     }
@@ -727,6 +761,106 @@
   /* Whether this page was arrived at from the works feed. */
   function cameFromFeed() {
     return isFeedUrl(cameFrom());
+  }
+
+  /* Where a work's own page is, carrying the course it is being opened
+     from when there is one. */
+  function workHref(work) {
+    var href = "project.html?id=" + encodeURIComponent(work.id);
+    if (inCourse) href += "&course=" + encodeURIComponent(inCourse);
+    return href;
+  }
+
+  function courseUrl(id) {
+    return "course.html?id=" + encodeURIComponent(id);
+  }
+
+  /* Every year of the degree, or an empty list if there are none. */
+  function studyYears() {
+    return (DATA && DATA.studies && DATA.studies.years) || [];
+  }
+
+  /* A course's own run of works. Its list holds either the id of a work
+     from the main `works` array — the same work shown in both places,
+     written out once — or a whole work of its own. */
+  function courseWorks(course) {
+    return (course.works || []).map(function (entry) {
+      if (typeof entry === "string") return workById(entry);
+      if (entry && entry.ref) return workById(entry.ref);
+      return entry;
+    }).filter(Boolean);
+  }
+
+  /* A work by id, wherever it is written: the main feed's array, or
+     inside a course. Only works written out in full are looked at here,
+     never the ids pointing at other works, so this can't chase its own
+     tail. */
+  function workById(id) {
+    var all = (DATA.works || []).slice();
+    studyYears().forEach(function (year) {
+      (year.courses || []).forEach(function (course) {
+        (course.works || []).forEach(function (entry) {
+          if (entry && typeof entry === "object" && !entry.ref) all.push(entry);
+        });
+      });
+    });
+    for (var i = 0; i < all.length; i++) {
+      if (all[i].id === id) return all[i];
+    }
+    return null;
+  }
+
+  /* A course by id, with the year it sits in. */
+  function findCourse(id) {
+    if (!id) return null;
+    var found = null;
+    studyYears().forEach(function (year) {
+      (year.courses || []).forEach(function (course) {
+        if (!found && course.id === id) found = { year: year, course: course };
+      });
+    });
+    return found;
+  }
+
+  /* The first course that shows this work, if any. */
+  function courseHolding(id) {
+    var found = null;
+    studyYears().forEach(function (year) {
+      (year.courses || []).forEach(function (course) {
+        if (found) return;
+        var mine = courseWorks(course).some(function (w) { return w.id === id; });
+        if (mine) found = { year: year, course: course };
+      });
+    });
+    return found;
+  }
+
+  /* Which run of works a work's page belongs to: the course it was
+     opened from, if it was opened from one, and the main feed
+     otherwise. A work that is only written inside a course belongs to
+     that course however you arrived at it — by a bookmark, say — so
+     Previous/Next still move along the course and Back still leads to
+     it rather than to a feed the work isn't in. */
+  function collectionFor(id, courseId) {
+    var found = findCourse(courseId);
+    if (!found) {
+      var inFeed = (DATA.works || []).some(function (w) { return w.id === id; });
+      if (!inFeed) found = courseHolding(id);
+    }
+    if (found) {
+      return {
+        works: courseWorks(found.course),
+        course: found.course,
+        url: courseUrl(found.course.id),
+        label: found.course.short || found.course.title
+      };
+    }
+    return {
+      works: DATA.works || [],
+      course: null,
+      url: "index.html",
+      label: "work"
+    };
   }
 
   /* Which work a project.html URL points at, or null for anything else. */
@@ -1243,7 +1377,14 @@
     if (!DATA) return;
     var params = new URLSearchParams(window.location.search);
     var id = params.get("id");
-    var works = DATA.works;
+    /* The run of works this page belongs to, and with it where Back
+       leads and what it says. A card in a course's feed links here with
+       the course on the URL; see collectionFor for a work reached any
+       other way. */
+    var collection = collectionFor(id, params.get("course"));
+    var works = collection.works;
+    inCourse = collection.course ? collection.course.id : null;
+    backToLabel = collection.label;
     var index = works.findIndex(function (w) { return w.id === id; });
 
     if (index === -1) {
@@ -1353,9 +1494,16 @@
 
     /* Back to this work's own card in the feed rather than the top of
        the page — both because that's where the reader was, and because
-       the text has to have somewhere on screen to fly back to. */
+       the text has to have somewhere on screen to fly back to. Opened
+       from a course, that card is in the course's feed, and the link
+       both leads there and says so: Back to work out of the main feed,
+       Back to Drawing out of the drawing course. */
+    var backHref = collection.url + "#w-" + work.id;
     document.querySelectorAll('a[href="index.html#work"]').forEach(function (a) {
-      a.href = "index.html#w-" + work.id;
+      a.href = backHref;
+      // The arrow belongs to the one in the header, not to the footer's.
+      a.textContent = (a.classList.contains("back-link") ? "\u2190 " : "")
+        + "Back to " + backToLabel;
     });
 
     var materialsList = document.getElementById("p-materials");
@@ -1422,10 +1570,10 @@
     linkProjectNav("nav-prev", prevWork);
     linkProjectNav("nav-next", nextWork);
 
-    floatingWayBack("index.html#w-" + work.id);
+    floatingWayBack(backHref);
     tapLinks(".site-nav a, .site-footer a, .back-link, .project-nav a");
     slideDeck(prevWork, nextWork);
-    edgeSwipeBack("index.html#w-" + work.id);
+    edgeSwipeBack(backHref);
     addSideArrows(prevWork, nextWork);
   }
 
@@ -1440,7 +1588,7 @@
 
         var arrow = document.createElement("a");
         arrow.className = "work-arrow " + where;
-        arrow.href = "project.html?id=" + encodeURIComponent(work.id);
+        arrow.href = workHref(work);
         arrow.setAttribute("aria-label", side[2] + ": " + work.title);
         arrow.innerHTML = where === "prev"
           ? '<svg viewBox="0 0 20 44" aria-hidden="true"><path d="M15 4 L5 22 L15 40"/></svg>'
@@ -1464,7 +1612,7 @@
     var button = document.createElement("a");
     button.className = "back-float";
     button.href = href;
-    button.textContent = "\u2190 Back to work";
+    button.textContent = "\u2190 Back to " + backToLabel;
     document.body.appendChild(button);
     // A lift like the Back link above it — it asks for the card's own
     // anchor — so the travelling names stay on.
@@ -1702,7 +1850,7 @@
 
     var header = document.createElement("header");
     header.className = "project-header";
-    header.appendChild(textEl("span", "back-link", "\u2190 Back to work"));
+    header.appendChild(textEl("span", "back-link", "\u2190 Back to " + backToLabel));
     header.appendChild(textEl("h1", "p-title", work.title));
 
     var meta = document.createElement("div");
@@ -1744,7 +1892,7 @@
     if (alreadyMoved) skipNextTransition();
     // And nothing is named on the way out either, for the same reason.
     unnameTheTravellers();
-    window.location.href = "project.html?id=" + encodeURIComponent(work.id);
+    window.location.href = workHref(work);
   }
 
   /* Armed for exactly one navigation. It used to be armed for good: the
@@ -1852,7 +2000,7 @@
       el.remove();
       return;
     }
-    el.href = "project.html?id=" + encodeURIComponent(work.id);
+    el.href = workHref(work);
     var titleEl = el.querySelector(".nav-title");
     if (titleEl) titleEl.textContent = work.title;
   }
@@ -1895,6 +2043,111 @@
   function nameForTransition(id, name) {
     var el = document.getElementById(id);
     if (el) el.style.viewTransitionName = name;
+  }
+
+  /* -------------------------------------------------------------------
+     Studies: the degree, year by year. The page is an index — each
+     course is a page of its own, and that page is the works feed over
+     the course's own works.
+     ----------------------------------------------------------------- */
+  function initStudies() {
+    if (!DATA) return;
+    tapLinks(".site-nav a, .site-footer a");
+
+    var intro = document.getElementById("studies-intro");
+    if (intro) {
+      // No line written: the paragraph goes rather than standing empty.
+      if (DATA.studies && DATA.studies.intro) intro.textContent = DATA.studies.intro;
+      else intro.remove();
+    }
+
+    var root = document.getElementById("study-years");
+    if (!root) return;
+
+    studyYears().forEach(function (year) {
+      var section = document.createElement("section");
+      section.className = "study-year";
+      // So a year can be linked to directly: studies.html#y-year-1.
+      section.id = "y-" + year.id;
+      section.appendChild(textEl("h2", "year-title", year.title));
+      if (year.blurb) section.appendChild(textEl("p", "year-blurb", year.blurb));
+
+      var list = document.createElement("div");
+      list.className = "course-links";
+      (year.courses || []).forEach(function (course) {
+        var link = document.createElement("a");
+        link.href = courseUrl(course.id);
+
+        var main = document.createElement("span");
+        main.className = "course-main";
+        main.appendChild(textEl("span", "course-name", course.title));
+        /* How much is in there, which is the one thing the index can say
+           about a course that its name doesn't. A course with nothing in
+           it yet says nothing rather than "0 works". */
+        var count = courseWorks(course).length;
+        if (count) {
+          main.appendChild(textEl("span", "course-count",
+            count + (count === 1 ? " work" : " works")));
+        }
+
+        link.appendChild(main);
+        link.appendChild(textEl("span", "arrow", "\u2192"));
+        list.appendChild(link);
+      });
+
+      section.appendChild(list);
+      root.appendChild(section);
+    });
+
+    tapLinks(".course-links a");
+  }
+
+  /* -------------------------------------------------------------------
+     A course: its own works, in the same feed the home page uses.
+     ----------------------------------------------------------------- */
+  function initCourse() {
+    if (!DATA) return;
+    var params = new URLSearchParams(window.location.search);
+    var found = findCourse(params.get("id"));
+    tapLinks(".site-nav a, .site-footer a, .back-link");
+
+    if (!found) {
+      var root = document.getElementById("course-root");
+      if (root) {
+        root.innerHTML = '<div class="not-found">' +
+          "<p>This course could not be found.</p>" +
+          '<p><a href="studies.html">Back to studies</a></p>' +
+          "</div>";
+      }
+      document.title = "Not found — " + DATA.person.name;
+      return;
+    }
+
+    var course = found.course;
+    document.title = course.title + " — " + DATA.person.name;
+    setText("c-year", found.year.title);
+    setText("c-title", course.title);
+    var blurb = document.getElementById("c-blurb");
+    if (blurb) {
+      if (course.blurb) blurb.textContent = course.blurb;
+      else blurb.remove();
+    }
+
+    /* Set before the cards are built, so every one of them links to its
+       work with the course on the URL and the work's page knows which
+       run of works it is in. */
+    inCourse = course.id;
+    backToLabel = course.short || course.title;
+
+    var feed = document.getElementById("work");
+    if (!feed) return;
+    var works = courseWorks(course);
+    if (!works.length) {
+      feed.appendChild(textEl("p", "feed-empty",
+        "Nothing from this course is up yet."));
+      return;
+    }
+    buildFeed(feed, works);
   }
 
   /* -------------------------------------------------------------------

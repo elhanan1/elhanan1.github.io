@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Course — elhanan itzkovich</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-page="course">
+
+  <nav class="site-nav" aria-label="Primary">
+    <a class="menu-logo" href="index.html" aria-label="elhanan itzkovich — home">
+      <svg viewBox="10 6 114 86" aria-hidden="true" focusable="false">
+        <g fill="none" stroke="var(--fg)" stroke-width="12">
+          <path d="M22 18 L78 82"/>
+          <path d="M78 18 L78 36 Q78 50 60 56"/>
+          <path d="M22 82 L22 64 Q22 50 40 44"/>
+        </g>
+        <g fill="none" stroke="var(--bg)" stroke-width="22" transform="translate(36,0)">
+          <path d="M22 18 L78 82"/>
+          <path d="M78 18 L78 36 Q78 50 60 56"/>
+          <path d="M22 82 L22 64 Q22 50 40 44"/>
+        </g>
+        <g fill="none" stroke="var(--fg)" stroke-width="12" transform="translate(36,0)">
+          <path d="M22 18 L78 82"/>
+          <path d="M78 18 L78 36 Q78 50 60 56"/>
+          <path d="M22 82 L22 64 Q22 50 40 44"/>
+        </g>
+      </svg>
+    </a>
+    <div class="nav-controls">
+      <!-- The ground the open menu reads against on a narrow screen,
+           where a work's photo and its text run the full width and pass
+           right under the words. It grows out of the dot, centred on the
+           middle of the menu's own text, and runs off the corner. -->
+      <span class="menu-disc" aria-hidden="true"></span>
+      <div class="menu-row">
+        <a href="index.html#work" data-nav="work">Work</a>
+        <a href="studies.html" data-nav="studies">Studies</a>
+        <a href="about.html" data-nav="about">About</a>
+      </div>
+      <button class="dot" aria-label="Open menu" type="button"></button>
+    </div>
+  </nav>
+
+  <div id="course-root">
+    <header class="course-header">
+      <a class="back-link" href="studies.html">&larr; Back to studies</a>
+      <p class="course-year" id="c-year"></p>
+      <h1 class="course-title" id="c-title"></h1>
+      <p class="course-blurb" id="c-blurb"></p>
+    </header>
+
+    <!-- The course's own works, in the same feed as the home page. -->
+    <main class="works-feed" id="work"></main>
+  </div>
+
+  <footer class="site-footer">
+    <span>&copy; <span id="year"></span> elhanan itzkovich</span>
+    <a href="studies.html">Back to studies</a>
+  </footer>
+
+  <script src="data/works.js"></script>
+  <script src="shared.js"></script>
+  <script>document.getElementById("year").textContent = new Date().getFullYear();</script>
+</body>
+</html>

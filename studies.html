@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Studies — elhanan itzkovich</title>
+  <meta name="description" content="Course work from the industrial design degree of elhanan itzkovich, year by year." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-page="studies">
+
+  <nav class="site-nav" aria-label="Primary">
+    <a class="menu-logo" href="index.html" aria-label="elhanan itzkovich — home">
+      <svg viewBox="10 6 114 86" aria-hidden="true" focusable="false">
+        <g fill="none" stroke="var(--fg)" stroke-width="12">
+          <path d="M22 18 L78 82"/>
+          <path d="M78 18 L78 36 Q78 50 60 56"/>
+          <path d="M22 82 L22 64 Q22 50 40 44"/>
+        </g>
+        <g fill="none" stroke="var(--bg)" stroke-width="22" transform="translate(36,0)">
+          <path d="M22 18 L78 82"/>
+          <path d="M78 18 L78 36 Q78 50 60 56"/>
+          <path d="M22 82 L22 64 Q22 50 40 44"/>
+        </g>
+        <g fill="none" stroke="var(--fg)" stroke-width="12" transform="translate(36,0)">
+          <path d="M22 18 L78 82"/>
+          <path d="M78 18 L78 36 Q78 50 60 56"/>
+          <path d="M22 82 L22 64 Q22 50 40 44"/>
+        </g>
+      </svg>
+    </a>
+    <div class="nav-controls">
+      <!-- The ground the open menu reads against on a narrow screen,
+           where a work's photo and its text run the full width and pass
+           right under the words. It grows out of the dot, centred on the
+           middle of the menu's own text, and runs off the corner. -->
+      <span class="menu-disc" aria-hidden="true"></span>
+      <div class="menu-row">
+        <a href="index.html#work" data-nav="work">Work</a>
+        <a href="studies.html" data-nav="studies">Studies</a>
+        <a href="about.html" data-nav="about">About</a>
+      </div>
+      <button class="dot" aria-label="Open menu" type="button"></button>
+    </div>
+  </nav>
+
+  <main class="studies-main" id="studies">
+    <h1>Studies</h1>
+    <p class="studies-intro" id="studies-intro"></p>
+    <!-- One section per year, each with its courses. Built by shared.js
+         from data/works.js -> studies.years. -->
+    <div class="study-years" id="study-years"></div>
+  </main>
+
+  <footer class="site-footer">
+    <span>&copy; <span id="year"></span> elhanan itzkovich</span>
+    <a href="index.html#work">Back to work</a>
+  </footer>
+
+  <script src="data/works.js"></script>
+  <script src="shared.js"></script>
+  <script>document.getElementById("year").textContent = new Date().getFullYear();</script>
+</body>
+</html>

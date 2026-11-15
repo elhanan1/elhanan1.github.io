@@ -1483,6 +1483,171 @@ html[data-settling] .work-visual .work-cue {
 /* ---------------------------------------------------------------------
    About page
    ------------------------------------------------------------------- */
+/* ---------------------------------------------------------------------
+   Studies: the index of years and courses, and the header a course's
+   own page carries above its feed.
+   ------------------------------------------------------------------- */
+.studies-main {
+  padding: 10rem var(--page-pad) 8rem;
+  /* The measure in characters, as on the about page — a monospace
+     fits about two thirds of the letters a proportional face does in
+     the same em. Wider than the bio's column, because these rows carry
+     a name at one end and a count at the other. */
+  max-width: calc(68ch + 2 * var(--page-pad));
+}
+
+.studies-main h1 {
+  font-weight: 300;
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  letter-spacing: .02em;
+  margin: 0 0 1.6rem;
+  text-transform: lowercase;
+}
+
+.studies-main .studies-intro {
+  font-size: 1.05rem;
+  color: var(--fg-soft);
+  margin: 0 0 3.2rem;
+}
+
+.study-year { margin-bottom: 3.4rem; }
+.study-year:last-child { margin-bottom: 0; }
+
+/* The year is a label standing over its courses, not a second heading
+   competing with the page's own. */
+.study-year .year-title {
+  font-weight: 400;
+  font-size: .78rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  margin: 0 0 1rem;
+}
+
+.study-year .year-blurb {
+  font-size: .95rem;
+  color: var(--fg-soft);
+  margin: 0 0 1.2rem;
+}
+
+.course-links {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border);
+}
+
+.course-links a {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1.2em;
+  padding: 1.15rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.course-links .course-main {
+  display: flex;
+  align-items: baseline;
+  gap: .9em;
+  flex-wrap: wrap;
+}
+
+.course-links .course-name {
+  font-size: 1.02rem;
+  letter-spacing: .01em;
+  color: var(--fg-soft);
+  transition: color var(--dur-fast) var(--ease);
+}
+
+.course-links .course-count {
+  font-size: .72rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+}
+
+/* The arrow waits for the pointer, the same way the about page's rows
+   do — and on a touch screen, where there is no pointer to find it
+   with, it is simply there. */
+.course-links a .arrow {
+  flex: none;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity var(--dur-fast) var(--ease),
+              transform var(--dur-fast) var(--ease);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .course-links a:hover .arrow {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  .course-links a:hover .course-name { color: var(--fg); }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .course-links a .arrow {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* A course's own page. Its header reads like a work's — the way back
+   above, the name of the thing, a line about it — and the feed of
+   cards follows underneath. */
+.course-header {
+  padding: 9rem var(--page-pad) 0;
+  max-width: calc(68ch + 2 * var(--page-pad));
+}
+
+.course-header .back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: .5em;
+  font-size: .8rem;
+  letter-spacing: .04em;
+  color: var(--fg-soft);
+  margin-bottom: 2.4rem;
+}
+
+.course-header .back-link:hover { color: var(--fg); }
+
+.course-header .course-year {
+  font-size: .72rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  margin: 0 0 .9rem;
+}
+
+.course-header .course-title {
+  font-weight: 300;
+  font-size: clamp(1.9rem, 5vw, 3rem);
+  letter-spacing: .02em;
+  line-height: 1.08;
+  margin: 0;
+  text-transform: lowercase;
+}
+
+.course-header .course-blurb {
+  font-size: 1.02rem;
+  color: var(--fg-soft);
+  margin: 1.2rem 0 0;
+  max-width: 60ch;
+}
+
+/* A course with nothing in it yet. */
+.feed-empty {
+  font-size: .95rem;
+  color: var(--fg-faint);
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .studies-main { padding-top: 8rem; }
+  .course-header { padding-top: 8rem; }
+}
+
 .about-main {
   padding: 10rem var(--page-pad) 8rem;
   /* The measure, in characters rather than ems. A monospace fits barely

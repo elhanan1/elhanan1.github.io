@@ -28,6 +28,8 @@ static HTML/CSS/JS.
 ```
 index.html          Home page — name, tagline, scrolling work feed
 project.html         Project template, loads a work by ?id= in the URL
+studies.html         The degree, year by year, each course a link
+course.html          One course's works, in the same feed as the home page
 about.html           About / contact page
 style.css            All styles (design tokens at the top)
 shared.js            Nav, scroll/sketch behaviour, page rendering
@@ -136,6 +138,52 @@ outputs multiple `<path>` elements, either combine them into one
 continuous path, or just keep the first one and treat the rest as
 optional detail.
 
+### The studies section
+
+**Studies** is the degree laid out by year, and every course in it gets a
+page of its own that is the home page's feed over that course's works —
+same cards, same sketches, same project pages behind them.
+
+It all lives in `data/works.js` under `studies`:
+
+```js
+studies: {
+  intro: "Course work from my industrial design degree, year by year.",
+  years: [
+    {
+      id: "year-1",
+      title: "Year one",
+      blurb: "",                       // optional line under the heading
+      courses: [
+        { id: "drawing", title: "Drawing", blurb: "", works: [] }
+      ]
+    }
+  ]
+}
+```
+
+A course's `works` list takes either of two things, side by side:
+
+- **the id of a work from the `works` array** — `"looker-chair"`. The
+  same work, shown in both places, written out once.
+- **a whole work of its own** — the same object as any work in `works`
+  (id, title, year, category, size, blurb, intro, process, materials,
+  sketch, images, gallery). A work written here only shows in its
+  course, not in the main feed.
+
+The rest of it follows: a course's page is `course.html?id=<course id>`,
+a work opened from a course keeps the course on its URL
+(`project.html?id=<work>&course=<course>`), and inside one the
+Previous/Next pair, the arrows in the margins, the swipe between works
+and every way back all stay within that course. `short` on a course is
+what a work's Back link says when the full title is too long for one.
+Add a year by copying the whole year object and changing its `id`,
+`title` and `courses`; the order they are written in is the order they
+appear.
+
+A course with nothing in it yet says so on its page and shows no count
+on the index, so the section can go up before the works do.
+
 ### About / Contact page
 
 Edit `data/works.js` → `about`: `bio`, `email`, `instagram`, `behance`,
@@ -165,7 +213,11 @@ something else.
   instant.
 - **Mobile**: there's no hover, so each work's description sits below its
   sketch instead of appearing in a hover tooltip.
-- The **Work · About** menu collapses into a small dot after a
+- The menu's **Studies** is underlined on the studies index and on
+  every course page: it is the section you are in, the same way the feed
+  underlines Work. A work's own page marks neither, whichever feed it
+  was opened from.
+- The **Work · Studies · About** menu collapses into a small dot after a
   short scroll, and expands again on hover (desktop) or tap (mobile). The
   menu item for the page you are on is underlined — **Work** on the feed,
   **About** on the about page (a work's own page marks neither).

@@ -210,5 +210,68 @@ window.SITE_DATA = {
   ]
   
   }
-  ]
+  ],
+
+  /* The degree, course by course.
+
+     Each year holds its courses, and every course is a works page of its
+     own: the same feed of cards, the same sketches, the same project
+     pages behind them. A course's `works` list takes either the id of a
+     work from the `works` array above — so a work can show in both
+     places without being written out twice — or a whole work object
+     of its own, in exactly the shape used above (id, title, year,
+     category, size, blurb, intro, process, materials, sketch, images,
+     gallery).
+
+     So both of these are fine, side by side:
+
+       works: [
+         "looker-chair",          // the work above, shown here too
+         { id: "sketch-studies", title: "Sketch studies", ... }
+       ]
+
+     `short` is what the Back link on a work says when it was opened
+     from that course, for a title too long to sit in one; leave it out
+     and the full title is used. `blurb` on a year or a course is the
+     line under its heading — leave it out and nothing is drawn.
+     Adding a year is copying the whole year object and changing its id,
+     title and courses. */
+  studies: {
+    // Under the Studies heading. Leave it empty and the line is left out.
+    intro: "Course work from my industrial design degree, year by year.",
+    years: [
+      {
+        id: "year-1",
+        title: "Year one",
+        blurb: "",
+        courses: [
+          {
+            id: "structure-function-form",
+            title: "Studio: Structure. Function. Form.",
+            short: "Structure. Function. Form.",
+            blurb: "",
+            works: []
+          },
+          {
+            id: "studio-a",
+            title: "Studio A",
+            blurb: "",
+            works: []
+          },
+          {
+            id: "technology",
+            title: "Technology",
+            blurb: "",
+            works: []
+          },
+          {
+            id: "drawing",
+            title: "Drawing",
+            blurb: "",
+            works: []
+          }
+        ]
+      }
+    ]
+  }
 };
