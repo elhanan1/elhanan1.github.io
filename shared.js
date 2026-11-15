@@ -1500,6 +1500,17 @@
        Back to Drawing out of the drawing course. */
     var backHref = collection.url + "#w-" + work.id;
     document.querySelectorAll('a[href="index.html#work"]').forEach(function (a) {
+      /* The menu's Work is the site's own and not this work's way back:
+         it means the works feed from wherever you are, and it is called
+         Work on every page. Opened from a course it is left alone
+         altogether — a course's feed is not the works feed, and the
+         menu shouldn't say it is. Out of the main feed it still takes
+         the card's anchor, so leaving through the menu lifts the same
+         way the page's own Back does. */
+      if (a.closest(".site-nav")) {
+        if (!collection.course) a.href = backHref;
+        return;
+      }
       a.href = backHref;
       // The arrow belongs to the one in the header, not to the footer's.
       a.textContent = (a.classList.contains("back-link") ? "\u2190 " : "")
