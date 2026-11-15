@@ -41,6 +41,7 @@ scripts/
   generate-images.py Builds the medium/full images from your originals
 tools/
   sketch-editor.html Click-to-draw tool for making your own sketch paths
+  menu-lab.html      Bench for the menu's closing move, six versions side by side
 ```
 
 ## Replacing content
@@ -231,7 +232,11 @@ something else.
   screen and pass under the words. It is centred on the menu's own text,
   it runs off the corner of the screen, and it opens out of the dot and
   shuts back down into it. Above that width the card never reaches the
-  menu's corner and there is no disc.
+  menu's corner and there is no disc. Shutting, the dot is held back by
+  the length of the disc's trip down, and held at nothing rather than at
+  its own size while it waits — otherwise it stands in the corner at full
+  size through the whole trip and then snaps away to play its arrival,
+  which reads as the menu shutting, opening and shutting again.
 - **Arriving at a page doesn't animate the menu.** It is born in the state
   the page before it was left in, and when that is the state the new page
   calls for — the usual case — nothing moves at all. When it isn't (you

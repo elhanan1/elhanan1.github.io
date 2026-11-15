@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Menu lab — closing the menu on a narrow screen</title>
+<!--
+  A bench for one move: the open menu on a narrow screen shutting back
+  into its dot. Every panel is the real markup at the real size — the
+  same row, the same disc, the same 22px dot, the same tokens — with
+  only the closing move swapped underneath it.
+
+  Open it straight from the file system; nothing here is built and
+  nothing here is loaded by the site.
+-->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Spline+Sans+Mono:wght@300..700&display=swap');
+
+/* The site's own tokens, with one added: --k, the speed dial. Every
+   duration below is counted in it, so half speed is one number. */
+:root {
+  --bg: #15130f;
+  --fg: #ece7dc;
+  --fg-soft: #a9a193;
+  --fg-faint: #716a5c;
+  --border: rgba(236, 231, 220, 0.14);
+  --font: 'Spline Sans Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --ease: cubic-bezier(.22, 1, .36, 1);
+
+  --k: 1;
+  --dur-fast: calc(.25s * var(--k));
+  --dur-med: calc(.6s * var(--k));
+
+  /* The dot, and how wide the disc stands past the menu's text. Both
+     are the site's. */
+  --dot: 22px;
+  --disc-grow: 72px;
+  /* Where the disc sits when it is down: centred on the dot rather
+     than on the row. Half of however much wider than the row it is,
+     less the dot's own radius. */
+  --disc-tx: calc(var(--disc-grow) / -2 - var(--dot) / 2);
+  /* How small the disc has to be to be the dot. Measured per panel by
+     the script, since it depends on how wide the row is. */
+  --disc-dot: .084;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font);
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+}
+
+header.lab {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 1.4rem 1.6rem 1.1rem;
+}
+
+h1 {
+  font-weight: 300;
+  font-size: 1.1rem;
+  letter-spacing: .02em;
+  margin: 0 0 .3rem;
+  text-transform: lowercase;
+}
+
+.lab p {
+  margin: 0 0 1rem;
+  font-size: .78rem;
+  color: var(--fg-soft);
+  max-width: 78ch;
+  line-height: 1.6;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem 1.4rem;
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+
+.group > span {
+  font-size: .64rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  margin-right: .2rem;
+}
+
+button {
+  font: inherit;
+  font-size: .72rem;
+  letter-spacing: .04em;
+  color: var(--fg-soft);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: .36em 1em;
+  cursor: pointer;
+  transition: color .2s, border-color .2s, background .2s;
+}
+
+button:hover { color: var(--fg); border-color: var(--fg-soft); }
+
+button.on {
+  color: var(--bg);
+  background: var(--fg);
+  border-color: var(--fg);
+}
+
+/* ---------------------------------------------------------------------
+   The panels
+   ------------------------------------------------------------------- */
+.sheet {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(380px, 100%), 1fr));
+  gap: 1.6rem;
+  padding: 1.6rem;
+}
+
+.panel {
+  margin: 0;
+  border: 1px solid var(--border);
+}
+
+.panel.picked { border-color: var(--fg-soft); }
+
+figcaption {
+  padding: .9rem 1rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+figcaption .line {
+  display: flex;
+  align-items: baseline;
+  gap: .6em;
+  /* So a long title wraps inside the panel rather than setting how wide
+     the panel has to be. */
+  flex-wrap: wrap;
+}
+
+figcaption .t { min-width: 0; }
+
+figcaption .n {
+  font-size: .64rem;
+  color: var(--fg-faint);
+  letter-spacing: .1em;
+}
+
+figcaption .t {
+  font-size: .9rem;
+  letter-spacing: .01em;
+}
+
+figcaption .d {
+  display: block;
+  margin-top: .5rem;
+  font-size: .72rem;
+  line-height: 1.65;
+  color: var(--fg-soft);
+}
+
+/* A phone-width strip with a work's photo running under the menu,
+   which is the whole reason the disc exists. */
+/* A phone, at a phone's width: the row's width against the screen's is
+   the whole geometry of this move, so the strip is 375px and not
+   whatever the panel happens to be. */
+.phone {
+  position: relative;
+  width: 375px;
+  max-width: 100%;
+  margin: 0 auto;
+  height: 190px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.phone .plate {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 62%;
+}
+
+.phone .caption {
+  position: absolute;
+  left: 7vw;
+  right: 7vw;
+  top: 2.9rem;
+  font-size: .74rem;
+  line-height: 1.5;
+  color: #fff;
+  text-shadow: 0 1px 10px rgba(0,0,0,.5);
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------------
+   The menu itself: the site's markup and the site's numbers.
+   ------------------------------------------------------------------- */
+.site-nav {
+  position: absolute;
+  top: 1.1rem;
+  left: 7vw;
+  right: 7vw;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.menu-logo {
+  width: 30px;
+  height: 22px;
+  display: block;
+}
+
+.menu-logo svg { width: 100%; height: 100%; display: block; }
+
+.nav-controls { position: relative; }
+
+.menu-disc {
+  --disc-open-tx: -50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(100% + var(--disc-grow));
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--fg);
+  z-index: 0;
+  pointer-events: none;
+  transform: translate(var(--disc-tx), -50%) scale(0);
+  transition: transform var(--dur-fast) var(--ease);
+}
+
+.menu-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 1.6em;
+  font-size: .88rem;
+  letter-spacing: .06em;
+  padding: .5em 0;
+  transform-origin: right center;
+  transition: opacity var(--dur-med) var(--ease),
+              transform var(--dur-med) var(--ease);
+}
+
+.menu-row a {
+  font-weight: 200;
+  text-transform: uppercase;
+  letter-spacing: -.02em;
+  color: var(--fg);
+  text-decoration: none;
+}
+
+.dot {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  z-index: 2;
+  width: var(--dot);
+  height: var(--dot);
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--fg);
+  transform: translate(0, -50%) scale(0);
+  opacity: 0;
+}
+
+/* The two resting states. Nothing here animates. */
+.site-nav.collapsed .menu-row {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(.15) translateX(10px);
+}
+
+.site-nav.collapsed .dot {
+  opacity: 1;
+  transform: translate(0, -50%) scale(1);
+}
+
+.site-nav.collapsed.expanded .menu-row {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1) translateX(0);
+}
+
+.site-nav.collapsed.expanded .dot {
+  opacity: 0;
+  transform: translate(0, -50%) scale(0);
+}
+
+.site-nav.collapsed.expanded .menu-disc {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.site-nav .menu-row a { transition: color 0s var(--dur-fast); }
+.site-nav.collapsed.expanded .menu-row a { color: var(--bg); transition: color 0s; }
+
+/* Opening is the same in every panel: this bench is about the way
+   back. */
+@keyframes disc-open {
+  0%   { transform: translate(var(--disc-tx), -50%) scale(var(--disc-dot)); }
+  62%  { transform: translate(-50%, -50%) scale(1.07); }
+  100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes dot-pop-out {
+  0%   { transform: translate(0, -50%) scale(1); }
+  35%  { transform: translate(0, -50%) scale(1.22); }
+  100% { transform: translate(0, -50%) scale(0); }
+}
+
+.site-nav.opening.collapsed.expanded .menu-disc {
+  animation: disc-open var(--dur-med) var(--ease);
+}
+
+.site-nav.opening.collapsed.expanded .dot {
+  animation: dot-pop-out var(--dur-fast) var(--ease);
+}
+
+/* The dot's arrival, the site's: out past its own size, then settling
+   onto it. */
+@keyframes dot-pop-in {
+  0%   { transform: translate(0, -50%) scale(0); }
+  55%  { transform: translate(0, -50%) scale(1.6); }
+  100% { transform: translate(0, -50%) scale(1); }
+}
+
+/* Appearing with no move of its own, at the end of a disc's trip: for
+   the panels where the ball itself lands as the dot and all the dot
+   has to do is be there when it does. */
+@keyframes dot-take-over {
+  0%, 99%  { opacity: 0; }
+  100%     { opacity: 1; }
+}
+
+/* =====================================================================
+   1 — As it is now
+   The disc goes down to nothing over a quarter second and the dot is
+   held back by exactly that long before playing its arrival. The hold
+   is an animation-delay with no backwards fill, so for those 250ms the
+   dot is simply standing in its resting state at full size: it appears,
+   vanishes, and comes back. That is the close-open-close.
+   ===================================================================== */
+[data-variant="now"] .site-nav.shutting.collapsed .dot {
+  animation: dot-pop-in var(--dur-med) var(--ease);
+}
+
+[data-variant="now"] .site-nav.disc-closing.shutting .dot {
+  animation-delay: var(--dur-fast);
+}
+
+/* =====================================================================
+   2 — The same move, with the dot kept out of sight until its turn
+   One word of difference from the panel above: the hold is filled
+   backwards, so the dot waits at nothing instead of at full size. The
+   disc still goes down to nothing and the dot still arrives with its
+   beat — two events, one after the other.
+   ===================================================================== */
+[data-variant="filled"] .site-nav.shutting.collapsed .dot {
+  animation: dot-pop-in var(--dur-med) var(--ease) backwards;
+}
+
+[data-variant="filled"] .site-nav.disc-closing.shutting .dot {
+  animation-delay: var(--dur-fast);
+}
+
+/* =====================================================================
+   3 — One ball
+   The disc doesn't go to nothing: it shrinks until it is the dot, in
+   the dot's place. The two centres are a row's width apart, so the
+   ball travels into the corner as it contracts, and the dot is simply
+   what is left when it arrives. One move, no beat, nothing handed over
+   in sight.
+   ===================================================================== */
+@keyframes disc-into-dot {
+  0%      { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  99%     { transform: translate(var(--disc-tx), -50%) scale(var(--disc-dot)); opacity: 1; }
+  100%    { transform: translate(var(--disc-tx), -50%) scale(var(--disc-dot)); opacity: 0; }
+}
+
+[data-variant="one-ball"] .site-nav.shutting.collapsed .menu-disc {
+  animation: disc-into-dot var(--dur-med) var(--ease) both;
+}
+
+[data-variant="one-ball"] .site-nav.shutting.collapsed .dot {
+  animation: dot-take-over var(--dur-med) linear both;
+}
+
+/* The words are gone early, so what you watch is the ball. */
+[data-variant="one-ball"] .site-nav .menu-row {
+  transition: opacity calc(var(--dur-fast) * .8) var(--ease),
+              transform calc(var(--dur-fast) * .8) var(--ease);
+}
+
+/* =====================================================================
+   4 — One ball, with a beat in the landing
+   The same single shrink, but it passes under the dot's size on the
+   way and settles back out onto it — the beat the dot used to play on
+   its own, happening inside the ball's own move instead of after it.
+   ===================================================================== */
+@keyframes disc-into-dot-beat {
+  0%   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  72%  { transform: translate(calc(var(--disc-tx) * .98), -50%) scale(calc(var(--disc-dot) * .64)); }
+  99%  { transform: translate(var(--disc-tx), -50%) scale(var(--disc-dot)); opacity: 1; }
+  100% { transform: translate(var(--disc-tx), -50%) scale(var(--disc-dot)); opacity: 0; }
+}
+
+[data-variant="beat"] .site-nav.shutting.collapsed .menu-disc {
+  animation: disc-into-dot-beat calc(var(--dur-med) * 1.1) var(--ease) both;
+}
+
+[data-variant="beat"] .site-nav.shutting.collapsed .dot {
+  animation: dot-take-over calc(var(--dur-med) * 1.1) linear both;
+}
+
+[data-variant="beat"] .site-nav .menu-row {
+  transition: opacity calc(var(--dur-fast) * .8) var(--ease),
+              transform calc(var(--dur-fast) * .8) var(--ease);
+}
+
+/* =====================================================================
+   5 — The words in first, then the ball
+   Staged rather than overlapping: the row is drawn into the middle of
+   the ball — where the ball's own centre is, not off at the dot — and
+   only once it is gone does the ball set off for the corner. Two
+   beats, in an order you can read.
+   ===================================================================== */
+[data-variant="staged"] .site-nav .menu-row {
+  transform-origin: center center;
+  transition: opacity calc(var(--dur-fast) * .7) var(--ease),
+              transform calc(var(--dur-fast) * .7) var(--ease);
+}
+
+[data-variant="staged"] .site-nav.collapsed .menu-row {
+  transform: scale(.08) translateX(0);
+}
+
+[data-variant="staged"] .site-nav.shutting.collapsed .menu-disc {
+  animation: disc-into-dot calc(var(--dur-med) * .8) var(--ease)
+             calc(var(--dur-fast) * .7) both;
+}
+
+[data-variant="staged"] .site-nav.shutting.collapsed .dot {
+  animation: dot-take-over calc(var(--dur-med) * .8) linear
+             calc(var(--dur-fast) * .7) both;
+}
+
+/* =====================================================================
+   6 — Weighted landing
+   One ball again, but the weight is at the end: it lets go quickly and
+   spends the rest of the move arriving. Slower overall, and the corner
+   is where the eye ends up.
+   ===================================================================== */
+[data-variant="weighted"] .site-nav.shutting.collapsed .menu-disc {
+  animation: disc-into-dot calc(var(--dur-med) * 1.35)
+             cubic-bezier(.12, .85, .2, 1) both;
+}
+
+[data-variant="weighted"] .site-nav.shutting.collapsed .dot {
+  animation: dot-take-over calc(var(--dur-med) * 1.35) linear both;
+}
+
+[data-variant="weighted"] .site-nav .menu-row {
+  transition: opacity calc(var(--dur-fast) * .9) var(--ease),
+              transform calc(var(--dur-fast) * .9) var(--ease);
+}
+</style>
+</head>
+<body>
+
+<header class="lab">
+  <h1>menu lab — the way back into the dot</h1>
+  <p>
+    Six versions of one move: the open menu shutting back into its dot.
+    Same markup and the same sizes as the site, only the closing differs.
+    Click a panel to play that one, the buttons play all six, and the
+    slower speeds are for watching the hand-over.
+  </p>
+  <div class="controls">
+    <div class="group">
+      <span>Play</span>
+      <button id="play-close">Close</button>
+      <button id="play-open">Open</button>
+      <button id="loop">Loop</button>
+    </div>
+    <div class="group">
+      <span>Speed</span>
+      <button class="speed on" data-k="1">1&times;</button>
+      <button class="speed" data-k="2">&frac12;&times;</button>
+      <button class="speed" data-k="4">&frac14;&times;</button>
+      <button class="speed" data-k="8">&#8539;&times;</button>
+    </div>
+  </div>
+</header>
+
+<div class="sheet" id="sheet"></div>
+
+<template id="panel-template">
+  <figure class="panel">
+    <figcaption>
+      <span class="line"><span class="n"></span><span class="t"></span></span>
+      <span class="d"></span>
+    </figcaption>
+    <div class="phone">
+      <img class="plate" src="../assets/img/looker-chair-medium.webp" alt="" />
+      <p class="caption">A work's photo and its lines of text run the full
+        width of the screen here, and pass right under the words.</p>
+      <nav class="site-nav collapsed expanded">
+        <a class="menu-logo" href="#" aria-label="home">
+          <svg viewBox="10 6 114 86" aria-hidden="true">
+            <g fill="none" stroke="var(--fg)" stroke-width="12">
+              <path d="M22 18 L78 82"/>
+              <path d="M78 18 L78 36 Q78 50 60 56"/>
+              <path d="M22 82 L22 64 Q22 50 40 44"/>
+            </g>
+            <g fill="none" stroke="var(--bg)" stroke-width="22" transform="translate(36,0)">
+              <path d="M22 18 L78 82"/>
+              <path d="M78 18 L78 36 Q78 50 60 56"/>
+              <path d="M22 82 L22 64 Q22 50 40 44"/>
+            </g>
+            <g fill="none" stroke="var(--fg)" stroke-width="12" transform="translate(36,0)">
+              <path d="M22 18 L78 82"/>
+              <path d="M78 18 L78 36 Q78 50 60 56"/>
+              <path d="M22 82 L22 64 Q22 50 40 44"/>
+            </g>
+          </svg>
+        </a>
+        <div class="nav-controls">
+          <span class="menu-disc" aria-hidden="true"></span>
+          <div class="menu-row">
+            <a href="#">Work</a>
+            <a href="#">Studies</a>
+            <a href="#">About</a>
+          </div>
+          <button class="dot" type="button" aria-label="menu"></button>
+        </div>
+      </nav>
+    </div>
+  </figure>
+</template>
+
+<script>
+(function () {
+  "use strict";
+
+  var VARIANTS = [
+    {
+      id: "now",
+      title: "As it is now",
+      note: "The disc goes down to nothing, and the dot is held back by " +
+            "exactly as long before playing its arrival. The hold has no " +
+            "backwards fill, so through it the dot stands in its resting " +
+            "state at full size: it is there, then gone, then back. That " +
+            "is the close-open-close."
+    },
+    {
+      id: "filled",
+      title: "The same, with the dot kept out of sight until its turn",
+      note: "One word of difference: the dot waits at nothing instead of " +
+            "at full size. Still two events — the disc down to nothing, " +
+            "then the dot's own beat — but only the second one is seen."
+    },
+    {
+      id: "one-ball",
+      title: "One ball",
+      note: "The disc doesn't go to nothing: it shrinks until it is the " +
+            "dot, in the dot's place. The two centres are a row's width " +
+            "apart, so the ball travels into the corner as it contracts, " +
+            "and the dot is what is left when it lands."
+    },
+    {
+      id: "beat",
+      title: "One ball, with a beat in the landing",
+      note: "The same single shrink, passing under the dot's size on the " +
+            "way and settling back out onto it — the beat the dot used " +
+            "to play on its own, happening inside the ball's move."
+    },
+    {
+      id: "staged",
+      title: "The words in first, then the ball",
+      note: "The row is drawn into the middle of the ball rather than off " +
+            "towards the corner, and only once it is gone does the ball " +
+            "set off. Two beats, in an order you can read."
+    },
+    {
+      id: "weighted",
+      title: "Weighted landing",
+      note: "One ball again, but the weight is at the end: it lets go " +
+            "quickly and spends the rest of the move arriving. Slower, " +
+            "and the corner is where the eye ends up."
+    }
+  ];
+
+  var sheet = document.getElementById("sheet");
+  var template = document.getElementById("panel-template");
+  var panels = [];
+
+  VARIANTS.forEach(function (variant, i) {
+    var node = template.content.cloneNode(true);
+    var figure = node.querySelector(".panel");
+    figure.dataset.variant = variant.id;
+    figure.querySelector(".n").textContent = String(i + 1);
+    figure.querySelector(".t").textContent = variant.title;
+    figure.querySelector(".d").textContent = variant.note;
+
+    var nav = figure.querySelector(".site-nav");
+    var phone = figure.querySelector(".phone");
+    var panel = { figure: figure, nav: nav, open: true };
+    panels.push(panel);
+
+    /* Clicking a panel plays whichever way it isn't: open menus close,
+       closed ones open. */
+    phone.addEventListener("click", function () {
+      if (panel.open) close(panel); else open(panel);
+    });
+
+    sheet.appendChild(node);
+  });
+
+  /* How small the disc has to be to be the dot, which depends on how
+     wide the row is and so can only be measured. In the site this would
+     be set once by the script and again on a resize. */
+  function measure() {
+    panels.forEach(function (panel) {
+      var disc = panel.nav.querySelector(".menu-disc");
+      var dot = panel.nav.querySelector(".dot");
+      var wide = disc.offsetWidth;
+      if (!wide) return;
+      panel.nav.style.setProperty("--disc-dot",
+        (dot.offsetWidth / wide).toFixed(4));
+    });
+  }
+
+  /* The site's own moves, class for class: the way out is announced,
+     taken off and put back with a reflow between so that a move
+     interrupting another one starts rather than carries on. */
+  function close(panel) {
+    var nav = panel.nav;
+    nav.classList.remove("opening");
+    void nav.offsetWidth;
+    nav.classList.add("shutting", "disc-closing");
+    nav.classList.remove("expanded");
+    panel.open = false;
+  }
+
+  function open(panel) {
+    var nav = panel.nav;
+    nav.classList.remove("shutting", "disc-closing");
+    void nav.offsetWidth;
+    nav.classList.add("opening", "expanded");
+    panel.open = true;
+  }
+
+  function all(run) {
+    panels.forEach(function (panel) { run(panel); });
+  }
+
+  document.getElementById("play-close").addEventListener("click", function () {
+    all(function (p) { if (p.open) close(p); else { open(p); window.setTimeout(function () { close(p); }, beat()); } });
+  });
+
+  document.getElementById("play-open").addEventListener("click", function () {
+    all(function (p) { if (!p.open) open(p); else { close(p); window.setTimeout(function () { open(p); }, beat()); } });
+  });
+
+  /* Long enough for the move already running to finish before the one
+     being asked for starts, at whatever speed the dial is on. */
+  function beat() {
+    return 1100 * speed;
+  }
+
+  var speed = 1;
+  document.querySelectorAll(".speed").forEach(function (button) {
+    button.addEventListener("click", function () {
+      document.querySelectorAll(".speed").forEach(function (other) {
+        other.classList.toggle("on", other === button);
+      });
+      speed = Number(button.dataset.k);
+      document.documentElement.style.setProperty("--k", String(speed));
+    });
+  });
+
+  var looping = null;
+  var loopButton = document.getElementById("loop");
+  loopButton.addEventListener("click", function () {
+    if (looping) {
+      window.clearInterval(looping);
+      looping = null;
+      loopButton.classList.remove("on");
+      return;
+    }
+    loopButton.classList.add("on");
+    var shut = true;
+    looping = window.setInterval(function () {
+      all(shut ? close : open);
+      shut = !shut;
+    }, 1400 * speed);
+  });
+
+  window.addEventListener("resize", measure);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+  measure();
+})();
+</script>
+</body>
+</html>

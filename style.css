@@ -696,8 +696,21 @@ ul { margin: 0; padding: 0; list-style: none; }
 
   /* The dot holds still for the length of the disc's trip down and then
      plays its own arrival, instead of the two landing in one frame. The
-     nav wears this only while a disc is actually shutting. */
-  .site-nav.disc-closing.shutting .dot { animation-delay: var(--dur-fast); }
+     nav wears this only while a disc is actually shutting.
+
+     And it holds at the first frame of that arrival — nothing — rather
+     than at its own resting state, which is full size. A delay on its
+     own doesn't do that: an animation that hasn't started yet leaves
+     the element exactly as the rest of the stylesheet has it, and the
+     rule for a collapsed menu puts the dot there at full size. So for
+     the length of the disc's trip the dot was simply standing in the
+     corner, and then it snapped to nothing and grew back: the menu
+     looked like it shut, opened and shut again. Filling backwards is
+     the whole of the difference. */
+  .site-nav.disc-closing.shutting .dot {
+    animation-delay: var(--dur-fast);
+    animation-fill-mode: backwards;
+  }
 }
 
 @media (max-width: 720px) and (hover: hover) and (pointer: fine) {
