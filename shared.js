@@ -1453,8 +1453,8 @@
     setText("p-year", work.year);
     setText("p-category", work.category);
     setText("p-blurb", work.blurb);
-    setText("p-intro", work.intro);
-    setText("p-process", work.process);
+    fillOrDrop("p-intro", work.intro);
+    fillOrDrop("p-process", work.process);
 
     /* The other end of the lift. The same four names as on the card, so
        each piece travels between the two — in both directions, since
@@ -1466,7 +1466,9 @@
       nameForTransition("p-title", "lift-title");
       nameForTransition("p-meta", "lift-meta");
       nameForTransition("p-blurb", "lift-blurb");
-      nameForTransition("p-intro", "project-intro");
+      if (!document.getElementById("p-intro").hidden) {
+        nameForTransition("p-intro", "project-intro");
+      }
       if (heroImg) heroImg.style.viewTransitionName = "lift-visual";
     }
 
@@ -1555,11 +1557,12 @@
     var materialsList = document.getElementById("p-materials");
     if (materialsList) {
       materialsList.innerHTML = "";
-      work.materials.forEach(function (m) {
+      (work.materials || []).forEach(function (m) {
         var li = document.createElement("li");
         li.textContent = m;
         materialsList.appendChild(li);
       });
+      dropIfEmpty(materialsList, materialsList.children.length);
     }
 
     var gallery = document.getElementById("p-gallery");
@@ -2054,6 +2057,23 @@
   function setText(id, value) {
     var el = document.getElementById(id);
     if (el) el.textContent = value;
+  }
+
+  /* The page keeps a Process and a Materials standing whether a work
+     has anything to put in them or not, and a heading over nothing
+     reads as something missing rather than as something short. A work
+     can be a drawing with one line under its title: each section goes
+     when its own text does, and the intro with it. */
+  function fillOrDrop(id, text) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text || "";
+    dropIfEmpty(el, !!text);
+  }
+
+  function dropIfEmpty(el, keep) {
+    var section = el.closest(".project-section") || el;
+    section.hidden = !keep;
   }
 
   /* Takes the travelling names off a work's pieces, so the page leaves

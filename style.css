@@ -1249,6 +1249,9 @@ html[data-settling] .work-visual .work-cue {
   max-width: 48em;
 }
 
+/* Said plainly, so no later rule on the section can put it back. */
+.project-section[hidden], .p-intro[hidden] { display: none; }
+
 .project-section h2 {
   font-weight: 400;
   font-size: 1rem;
