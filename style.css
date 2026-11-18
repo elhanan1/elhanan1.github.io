@@ -1282,6 +1282,11 @@ html[data-settling] .work-visual .work-cue {
   gap: 1.4rem;
 }
 
+/* A work can be a single photo with nothing after it — a drawing, say.
+   An empty grid still carries the section's own space below it, which
+   left a hole between the photo and Process. */
+.project-gallery:empty { display: none; }
+
 .project-gallery figure {
   margin: 0;
   background: var(--surface);

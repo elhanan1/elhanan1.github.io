@@ -352,7 +352,39 @@ window.SITE_DATA = {
             id: "drawing",
             title: "Drawing",
             blurb: "",
-            works: []
+            works: [
+              {
+                id: "milo-study",
+                title: "Milo of Croton",
+                year: 2026,
+                category: "Drawing exercise",
+                size: "medium",
+                blurb: "A copy after Puget's Milo of Croton, built out of "
+                  + "straight lines before any curve.",
+                intro: "The course draws from printed plates. The plate goes "
+                  + "up on the board beside an empty sheet and the figure is "
+                  + "measured across onto it by eye, at the same size. This "
+                  + "one is after Pierre Puget's Milo of Croton, taken as far "
+                  + "as the chest, the near arm and the turn of the head.",
+                process: "Everything is laid in straight first: the outline "
+                  + "of the whole figure as a run of flat angles, then the "
+                  + "longer ones inside it \u2014 the shoulder, the ribs, the "
+                  + "line of the thigh \u2014 each one a straight line "
+                  + "standing in for the curve it will become. The faint "
+                  + "horizontal and vertical across the sheet are carried "
+                  + "over from the plate, and everything is measured against "
+                  + "them. Only once a shape is boxed in does it get its "
+                  + "curve, and only where a line is already there to put it "
+                  + "on.",
+                materials: ["Graphite on paper"],
+                images: {
+                  medium: "assets/img/milo-study-medium.webp",
+                  w: 600, h: 799,
+                  full: "assets/img/milo-study-full.jpg"
+                },
+                gallery: []
+              }
+            ]
           }
         ]
       }
