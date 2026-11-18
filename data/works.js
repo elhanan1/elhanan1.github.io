@@ -306,10 +306,13 @@ window.SITE_DATA = {
                   + "skewer runs through the top edge, where the upper "
                   + "panels meet.",
                 materials: ["Cardboard", "Bamboo skewer"],
+                /* The two rocked positions, flipping. A single file, with
+                   no `full` beside it: it is already the largest copy
+                   there is, and the page only reaches for a second one
+                   when there is a second one to reach for. */
                 images: {
-                  medium: "assets/img/many-boxes-medium.webp",
-                  w: 600, h: 800,
-                  full: "assets/img/many-boxes-full.jpg"
+                  medium: "assets/img/many-boxes-rock.gif",
+                  w: 640, h: 854
                 },
                 gallery: [
                   {
@@ -331,6 +334,12 @@ window.SITE_DATA = {
                     medium: "assets/img/many-boxes-4-medium.webp",
                     w: 600, h: 800,
                     full: "assets/img/many-boxes-4-full.jpg"
+                  },
+                  {
+                    type: "image",
+                    caption: "The lid, off and on.",
+                    medium: "assets/img/many-boxes-lid.gif",
+                    w: 560, h: 746
                   }
                 ]
               }
