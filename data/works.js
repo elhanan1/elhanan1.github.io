@@ -367,7 +367,7 @@ window.SITE_DATA = {
                   + "one is after Pierre Puget's Milo of Croton, taken as far "
                   + "as the chest, the near arm and the turn of the head.",
                 process: "Everything is laid in straight first \u2014 the "
-                  + "second sheet here is that stage: the outline of the "
+                  + "blocked-in sheet below is that stage: the outline of the "
                   + "whole figure as a run of flat angles, then the longer "
                   + "ones inside it, the shoulder, the ribs, the line of the "
                   + "thigh, each one a straight line standing in for the "
@@ -385,10 +385,19 @@ window.SITE_DATA = {
                 gallery: [
                   {
                     type: "image",
+                    pos: [1, 1],
                     caption: "The same sheet, blocked in.",
                     medium: "assets/img/milo-study-2-medium.webp",
                     w: 600, h: 799,
                     full: "assets/img/milo-study-2-full.jpg"
+                  },
+                  {
+                    type: "image",
+                    pos: [1, 2],
+                    caption: "The plate it was drawn from.",
+                    medium: "assets/img/milo-study-3-medium.webp",
+                    w: 600, h: 894,
+                    full: "assets/img/milo-study-3-full.jpg"
                   }
                 ]
               }
