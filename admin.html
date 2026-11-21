@@ -1,0 +1,1755 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Studio — elhanan itzkovich</title>
+<!--
+  The studio: the page the site is written from.
+
+  It reads data/works.js straight out of the repository, gives every
+  field of it a form, resizes photos in the browser exactly as
+  scripts/generate-images.py does, and commits the result back in one
+  commit. GitHub Pages rebuilds from that commit, so pressing Publish
+  is the whole of putting something on the site.
+
+  Nothing here runs on a server. The GitHub token you paste stays in
+  this browser's localStorage and is sent only to api.github.com, so
+  the page being public costs nothing: without a token it can do
+  nothing but sit there.
+
+  See docs/CONTENT.md for the shape of the content and how images are
+  named.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Spline+Sans+Mono:wght@300..700&display=swap');
+
+:root {
+  --bg: #f1f0f0;
+  --fg: #1c1a17;
+  --fg-soft: #6b6559;
+  --fg-faint: #a39c8c;
+  --border: rgba(28, 26, 23, 0.12);
+  --surface: rgba(28, 26, 23, 0.045);
+  --surface-strong: rgba(28, 26, 23, 0.08);
+  --accent: #d2561c;
+  --warn: #9a3412;
+  --font: 'Spline Sans Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --ease: cubic-bezier(.22, 1, .36, 1);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15130f;
+    --fg: #ece7dc;
+    --fg-soft: #a9a193;
+    --fg-faint: #716a5c;
+    --border: rgba(236, 231, 220, 0.14);
+    --surface: rgba(236, 231, 220, 0.05);
+    --surface-strong: rgba(236, 231, 220, 0.09);
+    --accent: #ff8042;
+    --warn: #fca5a5;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: var(--font);
+  font-weight: 300;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+}
+a { color: var(--accent); }
+
+/* ---- the bar across the top ---- */
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  flex-wrap: wrap;
+  padding: .7rem clamp(.9rem, 3vw, 2rem);
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.bar .mark { width: 30px; height: 24px; flex: none; }
+.bar h1 {
+  font-size: .95rem;
+  font-weight: 500;
+  margin: 0;
+  letter-spacing: .01em;
+}
+.bar h1 .dot { color: var(--accent); }
+.bar .spacer { flex: 1 1 auto; }
+.state {
+  font-size: .76rem;
+  color: var(--fg-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 44vw;
+}
+.state.busy { color: var(--accent); }
+.state.bad { color: var(--warn); }
+
+/* ---- buttons and fields ---- */
+button {
+  font: inherit;
+  font-size: .8rem;
+  color: var(--fg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: .5rem .8rem;
+  min-height: 38px;
+  cursor: pointer;
+  transition: background var(--ease) .2s, color var(--ease) .2s;
+}
+button:hover { background: var(--surface-strong); }
+button:disabled { opacity: .4; cursor: default; }
+button.primary {
+  background: var(--fg);
+  color: var(--bg);
+  border-color: var(--fg);
+  font-weight: 500;
+}
+button.primary:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.tiny { padding: .3rem .5rem; min-height: 32px; font-size: .72rem; }
+button.danger:hover { color: #fff; background: var(--warn); border-color: var(--warn); }
+button.on { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+
+input[type=text], input[type=number], input[type=password], textarea, select {
+  font: inherit;
+  font-size: .85rem;
+  width: 100%;
+  color: var(--fg);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: .5rem .6rem;
+  min-height: 38px;
+}
+textarea { line-height: 1.55; resize: vertical; }
+input:focus, textarea:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+label.field { display: block; margin: 0 0 .9rem; }
+label.field > span {
+  display: block;
+  font-size: .7rem;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  margin-bottom: .3rem;
+}
+label.field > em {
+  display: block;
+  font-style: normal;
+  font-size: .72rem;
+  color: var(--fg-faint);
+  margin-top: .25rem;
+}
+.row { display: flex; gap: .8rem; flex-wrap: wrap; }
+.row > * { flex: 1 1 10rem; }
+.check {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: .82rem;
+  cursor: pointer;
+  min-height: 38px;
+}
+.check input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+/* ---- tabs ---- */
+.tabs {
+  display: flex;
+  gap: .3rem;
+  padding: .5rem clamp(.9rem, 3vw, 2rem) 0;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border);
+}
+.tabs button {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  border-radius: 0;
+  color: var(--fg-soft);
+}
+.tabs button.on { color: var(--fg); background: transparent; border-bottom-color: var(--accent); }
+
+/* ---- layout ---- */
+main { padding: clamp(1rem, 3vw, 2rem); max-width: 1400px; }
+.panes { display: grid; grid-template-columns: minmax(16rem, 22rem) 1fr; gap: clamp(1rem, 3vw, 2.4rem); align-items: start; }
+@media (max-width: 860px) { .panes { grid-template-columns: 1fr; } }
+h2.section {
+  font-size: .72rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  font-weight: 500;
+  margin: 0 0 .8rem;
+}
+.card {
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: var(--surface);
+}
+.card.plain { background: transparent; }
+
+/* ---- the list of works ---- */
+.list { display: flex; flex-direction: column; gap: .5rem; }
+.item {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  padding: .5rem;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg);
+  text-align: left;
+  width: 100%;
+  min-height: 60px;
+}
+.item.sel { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.item .thumb {
+  width: 42px; height: 42px; flex: none;
+  object-fit: cover;
+  background: var(--surface-strong);
+  border-radius: 2px;
+}
+.item .who { flex: 1 1 auto; min-width: 0; }
+.item .who b { display: block; font-weight: 500; font-size: .85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item .who small { color: var(--fg-faint); font-size: .72rem; }
+.item .moves { display: flex; flex-direction: column; gap: 2px; flex: none; }
+.item .moves button { padding: 0; width: 26px; min-height: 20px; height: 20px; font-size: .62rem; line-height: 1; }
+.badge {
+  display: inline-block;
+  font-size: .62rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: .1rem .35rem;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 2px;
+  margin-left: .4rem;
+  vertical-align: .08em;
+}
+
+/* ---- images ---- */
+.shots { display: flex; flex-direction: column; gap: .7rem; }
+.shot {
+  display: flex;
+  gap: .8rem;
+  align-items: flex-start;
+  padding: .6rem;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+.shot img { width: 86px; height: 86px; object-fit: cover; background: var(--surface-strong); flex: none; border-radius: 2px; }
+.shot .meta { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: .45rem; }
+.shot .meta small { color: var(--fg-faint); font-size: .68rem; word-break: break-all; }
+.shot .acts { display: flex; gap: .3rem; flex-wrap: wrap; }
+.drop {
+  border: 1px dashed var(--border);
+  border-radius: 3px;
+  padding: 1.1rem;
+  text-align: center;
+  color: var(--fg-soft);
+  font-size: .8rem;
+  cursor: pointer;
+}
+.drop.over { border-color: var(--accent); color: var(--accent); }
+
+/* ---- the token gate ---- */
+.gate { max-width: 40rem; margin: clamp(2rem, 8vh, 5rem) auto; padding: 0 1.2rem; }
+.gate h2 { font-size: 1.1rem; font-weight: 500; margin: 0 0 .6rem; }
+.gate p, .gate li { color: var(--fg-soft); font-size: .86rem; }
+.gate ol { padding-left: 1.3rem; }
+.gate code { background: var(--surface-strong); padding: .1rem .3rem; border-radius: 2px; font-size: .8rem; }
+
+/* ---- preview overlay ---- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+.overlay header { display: flex; gap: .6rem; align-items: center; padding: .6rem 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.overlay .frame { flex: 1 1 auto; display: flex; justify-content: center; overflow: auto; background: var(--surface); }
+.overlay iframe { border: 0; background: var(--bg); width: 100%; height: 100%; }
+.overlay.phone iframe { width: 414px; max-width: 100%; }
+
+.note { font-size: .74rem; color: var(--fg-faint); margin: .3rem 0 0; }
+.hide { display: none !important; }
+.changes { font-size: .78rem; color: var(--fg-soft); }
+.changes li { word-break: break-all; }
+.empty { color: var(--fg-faint); font-size: .82rem; padding: .6rem 0; }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <svg class="mark" viewBox="10 6 114 86" aria-hidden="true">
+    <g fill="none" stroke="currentColor" stroke-width="12">
+      <path d="M22 18 L78 82"/><path d="M78 18 L78 36 Q78 50 60 56"/><path d="M22 82 L22 64 Q22 50 40 44"/>
+    </g>
+    <g fill="none" stroke="var(--bg)" stroke-width="22" transform="translate(36,0)">
+      <path d="M22 18 L78 82"/><path d="M78 18 L78 36 Q78 50 60 56"/><path d="M22 82 L22 64 Q22 50 40 44"/>
+    </g>
+    <g fill="none" stroke="currentColor" stroke-width="12" transform="translate(36,0)">
+      <path d="M22 18 L78 82"/><path d="M78 18 L78 36 Q78 50 60 56"/><path d="M22 82 L22 64 Q22 50 40 44"/>
+    </g>
+  </svg>
+  <h1>studio<span class="dot">.</span></h1>
+  <div class="spacer"></div>
+  <span class="state" id="state"></span>
+  <button id="previewBtn" class="hide">Preview</button>
+  <button id="publishBtn" class="primary hide">Publish</button>
+  <button id="signOut" class="tiny hide">Sign out</button>
+</div>
+
+<div class="tabs hide" id="tabs">
+  <button data-tab="works" class="on">Projects</button>
+  <button data-tab="studies">Studies</button>
+  <button data-tab="about">About</button>
+  <button data-tab="publish">Publish</button>
+</div>
+
+<div class="gate" id="gate"></div>
+<main id="app" class="hide"></main>
+
+<div id="overlay"></div>
+
+<script>
+/* =====================================================================
+   The studio's one script. Four parts, in order:
+     1. the repository: token, reading data/works.js, writing a commit
+     2. the content in hand: state, dirtiness, local autosave
+     3. photos: the same two sizes scripts/generate-images.py makes
+     4. the forms, and the preview that shows the real pages
+   =================================================================== */
+(function () {
+"use strict";
+
+/* --- 1. the repository ------------------------------------------- */
+
+var OWNER = "elhanan1";
+var REPO = "elhanan1.github.io";
+var BRANCH = "main";
+var CONTENT_PATH = "data/works.js";
+var TOKEN_KEY = "studio-token";
+var DRAFT_KEY = "studio-draft";
+var PREVIEW_KEY = "studio-preview";
+
+var token = "";
+try { token = localStorage.getItem(TOKEN_KEY) || ""; } catch (e) { token = ""; }
+
+function api(path, options) {
+  options = options || {};
+  var headers = {
+    "Accept": "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28"
+  };
+  if (token) headers.Authorization = "Bearer " + token;
+  if (options.body) headers["Content-Type"] = "application/json";
+  return fetch("https://api.github.com" + path, {
+    method: options.method || "GET",
+    headers: headers,
+    body: options.body ? JSON.stringify(options.body) : undefined
+  }).then(function (res) {
+    if (res.status === 204) return null;
+    return res.json().catch(function () { return null; }).then(function (data) {
+      if (!res.ok) {
+        var msg = (data && data.message) || ("GitHub said " + res.status);
+        if (res.status === 401) msg = "The token was refused. It may have expired — paste a new one.";
+        if (res.status === 403) msg = "The token is missing permission for this repository (it needs Contents: read and write).";
+        if (res.status === 409) msg = "Someone else committed in the meantime. Reload, then publish again.";
+        var err = new Error(msg);
+        err.status = res.status;
+        throw err;
+      }
+      return data;
+    });
+  });
+}
+
+/* Text in and out of base64, with characters above ASCII intact: the
+   About copy and the works' text are full of em dashes and accents. */
+function toBase64(text) {
+  var bytes = new TextEncoder().encode(text);
+  var out = "";
+  for (var i = 0; i < bytes.length; i += 0x8000) {
+    out += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(out);
+}
+function fromBase64(b64) {
+  var raw = atob(b64.replace(/\s/g, ""));
+  var bytes = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+
+/* data/works.js is ordinary JavaScript that hands window.SITE_DATA its
+   value, so it is read by running it with a window of our own. That
+   keeps hand edits working: whatever shape the file is in, what comes
+   out is the data the site itself would see. */
+function parseContent(source) {
+  var sandbox = { location: { search: "" }, sessionStorage: null };
+  new Function("window", source + "\n;return window;")(sandbox);
+  var data = sandbox.SITE_DATA;
+  if (!data || typeof data !== "object") throw new Error("data/works.js did not set window.SITE_DATA.");
+  if (!Array.isArray(data.works)) data.works = [];
+  if (!data.person) data.person = { name: "", tagline: "" };
+  if (!data.about) data.about = {};
+  if (!data.studies) data.studies = { intro: "", years: [] };
+  if (!Array.isArray(data.studies.years)) data.studies.years = [];
+  return data;
+}
+
+/* The file the studio writes back. The wrapper is what lets the
+   preview work; see the comment it carries. */
+function serialiseContent(data) {
+  var body = JSON.stringify(data, null, 2).split("\n").map(function (line, i) {
+    return i === 0 ? line : "  " + line;
+  }).join("\n");
+  return [
+    "/**",
+    " * The whole of the site's content: the name and tagline, the About copy,",
+    " * every project, and the degree year by year.",
+    " *",
+    " * This file is written by the studio page (admin.html) — open it, edit,",
+    " * press Publish, and it is committed back here. It can still be edited",
+    " * by hand: it is ordinary JavaScript, and the studio reads whatever is",
+    " * in it. See docs/CONTENT.md for what every field means and how the",
+    " * images are named.",
+    " *",
+    " * The small wrapper below is what lets the studio's preview show the",
+    " * real pages with unpublished edits in them: with ?preview=1 in the URL",
+    " * the pages read the draft the studio left in sessionStorage instead of",
+    " * the published data. Nothing else about the site depends on it.",
+    " */",
+    "window.SITE_DATA = (function () {",
+    "  var published = " + body + ";",
+    "",
+    "  try {",
+    "    if (window.location.search.indexOf(\"preview=1\") > -1) {",
+    "      var draft = window.sessionStorage.getItem(\"studio-preview\");",
+    "      if (draft) return JSON.parse(draft);",
+    "    }",
+    "  } catch (e) { /* no preview available; fall through to the real data */ }",
+    "",
+    "  return published;",
+    "})();",
+    ""
+  ].join("\n");
+}
+
+/* --- 2. the content in hand -------------------------------------- */
+
+var state = {
+  data: null,         // the content being edited
+  baseSha: null,      // the commit the edits started from
+  files: {},          // path -> { base64: string }  waiting to be committed
+  previews: {},       // path -> data: URL, so the preview can show them
+  dirty: false,
+  tab: "works",
+  sel: null           // what the editor is pointed at
+};
+
+function clone(value) { return JSON.parse(JSON.stringify(value)); }
+
+function touched() {
+  state.dirty = true;
+  saveDraft();
+  renderBar();
+}
+
+/* The edits survive a closed tab. Only the text goes to localStorage —
+   photos waiting to be published are far too big for it, so a reload
+   keeps the words and asks for the photos again. */
+function saveDraft() {
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({
+      at: Date.now(),
+      baseSha: state.baseSha,
+      data: state.data,
+      pending: Object.keys(state.files)
+    }));
+  } catch (e) { /* out of room; the copy on GitHub is still the truth */ }
+}
+function clearDraft() {
+  try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+}
+function readDraft() {
+  try {
+    var raw = localStorage.getItem(DRAFT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+
+window.addEventListener("beforeunload", function (e) {
+  if (!state.dirty) return;
+  e.preventDefault();
+  e.returnValue = "";
+});
+
+/* --- 3. photos ---------------------------------------------------- */
+
+var MEDIUM_WIDTH = 600;
+var FULL_WIDTH = 1600;
+var MEDIUM_QUALITY = 0.78;
+var FULL_QUALITY = 0.85;
+
+function slug(text) {
+  return String(text || "")
+    .toLowerCase()
+    .replace(/['"]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+}
+
+function drawTo(bitmap, width) {
+  var w = Math.min(width, bitmap.width);
+  var h = Math.max(1, Math.round(bitmap.height * (w / bitmap.width)));
+  var canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  canvas.getContext("2d").drawImage(bitmap, 0, 0, w, h);
+  return canvas;
+}
+
+function canvasToBase64(canvas, type, quality) {
+  return new Promise(function (resolve, reject) {
+    canvas.toBlob(function (blob) {
+      if (!blob) return reject(new Error("The browser could not encode " + type + "."));
+      var reader = new FileReader();
+      reader.onload = function () {
+        var url = String(reader.result);
+        resolve({ base64: url.slice(url.indexOf(",") + 1), url: url, bytes: blob.size });
+      };
+      reader.onerror = function () { reject(new Error("Could not read the encoded image.")); };
+      reader.readAsDataURL(blob);
+    }, type, quality);
+  });
+}
+
+function fileToBase64(file) {
+  return new Promise(function (resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      var url = String(reader.result);
+      resolve({ base64: url.slice(url.indexOf(",") + 1), url: url, bytes: file.size });
+    };
+    reader.onerror = function () { reject(new Error("Could not read " + file.name)); };
+    reader.readAsDataURL(file);
+  });
+}
+
+function hasAlpha(canvas) {
+  var px = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data;
+  for (var i = 3; i < px.length; i += 4) if (px[i] < 250) return true;
+  return false;
+}
+
+/* One photo in, the site's two sizes out, named as the Python script
+   names them: <name>-medium.webp at 600px for the cards, and
+   <name>-full.jpg at 1600px for the project page — .webp instead when
+   the photo is a cut-out, which has transparency a JPEG cannot hold.
+   The original goes to assets/originals/, so the folder stays the
+   record of what the site was built from. A GIF is left exactly as it
+   is: it is animated, and re-encoding it would flatten it.
+   Returns the piece of content a work's `images` field wants. */
+function processPhoto(file, name) {
+  var ext = (file.name.match(/\.[a-z0-9]+$/i) || [".jpg"])[0].toLowerCase();
+
+  if (file.type === "image/gif") {
+    return Promise.all([
+      createImageBitmap(file),
+      fileToBase64(file)
+    ]).then(function (both) {
+      var bitmap = both[0], read = both[1];
+      var path = "assets/img/" + name + ".gif";
+      stage(path, read);
+      return { medium: path, full: path, w: bitmap.width, h: bitmap.height };
+    });
+  }
+
+  return createImageBitmap(file, { imageOrientation: "from-image" }).then(function (bitmap) {
+    var mediumCanvas = drawTo(bitmap, MEDIUM_WIDTH);
+    var fullCanvas = drawTo(bitmap, FULL_WIDTH);
+    var cutOut = /\.(png|webp)$/.test(ext) && hasAlpha(mediumCanvas);
+    return Promise.all([
+      canvasToBase64(mediumCanvas, "image/webp", MEDIUM_QUALITY),
+      canvasToBase64(fullCanvas, cutOut ? "image/webp" : "image/jpeg", FULL_QUALITY),
+      fileToBase64(file)
+    ]).then(function (out) {
+      var medium = out[0], full = out[1], original = out[2];
+      var mediumPath = "assets/img/" + name + "-medium.webp";
+      var fullPath = "assets/img/" + name + "-full." + (cutOut ? "webp" : "jpg");
+      stage(mediumPath, medium);
+      stage(fullPath, full);
+      stage("assets/originals/" + name + ext, original);
+      return {
+        medium: mediumPath,
+        full: fullPath,
+        w: mediumCanvas.width,
+        h: mediumCanvas.height
+      };
+    });
+  });
+}
+
+function stage(path, read) {
+  state.files[path] = { base64: read.base64, bytes: read.bytes };
+  state.previews[path] = read.url;
+}
+
+/* What to show for an image that may not be published yet. */
+function shownSrc(path) {
+  if (!path) return "";
+  if (state.previews[path]) return state.previews[path];
+  return path + "?v=" + encodeURIComponent(state.baseSha || "");
+}
+
+/* --- 4. the forms ------------------------------------------------- */
+
+var gate = document.getElementById("gate");
+var app = document.getElementById("app");
+var tabsEl = document.getElementById("tabs");
+var stateEl = document.getElementById("state");
+var overlay = document.getElementById("overlay");
+
+function h(tag, props, kids) {
+  var el = document.createElement(tag);
+  props = props || {};
+  Object.keys(props).forEach(function (key) {
+    var value = props[key];
+    if (key === "class") el.className = value;
+    else if (key === "text") el.textContent = value;
+    else if (key === "html") el.innerHTML = value;
+    else if (key.slice(0, 2) === "on") el.addEventListener(key.slice(2), value);
+    else if (value === true) el.setAttribute(key, "");
+    else if (value !== false && value != null) el.setAttribute(key, value);
+  });
+  (kids || []).forEach(function (kid) {
+    if (kid) el.appendChild(typeof kid === "string" ? document.createTextNode(kid) : kid);
+  });
+  return el;
+}
+
+function say(text, kind) {
+  stateEl.textContent = text || "";
+  stateEl.className = "state" + (kind ? " " + kind : "");
+}
+
+/* A labelled field over one key of one object. */
+function field(label, target, key, opts) {
+  opts = opts || {};
+  var input;
+  if (opts.rows) {
+    input = h("textarea", { rows: opts.rows, placeholder: opts.placeholder || "" });
+    input.value = target[key] == null ? "" : String(target[key]);
+  } else if (opts.options) {
+    input = h("select", {});
+    opts.options.forEach(function (option) {
+      var o = h("option", { value: option[0], text: option[1] });
+      if (String(target[key] || "") === String(option[0])) o.selected = true;
+      input.appendChild(o);
+    });
+  } else {
+    input = h("input", { type: opts.type || "text", placeholder: opts.placeholder || "" });
+    input.value = target[key] == null ? "" : String(target[key]);
+  }
+  input.addEventListener("input", function () {
+    var value = input.value;
+    if (opts.type === "number") target[key] = value === "" ? "" : Number(value);
+    else target[key] = value;
+    if (opts.onChange) opts.onChange(value);
+    touched();
+  });
+  if (opts.options) input.addEventListener("change", function () { touched(); });
+  return h("label", { class: "field" }, [
+    h("span", { text: label }),
+    input,
+    opts.hint ? h("em", { text: opts.hint }) : null
+  ]);
+}
+
+function checkbox(label, target, key, onChange) {
+  var input = h("input", { type: "checkbox" });
+  input.checked = !!target[key];
+  input.addEventListener("change", function () {
+    if (input.checked) target[key] = true; else delete target[key];
+    if (onChange) onChange();
+    touched();
+  });
+  return h("label", { class: "check" }, [input, label]);
+}
+
+function confirmThen(question, run) {
+  if (window.confirm(question)) run();
+}
+
+/* ---- the token gate ---- */
+
+function renderGate(message) {
+  var input = h("input", { type: "password", placeholder: "github_pat_…", autocomplete: "off" });
+  var connect = h("button", { class: "primary", text: "Connect" });
+  var problem = h("p", { class: "note", text: message || "" });
+  if (message) problem.style.color = "var(--warn)";
+
+  function tryToken() {
+    var value = input.value.trim();
+    if (!value) return;
+    token = value;
+    say("Checking the token…", "busy");
+    connect.disabled = true;
+    api("/repos/" + OWNER + "/" + REPO).then(function (repo) {
+      if (!repo.permissions || !repo.permissions.push) {
+        throw new Error("That token can read the repository but not write to it. It needs Contents: read and write.");
+      }
+      try { localStorage.setItem(TOKEN_KEY, token); } catch (e) {}
+      BRANCH = repo.default_branch || BRANCH;
+      start();
+    }).catch(function (err) {
+      token = "";
+      connect.disabled = false;
+      say("", "");
+      renderGate(err.message);
+    });
+  }
+
+  connect.addEventListener("click", tryToken);
+  input.addEventListener("keydown", function (e) { if (e.key === "Enter") tryToken(); });
+
+  gate.innerHTML = "";
+  gate.classList.remove("hide");
+  app.classList.add("hide");
+  tabsEl.classList.add("hide");
+  ["previewBtn", "publishBtn", "signOut"].forEach(function (id) {
+    document.getElementById(id).classList.add("hide");
+  });
+  gate.appendChild(h("div", {}, [
+    h("h2", { text: "Sign in to the studio" }),
+    h("p", { text: "This page writes to " + OWNER + "/" + REPO + " on your behalf. It needs a GitHub token once; after that it is remembered in this browser." }),
+    h("ol", {}, [
+      h("li", { html: 'Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub → fine-grained tokens</a>.' }),
+      h("li", { html: 'Under <code>Repository access</code> choose <b>Only select repositories</b> and pick <code>' + REPO + '</code>.' }),
+      h("li", { html: 'Under <code>Permissions → Repository permissions</code> set <b>Contents</b> to <b>Read and write</b>. Nothing else is needed.' }),
+      h("li", { text: "Give it an expiry you are comfortable with, generate it, and paste it below." })
+    ]),
+    h("label", { class: "field" }, [h("span", { text: "Token" }), input]),
+    h("div", { class: "row" }, [connect]),
+    problem,
+    h("p", { class: "note", text: "The token is kept in this browser only and sent to api.github.com and nowhere else. On a shared computer, press Sign out when you are done." })
+  ]));
+  input.focus();
+}
+
+/* ---- loading ---- */
+
+function start() {
+  say("Loading the site's content…", "busy");
+  api("/repos/" + OWNER + "/" + REPO + "/contents/" + CONTENT_PATH + "?ref=" + encodeURIComponent(BRANCH))
+    .then(function (file) {
+      var source = fromBase64(file.content);
+      var data = parseContent(source);
+      state.data = data;
+      state.baseSha = file.sha;
+      state.files = {};
+      state.previews = {};
+      state.dirty = false;
+
+      var draft = readDraft();
+      if (draft && draft.data && JSON.stringify(draft.data) !== JSON.stringify(data)) {
+        var when = new Date(draft.at).toLocaleString();
+        var keep = window.confirm(
+          "There are unpublished edits in this browser from " + when + ".\n\n" +
+          "OK: carry on with them.\nCancel: throw them away and start from what is published."
+          + (draft.pending && draft.pending.length
+              ? "\n\n(Photos are never kept in the browser — these will need uploading again: "
+                + draft.pending.join(", ") + ")"
+              : "")
+        );
+        if (keep) {
+          state.data = draft.data;
+          state.dirty = true;
+        } else {
+          clearDraft();
+        }
+      }
+
+      gate.classList.add("hide");
+      app.classList.remove("hide");
+      tabsEl.classList.remove("hide");
+      ["previewBtn", "publishBtn", "signOut"].forEach(function (id) {
+        document.getElementById(id).classList.remove("hide");
+      });
+      say("");
+      render();
+    })
+    .catch(function (err) {
+      if (err.status === 401 || err.status === 403) {
+        try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+        token = "";
+        renderGate(err.message);
+      } else {
+        say(err.message, "bad");
+      }
+    });
+}
+
+function renderBar() {
+  var count = Object.keys(state.files).length;
+  var publish = document.getElementById("publishBtn");
+  publish.textContent = state.dirty || count
+    ? "Publish" + (count ? " (" + count + " file" + (count === 1 ? "" : "s") + ")" : "")
+    : "Published";
+  publish.disabled = !state.dirty && !count;
+}
+
+/* ---- the works list, over whichever array it is given ---- */
+
+function coverSrc(work) {
+  return shownSrc(work && work.images && work.images.medium);
+}
+
+function workRow(entry, list, index) {
+  var isRef = typeof entry === "string" || (entry && entry.ref);
+  var refId = typeof entry === "string" ? entry : (entry && entry.ref);
+  var work = isRef ? findWork(refId) : entry;
+  var selected = state.sel && state.sel.work === entry;
+
+  var moves = h("div", { class: "moves" }, [
+    h("button", {
+      class: "tiny", text: "↑", title: "Move up", disabled: index === 0,
+      onclick: function (e) { e.stopPropagation(); move(list, index, -1); }
+    }),
+    h("button", {
+      class: "tiny", text: "↓", title: "Move down", disabled: index === list.length - 1,
+      onclick: function (e) { e.stopPropagation(); move(list, index, 1); }
+    })
+  ]);
+
+  var title = isRef
+    ? ((work && work.title) || refId) + " →"
+    : (entry.title || "Untitled");
+  var under = isRef
+    ? "shown here from Projects"
+    : [entry.year || "—", entry.category || "no category"].join(" · ");
+
+  var row = h("div", {
+    class: "item" + (selected ? " sel" : ""),
+    onclick: function () {
+      if (isRef) return;
+      state.sel = { work: entry, list: list };
+      render();
+    }
+  }, [
+    h("img", { class: "thumb", src: coverSrc(work), alt: "" }),
+    h("div", { class: "who" }, [
+      h("b", {}, [title, entry && entry.draft ? h("span", { class: "badge", text: "draft" }) : null]),
+      h("small", { text: under })
+    ]),
+    moves,
+    h("button", {
+      class: "tiny danger", text: "✕", title: "Remove",
+      onclick: function (e) {
+        e.stopPropagation();
+        var what = isRef
+          ? "Take " + title.replace(" →", "") + " out of this course? The project itself stays."
+          : "Delete “" + (entry.title || "Untitled") + "”? Its photos stay in the repository.";
+        confirmThen(what, function () {
+          list.splice(index, 1);
+          if (state.sel && state.sel.work === entry) state.sel = null;
+          touched();
+          render();
+        });
+      }
+    })
+  ]);
+  if (!isRef) rowsOnScreen.push({ work: entry, row: row });
+  return row;
+}
+
+function move(list, index, by) {
+  var to = index + by;
+  if (to < 0 || to >= list.length) return;
+  var held = list[index];
+  list[index] = list[to];
+  list[to] = held;
+  touched();
+  render();
+}
+
+/* The rows currently on screen, so one of them can be brought up to
+   date on its own. Typing a title must not rebuild the page: that would
+   take the caret out of the field after the first letter. */
+var rowsOnScreen = [];
+
+function refreshRow(work) {
+  rowsOnScreen.forEach(function (held) {
+    if (held.work !== work) return;
+    var label = held.row.querySelector(".who b");
+    if (!label) return;
+    label.textContent = work.title || "Untitled";
+    if (work.draft) label.appendChild(h("span", { class: "badge", text: "draft" }));
+    var under = held.row.querySelector(".who small");
+    if (under) under.textContent = [work.year || "—", work.category || "no category"].join(" · ");
+  });
+}
+
+function workList(list) {
+  if (!list.length) return h("p", { class: "empty", text: "Nothing here yet." });
+  return h("div", { class: "list" }, list.map(function (entry, i) {
+    return workRow(entry, list, i);
+  }));
+}
+
+function findWork(id) {
+  var found = null;
+  (state.data.works || []).forEach(function (work) { if (work.id === id) found = work; });
+  if (found) return found;
+  eachCourse(function (course) {
+    (course.works || []).forEach(function (entry) {
+      if (entry && typeof entry === "object" && !entry.ref && entry.id === id) found = entry;
+    });
+  });
+  return found;
+}
+
+function eachCourse(run) {
+  (state.data.studies.years || []).forEach(function (year) {
+    (year.courses || []).forEach(function (course) { run(course, year); });
+  });
+}
+
+function allIds() {
+  var ids = (state.data.works || []).map(function (w) { return w.id; });
+  eachCourse(function (course) {
+    (course.works || []).forEach(function (entry) {
+      if (entry && typeof entry === "object" && !entry.ref) ids.push(entry.id);
+    });
+  });
+  return ids;
+}
+
+function freeId(wanted) {
+  var taken = allIds();
+  var id = wanted || "work";
+  var n = 2;
+  while (taken.indexOf(id) > -1) id = (wanted || "work") + "-" + n++;
+  return id;
+}
+
+function newWork() {
+  return {
+    // Bookkeeping, stripped before anything is written: it marks a
+    // project that has never been published, whose id may still follow
+    // the title it is being given.
+    _fresh: true,
+    id: freeId("new-project"),
+    title: "",
+    year: new Date().getFullYear(),
+    category: "",
+    size: "medium",
+    draft: true,
+    blurb: "",
+    intro: "",
+    process: "",
+    materials: [],
+    images: null,
+    gallery: []
+  };
+}
+
+/* ---- photos on a work ---- */
+
+/* Where the next photo of a work should be filed: <id>, then <id>-2,
+   <id>-3, and so on, which is the naming the site has used all along. */
+function nextPhotoName(work) {
+  var used = {};
+  function note(path) {
+    var m = String(path || "").match(/assets\/(?:img|originals)\/(.+?)(?:-medium|-full)?\.[a-z0-9]+$/);
+    if (m) used[m[1]] = true;
+  }
+  if (work.images) { note(work.images.medium); note(work.images.full); }
+  (work.gallery || []).forEach(function (item) {
+    note(item.medium); note(item.full); note(item.src);
+  });
+  Object.keys(state.files).forEach(note);
+  var base = slug(work.id) || "work";
+  if (!used[base]) return base;
+  var n = 2;
+  while (used[base + "-" + n]) n++;
+  return base + "-" + n;
+}
+
+function dropper(text, onFiles, accept) {
+  var input = h("input", {
+    type: "file",
+    accept: accept || "image/*",
+    multiple: true,
+    class: "hide"
+  });
+  input.addEventListener("change", function () {
+    if (input.files && input.files.length) onFiles(Array.prototype.slice.call(input.files));
+    input.value = "";
+  });
+  var zone = h("div", { class: "drop", text: text, onclick: function () { input.click(); } });
+  ["dragenter", "dragover"].forEach(function (name) {
+    zone.addEventListener(name, function (e) { e.preventDefault(); zone.classList.add("over"); });
+  });
+  ["dragleave", "drop"].forEach(function (name) {
+    zone.addEventListener(name, function (e) { e.preventDefault(); zone.classList.remove("over"); });
+  });
+  zone.addEventListener("drop", function (e) {
+    var files = e.dataTransfer && e.dataTransfer.files;
+    if (files && files.length) onFiles(Array.prototype.slice.call(files));
+  });
+  return h("div", {}, [zone, input]);
+}
+
+/* A gallery lays itself out in pairs unless an item asks for the full
+   width, which is what the site's own grid expects: two columns, and a
+   `wide` item spanning both. The rows are numbered here so the pairs
+   stay side by side however the list is reordered. */
+function layoutGallery(gallery) {
+  var row = 1, col = 1;
+  (gallery || []).forEach(function (item) {
+    if (item.type === "video") { delete item.pos; return; }
+    if (item.wide) {
+      if (col === 2) { row++; col = 1; }
+      delete item.pos;
+      row++;
+      return;
+    }
+    item.pos = [row, col];
+    if (col === 2) { row++; col = 1; } else { col = 2; }
+  });
+}
+
+function addPhotos(work, files, asCover) {
+  var images = files.filter(function (f) { return /^image\//.test(f.type); });
+  var videos = files.filter(function (f) { return /^video\//.test(f.type); });
+  if (!images.length && !videos.length) {
+    say("That file is neither an image nor a video.", "bad");
+    return;
+  }
+  say("Resizing " + (images.length + videos.length) + " file(s)…", "busy");
+
+  var queue = Promise.resolve();
+  images.forEach(function (file, i) {
+    queue = queue.then(function () {
+      return processPhoto(file, nextPhotoName(work)).then(function (made) {
+        if (asCover && i === 0) {
+          work.images = made;
+        } else {
+          work.gallery = work.gallery || [];
+          work.gallery.push({
+            type: "image",
+            medium: made.medium,
+            full: made.full,
+            w: made.w,
+            h: made.h,
+            caption: ""
+          });
+        }
+      });
+    });
+  });
+  videos.forEach(function (file) {
+    queue = queue.then(function () {
+      var name = nextPhotoName(work);
+      var ext = (file.name.match(/\.[a-z0-9]+$/i) || [".mp4"])[0].toLowerCase();
+      return fileToBase64(file).then(function (read) {
+        var path = "assets/img/" + name + ext;
+        stage(path, read);
+        work.gallery = work.gallery || [];
+        work.gallery.push({ type: "video", src: path, wide: true, caption: "" });
+      });
+    });
+  });
+
+  queue.then(function () {
+    layoutGallery(work.gallery);
+    say("");
+    touched();
+    render();
+  }).catch(function (err) {
+    say(err.message, "bad");
+  });
+}
+
+function photoBlock(work) {
+  var cover = work.images;
+  var bits = [h("h2", { class: "section", text: "Cover photo" })];
+
+  if (cover) {
+    bits.push(h("div", { class: "shot" }, [
+      h("img", { src: shownSrc(cover.medium), alt: "" }),
+      h("div", { class: "meta" }, [
+        h("small", { text: cover.medium + "  ·  " + cover.w + "×" + cover.h + (state.files[cover.medium] ? "  ·  not published yet" : "") }),
+        h("div", { class: "acts" }, [
+          h("button", {
+            class: "tiny danger", text: "Remove",
+            onclick: function () {
+              confirmThen("Take the cover photo off this project?", function () {
+                work.images = null;
+                touched();
+                render();
+              });
+            }
+          })
+        ])
+      ])
+    ]));
+  }
+  bits.push(dropper(cover ? "Drop a photo here to replace the cover" : "Drop the cover photo here, or tap to choose", function (files) {
+    addPhotos(work, files.slice(0, 1), true);
+  }));
+
+  bits.push(h("h2", { class: "section", text: "Gallery" }));
+  bits.push(h("p", { class: "note", text: "Two photos sit side by side; one marked full width spans both columns. Order them with the arrows." }));
+
+  var gallery = work.gallery || [];
+  if (!gallery.length) {
+    bits.push(h("p", { class: "empty", text: "No gallery photos." }));
+  }
+  gallery.forEach(function (item, i) {
+    var caption = h("input", { type: "text", placeholder: "Caption (optional)" });
+    caption.value = item.caption || "";
+    caption.addEventListener("input", function () {
+      item.caption = caption.value;
+      touched();
+    });
+
+    bits.push(h("div", { class: "shot" }, [
+      item.type === "video"
+        ? h("video", { src: shownSrc(item.src), muted: true, playsinline: true, style: "width:86px;height:86px;object-fit:cover" })
+        : h("img", { src: shownSrc(item.medium), alt: "" }),
+      h("div", { class: "meta" }, [
+        h("small", { text: (item.medium || item.src || "") + (item.w ? "  ·  " + item.w + "×" + item.h : "") + (state.files[item.medium || item.src] ? "  ·  not published yet" : "") }),
+        caption,
+        h("div", { class: "acts" }, [
+          checkbox("Full width", item, "wide", function () { layoutGallery(gallery); render(); }),
+          item.type === "video" ? null : checkbox("Cut-out", item, "cutout"),
+          h("button", {
+            class: "tiny", text: "↑", disabled: i === 0,
+            onclick: function () {
+              var held = gallery[i]; gallery[i] = gallery[i - 1]; gallery[i - 1] = held;
+              layoutGallery(gallery); touched(); render();
+            }
+          }),
+          h("button", {
+            class: "tiny", text: "↓", disabled: i === gallery.length - 1,
+            onclick: function () {
+              var held = gallery[i]; gallery[i] = gallery[i + 1]; gallery[i + 1] = held;
+              layoutGallery(gallery); touched(); render();
+            }
+          }),
+          h("button", {
+            class: "tiny danger", text: "Remove",
+            onclick: function () {
+              confirmThen("Take this photo out of the gallery?", function () {
+                gallery.splice(i, 1);
+                layoutGallery(gallery);
+                touched();
+                render();
+              });
+            }
+          })
+        ])
+      ])
+    ]));
+  });
+
+  bits.push(dropper("Drop gallery photos here, or tap to choose — several at once is fine", function (files) {
+    addPhotos(work, files, false);
+  }, "image/*,video/mp4,video/webm"));
+
+  return h("div", { class: "card plain" }, bits);
+}
+
+/* ---- the sketch ---- */
+
+function sketchBlock(work) {
+  var paste = h("textarea", {
+    rows: 4,
+    placeholder: 'sketch: {\n  viewBox: "0 0 400 400",\n  entry: [200, 0],\n  …\n}'
+  });
+
+  function take() {
+    var text = paste.value.trim();
+    if (!text) return;
+    try {
+      var body = text.replace(/^\s*sketch\s*:\s*/, "").replace(/,\s*$/, "");
+      var got = new Function("return (" + body + ")")();
+      if (!got || !got.path || !got.entry || !got.exit) throw new Error("no path");
+      work.sketch = {
+        viewBox: got.viewBox || "0 0 400 400",
+        entry: got.entry,
+        exit: got.exit,
+        path: got.path
+      };
+      paste.value = "";
+      say("Sketch taken.", "");
+      touched();
+      render();
+    } catch (e) {
+      say("That does not look like the sketch editor's output.", "bad");
+    }
+  }
+
+  var preview = work.sketch
+    ? h("svg", { viewBox: work.sketch.viewBox || "0 0 400 400", width: "120", height: "120" }, [
+        h("path", { d: work.sketch.path, fill: "none", stroke: "currentColor", "stroke-width": "2" })
+      ])
+    : h("p", { class: "empty", text: "No sketch yet — the card will show its photo alone." });
+
+  return h("div", { class: "card plain" }, [
+    h("h2", { class: "section", text: "Sketch" }),
+    h("p", { class: "note", html: 'The line drawn as the card scrolls into view. Draw it in the <a href="tools/sketch-editor.html" target="_blank" rel="noopener">sketch editor</a>, copy its output, and paste it here.' }),
+    preview,
+    paste,
+    h("div", { class: "acts" }, [
+      h("button", { class: "tiny", text: "Take the pasted sketch", onclick: take }),
+      work.sketch ? h("button", {
+        class: "tiny danger", text: "Remove sketch",
+        onclick: function () {
+          confirmThen("Remove this project's sketch?", function () {
+            delete work.sketch;
+            touched();
+            render();
+          });
+        }
+      }) : null
+    ])
+  ]);
+}
+
+/* ---- one work's form ---- */
+
+function workEditor(work, list) {
+  var clash = allIds().filter(function (id) { return id === work.id; }).length > 1;
+  var idBlock = field("Id", work, "id", {
+    hint: clash ? "⚠ Another project already uses this id." : "Used in the page's link and in its photos' names.",
+    onChange: function () { work._idByHand = true; }
+  });
+  var idInput = idBlock.querySelector("input");
+
+  return h("div", {}, [
+    h("div", { class: "card" }, [
+      h("h2", { class: "section", text: "The project" }),
+      field("Title", work, "title", { onChange: function (value) {
+        /* An id is a project's address: it is in the link to its page
+           and in its photos' names. So it follows the title only for a
+           project begun here and not yet published, and only until the
+           id is typed into by hand. */
+        if (work._fresh && !work._idByHand) {
+          work.id = freeId(slug(value));
+          if (idInput) idInput.value = work.id;
+        }
+        refreshRow(work);
+      } }),
+      h("div", { class: "row" }, [
+        field("Year", work, "year", { type: "number", onChange: function () { refreshRow(work); } }),
+        field("Category", work, "category", { placeholder: "Studio exercise", onChange: function () { refreshRow(work); } })
+      ]),
+      h("div", { class: "row" }, [
+        field("Card size", work, "size", {
+          options: [["small", "small"], ["medium", "medium"], ["large", "large"]],
+          hint: "How large the card sits in the feed."
+        }),
+        idBlock
+      ]),
+      checkbox("Draft — kept here, left off the site", work, "draft", function () { refreshRow(work); }),
+      field("Blurb", work, "blurb", { rows: 2, hint: "The one line under the title in the feed." }),
+      field("Intro", work, "intro", { rows: 6, hint: "The opening paragraph on the project's own page." }),
+      field("Process", work, "process", { rows: 6, hint: "How it was made. Leave empty to leave the section out." }),
+      (function () {
+        var input = h("input", { type: "text", placeholder: "Cardboard, Sheet metal" });
+        input.value = (work.materials || []).join(", ");
+        input.addEventListener("input", function () {
+          work.materials = input.value.split(",").map(function (m) { return m.trim(); }).filter(Boolean);
+          touched();
+        });
+        return h("label", { class: "field" }, [
+          h("span", { text: "Materials" }), input,
+          h("em", { text: "Separated by commas." })
+        ]);
+      })()
+    ]),
+    photoBlock(work),
+    sketchBlock(work)
+  ]);
+}
+
+/* ---- the studies tree ---- */
+
+function newCourse() {
+  return { id: freeId("new-course"), title: "", short: "", blurb: "", works: [] };
+}
+
+function courseCard(course, year, index, courses) {
+  var works = course.works || (course.works = []);
+  var others = (state.data.works || []).map(function (w) { return [w.id, w.title || w.id]; });
+
+  var pick = h("select", {}, [h("option", { value: "", text: "Show a project from Projects…" })].concat(
+    others.map(function (pair) { return h("option", { value: pair[0], text: pair[1] }); })
+  ));
+  pick.addEventListener("change", function () {
+    if (!pick.value) return;
+    works.push(pick.value);
+    pick.value = "";
+    touched();
+    render();
+  });
+
+  return h("div", { class: "card" }, [
+    h("div", { class: "row" }, [
+      field("Course", course, "title"),
+      field("Short name", course, "short", { hint: "What the Back link says, when the title is long." })
+    ]),
+    h("div", { class: "row" }, [
+      field("Id", course, "id", { hint: "Its page address: course.html?id=…" }),
+      field("Line under the heading", course, "blurb")
+    ]),
+    h("h2", { class: "section", text: "Work in this course" }),
+    workList(works),
+    h("div", { class: "acts", style: "margin-top:.7rem;gap:.4rem;display:flex;flex-wrap:wrap" }, [
+      h("button", {
+        class: "tiny", text: "+ New work here",
+        onclick: function () {
+          var work = newWork();
+          work.category = "Studio exercise";
+          works.push(work);
+          state.sel = { work: work, list: works };
+          touched();
+          render();
+        }
+      }),
+      h("button", { class: "tiny", text: "↑ Move course up", disabled: index === 0,
+        onclick: function () { move(courses, index, -1); } }),
+      h("button", { class: "tiny", text: "↓ Move course down", disabled: index === courses.length - 1,
+        onclick: function () { move(courses, index, 1); } }),
+      h("button", {
+        class: "tiny danger", text: "Delete course",
+        onclick: function () {
+          confirmThen("Delete the course “" + (course.title || course.id) + "” and the work written inside it?", function () {
+            courses.splice(index, 1);
+            state.sel = null;
+            touched();
+            render();
+          });
+        }
+      })
+    ]),
+    pick
+  ]);
+}
+
+function studiesTree() {
+  var years = state.data.studies.years;
+  var bits = [
+    h("div", { class: "card plain" }, [
+      field("Line under the Studies heading", state.data.studies, "intro", { rows: 2 })
+    ])
+  ];
+
+  years.forEach(function (year, yi) {
+    var courses = year.courses || (year.courses = []);
+    bits.push(h("div", { class: "card plain", style: "border-left:2px solid var(--accent);padding-left:1rem" }, [
+      h("div", { class: "row" }, [
+        field("Year", year, "title"),
+        field("Id", year, "id")
+      ]),
+      field("Line under the year", year, "blurb"),
+      h("div", { class: "acts", style: "display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1rem" }, [
+        h("button", {
+          class: "tiny", text: "+ Add a course",
+          onclick: function () { courses.push(newCourse()); touched(); render(); }
+        }),
+        h("button", { class: "tiny", text: "↑ Move year up", disabled: yi === 0,
+          onclick: function () { move(years, yi, -1); } }),
+        h("button", { class: "tiny", text: "↓ Move year down", disabled: yi === years.length - 1,
+          onclick: function () { move(years, yi, 1); } }),
+        h("button", {
+          class: "tiny danger", text: "Delete year",
+          onclick: function () {
+            confirmThen("Delete “" + (year.title || year.id) + "” and all its courses?", function () {
+              years.splice(yi, 1);
+              state.sel = null;
+              touched();
+              render();
+            });
+          }
+        })
+      ]),
+      h("div", {}, courses.map(function (course, ci) {
+        return courseCard(course, year, ci, courses);
+      })),
+      courses.length ? null : h("p", { class: "empty", text: "No courses in this year yet." })
+    ]));
+  });
+
+  bits.push(h("button", {
+    class: "tiny", text: "+ Add a year",
+    onclick: function () {
+      state.data.studies.years.push({
+        id: freeId("year-" + (state.data.studies.years.length + 1)),
+        title: "Year " + (state.data.studies.years.length + 1),
+        blurb: "",
+        courses: []
+      });
+      touched();
+      render();
+    }
+  }));
+
+  return h("div", {}, bits);
+}
+
+/* ---- About ---- */
+
+function aboutForm() {
+  var about = state.data.about;
+  var person = state.data.person;
+  var cvInput = h("input", { type: "file", accept: "application/pdf", class: "hide" });
+  cvInput.addEventListener("change", function () {
+    var file = cvInput.files && cvInput.files[0];
+    if (!file) return;
+    fileToBase64(file).then(function (read) {
+      var path = "assets/" + slug(person.name || "cv") + "-cv.pdf";
+      stage(path, read);
+      about.cv = path;
+      say("CV ready to publish.", "");
+      touched();
+      render();
+    });
+    cvInput.value = "";
+  });
+
+  return h("div", {}, [
+    h("div", { class: "card" }, [
+      h("h2", { class: "section", text: "The site's name" }),
+      field("Name", person, "name"),
+      field("Tagline", person, "tagline")
+    ]),
+    h("div", { class: "card" }, [
+      h("h2", { class: "section", text: "About page" }),
+      field("Bio", about, "bio", { rows: 8 }),
+      field("Email", about, "email"),
+      h("div", { class: "row" }, [
+        field("Instagram", about, "instagram"),
+        field("Behance", about, "behance")
+      ]),
+      field("LinkedIn", about, "linkedin"),
+      field("CV file", about, "cv", { hint: "The path the About page links to." }),
+      h("div", { class: "acts" }, [
+        h("button", { class: "tiny", text: "Upload a new CV (PDF)", onclick: function () { cvInput.click(); } }),
+        cvInput
+      ])
+    ])
+  ]);
+}
+
+/* ---- publishing ---- */
+
+/* Keys the studio uses for its own bookkeeping never reach the file. */
+function scrub(value) {
+  if (Array.isArray(value)) return value.map(scrub);
+  if (value && typeof value === "object") {
+    var out = {};
+    Object.keys(value).forEach(function (key) {
+      if (key.charAt(0) === "_") return;
+      out[key] = scrub(value[key]);
+    });
+    return out;
+  }
+  return value;
+}
+
+function changedFiles() {
+  var list = [{ path: CONTENT_PATH, content: toBase64(serialiseContent(scrub(state.data))), words: true }];
+  Object.keys(state.files).forEach(function (path) {
+    list.push({ path: path, content: state.files[path].base64, bytes: state.files[path].bytes });
+  });
+  return list;
+}
+
+function publishTab() {
+  var files = changedFiles();
+  var message = h("input", { type: "text", placeholder: "What changed" });
+  message.value = "Update site content";
+
+  var button = h("button", { class: "primary", text: "Publish to the site" });
+  button.disabled = !state.dirty && Object.keys(state.files).length === 0;
+  button.addEventListener("click", function () { doPublish(message.value); });
+
+  return h("div", {}, [
+    h("div", { class: "card" }, [
+      h("h2", { class: "section", text: "What will be committed" }),
+      h("ul", { class: "changes" }, files.map(function (file) {
+        return h("li", {
+          text: file.path + (file.bytes ? "  (" + Math.round(file.bytes / 1024) + " KB)" : "")
+        });
+      })),
+      h("p", { class: "note", text: "One commit on " + BRANCH + ". GitHub Pages rebuilds the site from it, which usually takes under a minute." }),
+      h("label", { class: "field" }, [h("span", { text: "Commit message" }), message]),
+      h("div", { class: "row" }, [button])
+    ]),
+    h("div", { class: "card plain" }, [
+      h("h2", { class: "section", text: "Starting again" }),
+      h("div", { class: "acts", style: "display:flex;gap:.5rem;flex-wrap:wrap" }, [
+        h("button", {
+          text: "Reload from GitHub",
+          onclick: function () {
+            confirmThen("Throw away the edits in this browser and load what is published?", function () {
+              clearDraft();
+              state.dirty = false;
+              state.files = {};
+              state.previews = {};
+              start();
+            });
+          }
+        }),
+        h("button", {
+          class: "danger",
+          text: "Sign out of the studio",
+          onclick: signOut
+        })
+      ]),
+      h("p", { class: "note", text: "Every publish is an ordinary commit, so anything can be undone in the repository's history." })
+    ])
+  ]);
+}
+
+function doPublish(message) {
+  var files = changedFiles();
+  var base = "/repos/" + OWNER + "/" + REPO;
+  say("Publishing…", "busy");
+
+  api(base + "/git/ref/heads/" + encodeURIComponent(BRANCH)).then(function (ref) {
+    var headSha = ref.object.sha;
+    return api(base + "/contents/" + CONTENT_PATH + "?ref=" + headSha).then(function (file) {
+      if (file.sha !== state.baseSha) {
+        var carryOn = window.confirm(
+          "data/works.js has changed on GitHub since this page loaded — by hand, or from another device.\n\n" +
+          "OK: publish anyway, replacing it with what is on this page.\nCancel: stop, so you can reload first."
+        );
+        if (!carryOn) throw new Error("Publishing stopped. Reload from GitHub first.");
+      }
+      return api(base + "/git/commits/" + headSha);
+    }).then(function (commit) {
+      var baseTree = commit.tree.sha;
+      var blobs = files.map(function (file) {
+        return api(base + "/git/blobs", {
+          method: "POST",
+          body: { content: file.content, encoding: "base64" }
+        }).then(function (blob) {
+          return { path: file.path, mode: "100644", type: "blob", sha: blob.sha };
+        });
+      });
+      return Promise.all(blobs).then(function (tree) {
+        return api(base + "/git/trees", {
+          method: "POST",
+          body: { base_tree: baseTree, tree: tree }
+        });
+      }).then(function (tree) {
+        return api(base + "/git/commits", {
+          method: "POST",
+          body: {
+            message: (message || "Update site content").trim(),
+            tree: tree.sha,
+            parents: [headSha]
+          }
+        });
+      }).then(function (made) {
+        return api(base + "/git/refs/heads/" + encodeURIComponent(BRANCH), {
+          method: "PATCH",
+          body: { sha: made.sha }
+        });
+      });
+    });
+  }).then(function () {
+    return api(base + "/contents/" + CONTENT_PATH + "?ref=" + encodeURIComponent(BRANCH));
+  }).then(function (file) {
+    state.baseSha = file.sha;
+    state.files = {};
+    state.previews = {};
+    state.dirty = false;
+    clearDraft();
+    say("Published. The site rebuilds in a minute or so.", "");
+    render();
+  }).catch(function (err) {
+    say(err.message, "bad");
+  });
+}
+
+function signOut() {
+  confirmThen("Sign out and forget the token in this browser?", function () {
+    try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+    token = "";
+    state.dirty = false;
+    renderGate("");
+    say("");
+  });
+}
+
+/* ---- the preview ---- */
+
+/* The real pages, reading the edits in hand. Photos that have not been
+   published yet have no URL on the site, so the data handed to the
+   preview carries them inline instead. */
+function previewData(inlineFulls) {
+  var data = scrub(state.data);
+  (function walk(value) {
+    if (Array.isArray(value)) return value.forEach(walk);
+    if (!value || typeof value !== "object") return;
+    Object.keys(value).forEach(function (key) {
+      var held = value[key];
+      if (typeof held === "string" && state.previews[held]) {
+        var swap = state.previews[held];
+        if (key === "full" && !inlineFulls && value.medium && state.previews[value.medium]) {
+          swap = state.previews[value.medium];
+        }
+        value[key] = swap;
+      } else {
+        walk(held);
+      }
+    });
+  })(data);
+  return data;
+}
+
+function openPreview(page) {
+  var stored = false;
+  [true, false].forEach(function (inlineFulls) {
+    if (stored) return;
+    try {
+      sessionStorage.setItem(PREVIEW_KEY, JSON.stringify(previewData(inlineFulls)));
+      stored = true;
+    } catch (e) { /* too big with the large photos inline; try again without */ }
+  });
+  if (!stored) {
+    say("There are too many unpublished photos to preview them all at once.", "bad");
+    return;
+  }
+
+  var frame = h("iframe", { src: (page || "index.html") + "?preview=1", title: "Preview" });
+  var box = h("div", { class: "overlay" }, [
+    h("header", {}, [
+      h("strong", { text: "Preview", style: "font-weight:500;font-size:.85rem" }),
+      h("button", { class: "tiny", text: "Home", onclick: function () { frame.src = "index.html?preview=1"; } }),
+      h("button", { class: "tiny", text: "Studies", onclick: function () { frame.src = "studies.html?preview=1"; } }),
+      h("button", { class: "tiny", text: "About", onclick: function () { frame.src = "about.html?preview=1"; } }),
+      h("button", {
+        class: "tiny", text: "Phone / desktop",
+        onclick: function () { box.classList.toggle("phone"); }
+      }),
+      h("div", { class: "spacer", style: "flex:1 1 auto" }),
+      h("button", { class: "tiny", text: "Close", onclick: function () { overlay.innerHTML = ""; } })
+    ]),
+    h("div", { class: "frame" }, [frame])
+  ]);
+  overlay.innerHTML = "";
+  overlay.appendChild(box);
+}
+
+/* ---- putting a tab on screen ---- */
+
+function renderList() { render(); }
+
+function render() {
+  renderBar();
+  Array.prototype.forEach.call(tabsEl.children, function (button) {
+    button.classList.toggle("on", button.dataset.tab === state.tab);
+  });
+
+  app.innerHTML = "";
+  rowsOnScreen = [];
+
+  if (state.tab === "works") {
+    var left = h("div", {}, [
+      h("h2", { class: "section", text: "Projects, in the order the feed shows them" }),
+      workList(state.data.works),
+      h("button", {
+        class: "tiny", style: "margin-top:.8rem",
+        text: "+ New project",
+        onclick: function () {
+          var work = newWork();
+          state.data.works.unshift(work);
+          state.sel = { work: work, list: state.data.works };
+          touched();
+          render();
+        }
+      }),
+      state.sel && state.sel.work ? h("button", {
+        class: "tiny", style: "margin-top:.8rem;margin-left:.4rem",
+        text: "Duplicate selected",
+        onclick: function () {
+          var copy = clone(scrub(state.sel.work));
+          copy.id = freeId(slug(copy.id) + "-copy");
+          copy.title = (copy.title || "") + " (copy)";
+          copy.draft = true;
+          state.sel.list.splice(state.sel.list.indexOf(state.sel.work) + 1, 0, copy);
+          state.sel = { work: copy, list: state.sel.list };
+          touched();
+          render();
+        }
+      }) : null
+    ]);
+    var right = state.sel && state.sel.work
+      ? workEditor(state.sel.work, state.sel.list)
+      : h("p", { class: "empty", text: "Pick a project on the left, or start a new one." });
+    app.appendChild(h("div", { class: "panes" }, [left, right]));
+  } else if (state.tab === "studies") {
+    var tree = studiesTree();
+    var editor = state.sel && state.sel.work
+      ? workEditor(state.sel.work, state.sel.list)
+      : h("p", { class: "empty", text: "Pick a work inside a course to edit it." });
+    app.appendChild(h("div", { class: "panes" }, [tree, editor]));
+  } else if (state.tab === "about") {
+    app.appendChild(aboutForm());
+  } else {
+    app.appendChild(publishTab());
+  }
+}
+
+Array.prototype.forEach.call(tabsEl.children, function (button) {
+  button.addEventListener("click", function () {
+    state.tab = button.dataset.tab;
+    render();
+  });
+});
+document.getElementById("previewBtn").addEventListener("click", function () { openPreview("index.html"); });
+document.getElementById("publishBtn").addEventListener("click", function () {
+  state.tab = "publish";
+  render();
+  window.scrollTo(0, 0);
+});
+document.getElementById("signOut").addEventListener("click", signOut);
+
+/* ---- go ---- */
+
+if (token) start(); else renderGate("");
+
+})();
+</script>
+</body>
+</html>

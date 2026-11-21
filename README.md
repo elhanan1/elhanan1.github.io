@@ -27,6 +27,7 @@ static HTML/CSS/JS.
 
 ```
 index.html          Home page — name, tagline, scrolling work feed
+admin.html           The studio: edit the site and publish, from the browser
 project.html         Project template, loads a work by ?id= in the URL
 studies.html         The degree, year by year, each course a link
 course.html          One course's works, in the same feed as the home page
@@ -34,6 +35,7 @@ about.html           About / contact page
 style.css            All styles (design tokens at the top)
 shared.js            Nav, scroll/sketch behaviour, page rendering
 data/works.js        ALL content: your name, bio, links, and every work
+docs/CONTENT.md      What every field means, and how the studio works
 assets/originals/    Your source photos (one per work, plus -2/-3 variants)
 assets/img/          Generated medium (600px webp) + full (1600px jpg) images
 assets/video/        Optional video clips for a project's gallery
@@ -47,7 +49,32 @@ tools/
 ## Replacing content
 
 Everything — your name, bio, social links, and every work's text — lives
-in **`data/works.js`**. Open it, it's plain JavaScript with comments.
+in **`data/works.js`**: plain JavaScript setting `window.SITE_DATA`.
+
+There are two ways to edit it, and they can be used interchangeably.
+
+### The studio
+
+Open **`admin.html`** — on the live site,
+<https://elhanan1.github.io/admin.html>. It is a page in this repository
+that gives every field of `data/works.js` a form, resizes dropped photos
+into the two sizes the site uses, previews the real pages with the edits
+in them, and commits the result back in one commit. GitHub Pages
+rebuilds from it in about a minute.
+
+It asks once for a GitHub fine-grained token with **Contents: read and
+write** on this repository, and keeps it in that browser only. A project
+can be marked **draft**, which keeps it in the file and off the site.
+
+`docs/CONTENT.md` has the whole of it: signing in, the photo naming, the
+preview, and a reference for every field.
+
+### By hand
+
+The rest of this section. `data/works.js` can be edited in a text editor
+or straight on GitHub, exactly as before — the studio reads whatever is
+in it. The one thing not to do is edit by hand while the studio has
+unpublished edits open; publish those first.
 
 ### Adding or editing a work
 

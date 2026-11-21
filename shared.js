@@ -9,6 +9,58 @@
   "use strict";
 
   var DATA = window.SITE_DATA;
+  var previewing = window.location.search.indexOf("preview=1") > -1;
+
+  /* A work marked `draft: true` stays in the content file but is left
+     out of the site: out of the home feed, out of whichever course
+     holds it, and out of the Previous/Next run — so something can be
+     written up over several sittings without showing half-finished.
+     The studio's preview (?preview=1) keeps them in, so a draft can be
+     seen in place before it is published. */
+  if (DATA && !previewing) DATA = withoutDrafts(DATA);
+
+  function withoutDrafts(data) {
+    var hidden = {};
+    function noteDrafts(list) {
+      (list || []).forEach(function (entry) {
+        if (entry && typeof entry === "object" && entry.draft && entry.id) {
+          hidden[entry.id] = true;
+        }
+      });
+    }
+    noteDrafts(data.works);
+    ((data.studies && data.studies.years) || []).forEach(function (year) {
+      (year.courses || []).forEach(function (course) { noteDrafts(course.works); });
+    });
+
+    function kept(entry) {
+      if (typeof entry === "string") return !hidden[entry];
+      if (entry && entry.ref) return !hidden[entry.ref];
+      return !(entry && entry.draft);
+    }
+
+    var out = {};
+    Object.keys(data).forEach(function (key) { out[key] = data[key]; });
+    out.works = (data.works || []).filter(kept);
+    if (data.studies) {
+      out.studies = {};
+      Object.keys(data.studies).forEach(function (key) {
+        out.studies[key] = data.studies[key];
+      });
+      out.studies.years = ((data.studies.years) || []).map(function (year) {
+        var y = {};
+        Object.keys(year).forEach(function (key) { y[key] = year[key]; });
+        y.courses = (year.courses || []).map(function (course) {
+          var c = {};
+          Object.keys(course).forEach(function (key) { c[key] = course[key]; });
+          c.works = (course.works || []).filter(kept);
+          return c;
+        });
+        return y;
+      });
+    }
+    return out;
+  }
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   /* The course a run of works is being shown inside, when there is one:
