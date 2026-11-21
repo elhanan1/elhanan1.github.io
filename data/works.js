@@ -255,6 +255,62 @@ window.SITE_DATA = (function () {
                       "h": 746
                     }
                   ]
+                },
+                {
+                  "id": "work-2",
+                  "title": "עמוד",
+                  "year": 2026,
+                  "category": "Studio exercise",
+                  "size": "medium",
+                  "draft": true,
+                  "blurb": "",
+                  "intro": "",
+                  "process": "",
+                  "materials": [],
+                  "images": {
+                    "medium": "assets/img/work-2-3-medium.webp",
+                    "full": "assets/img/work-2-3-full.jpg",
+                    "w": 600,
+                    "h": 800
+                  },
+                  "gallery": [
+                    {
+                      "type": "image",
+                      "medium": "assets/img/work-2-4-medium.webp",
+                      "full": "assets/img/work-2-4-full.jpg",
+                      "w": 600,
+                      "h": 800,
+                      "caption": "",
+                      "pos": [
+                        1,
+                        1
+                      ]
+                    },
+                    {
+                      "type": "image",
+                      "medium": "assets/img/work-2-5-medium.webp",
+                      "full": "assets/img/work-2-5-full.jpg",
+                      "w": 600,
+                      "h": 800,
+                      "caption": "",
+                      "pos": [
+                        1,
+                        2
+                      ]
+                    },
+                    {
+                      "type": "image",
+                      "medium": "assets/img/work-2-6-medium.webp",
+                      "full": "assets/img/work-2-6-full.jpg",
+                      "w": 600,
+                      "h": 800,
+                      "caption": "",
+                      "pos": [
+                        2,
+                        1
+                      ]
+                    }
+                  ]
                 }
               ]
             },
@@ -317,6 +373,35 @@ window.SITE_DATA = (function () {
                       "full": "assets/img/milo-study-3-full.jpg"
                     }
                   ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "year-2",
+          "title": "Year 2",
+          "blurb": "",
+          "courses": [
+            {
+              "id": "new-course",
+              "title": "Studio b",
+              "short": "",
+              "blurb": "",
+              "works": [
+                {
+                  "id": "new-project",
+                  "title": "",
+                  "year": 2026,
+                  "category": "Studio exercise",
+                  "size": "medium",
+                  "draft": true,
+                  "blurb": "",
+                  "intro": "",
+                  "process": "",
+                  "materials": [],
+                  "images": null,
+                  "gallery": []
                 }
               ]
             }
