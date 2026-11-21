@@ -1675,6 +1675,26 @@ function openPreview(page) {
 
 function renderList() { render(); }
 
+/* On a phone the two panes stack, which would leave a work's form a
+   whole list below the list — far enough down to look as though
+   nothing had opened. So a narrow screen shows one thing at a time:
+   the list, or the work, with a way back. */
+var narrow = window.matchMedia("(max-width: 860px)");
+if (narrow.addEventListener) narrow.addEventListener("change", function () { render(); });
+
+function backToList(what) {
+  return h("button", {
+    class: "tiny",
+    style: "margin-bottom:1rem",
+    text: "← " + what,
+    onclick: function () {
+      state.sel = null;
+      render();
+      window.scrollTo(0, 0);
+    }
+  });
+}
+
 function render() {
   renderBar();
   Array.prototype.forEach.call(tabsEl.children, function (button) {
@@ -1717,18 +1737,31 @@ function render() {
     var right = state.sel && state.sel.work
       ? workEditor(state.sel.work, state.sel.list)
       : h("p", { class: "empty", text: "Pick a project on the left, or start a new one." });
-    app.appendChild(h("div", { class: "panes" }, [left, right]));
+    if (narrow.matches && state.sel && state.sel.work) {
+      app.appendChild(h("div", {}, [backToList("All projects"), right]));
+    } else {
+      app.appendChild(h("div", { class: "panes" }, [left, right]));
+    }
   } else if (state.tab === "studies") {
-    var tree = studiesTree();
     var editor = state.sel && state.sel.work
       ? workEditor(state.sel.work, state.sel.list)
-      : h("p", { class: "empty", text: "Pick a work inside a course to edit it." });
-    app.appendChild(h("div", { class: "panes" }, [tree, editor]));
+      : h("p", { class: "empty", text: "Tap a work inside a course to edit it." });
+    if (narrow.matches && state.sel && state.sel.work) {
+      app.appendChild(h("div", {}, [backToList("All courses"), editor]));
+    } else {
+      app.appendChild(h("div", { class: "panes" }, [studiesTree(), editor]));
+    }
   } else if (state.tab === "about") {
     app.appendChild(aboutForm());
   } else {
     app.appendChild(publishTab());
   }
+
+  /* A work opened on a phone takes over the screen, so start it at the
+     top rather than wherever the list happened to be scrolled to. */
+  var shown = state.sel && state.sel.work;
+  if (narrow.matches && shown && shown !== state.lastShown) window.scrollTo(0, 0);
+  state.lastShown = shown || null;
 }
 
 Array.prototype.forEach.call(tabsEl.children, function (button) {
